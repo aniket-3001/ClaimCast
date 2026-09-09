@@ -584,11 +584,11 @@ not a nicety. A room-class decision cannot be revisited on discharge day. An irr
 with a five-figure consequence and no information is the exact shape of problem a decision-support
 tool exists for.
 
-**Status of the five rupee figures: [UNVERIFIED — illustrative].** These are synthetic
-order-of-magnitude figures for a representative admission, consistent with the arithmetic in Part
-2, not measured values from a dataset. That is appropriate for a concept paper and consistent with
-the "synthetic or mock data" instruction in the brief — but see Part 5.4: the team must be able to
-produce the underlying bill on request.
+**Status of the five rupee figures: [SYNTHETIC, BUT DERIVED].** These are synthetic figures for a
+representative admission, not measured values from a dataset — appropriate for a concept paper and
+consistent with the "synthetic or mock data" instruction in the brief. They are not, however,
+asserted: the itemised bill they come out of is in Part 5.4 and is reproduced by the prototype's
+adjudication engine on demand.
 
 > **MATERIALITY FILTER · OUR ANSWER TO FEATURE BLOAT**
 > We compute the money at stake and stay silent unless it clears ₹10,000. A caregiver at 2 a.m.
@@ -697,7 +697,7 @@ This is the entire product rendered as one screen: two options, the patient's ow
 each, a recommendation, the delta, and — critically — **the clause citation**. The `Clause 3.2`
 reference is the visible proof of the "every ₹ cited to its clause" promise. Without it the screen
 is a calculator; with it, it is auditable advice. ₹1,26,900 − ₹48,500 = ₹78,400, matching decision
-2 on slide 3. **[UNVERIFIED — illustrative; see Part 5.4.]**
+2 on slide 3. **[Synthetic, but derived — the bill behind these figures is in Part 5.4.]**
 
 ## Slide 5 — Architecture, scope and references
 
@@ -963,9 +963,9 @@ Part 5.2.
 
 # Part 5 — Corrections applied, and what remains open
 
-Five corrections were applied to the deck after the research in Part 4 was completed; §§5.1–5.3,
-5.5 and 5.6 record what was wrong, what it was changed to, and why, so the reasoning survives.
-**§5.4 and §5.7 are still open and need your attention.**
+Corrections were applied to the deck after the research in Part 4 was completed; §§5.1–5.6 record
+what was wrong, what it was changed to, and why, so the reasoning survives.
+**§5.7 is still open and needs your attention.**
 
 ## 5.1 Slide 2 listed ICU and diagnostics as subject to proportionate deduction — they are not
 
@@ -1028,19 +1028,36 @@ hospitalisation average.
 **Now reads:** *"mean out-of-pocket per cancer hospitalisation"* — consistent with the ₹3.31 L
 figure beside it, which was already captioned *"per cancer patient, per year"*.
 
-## 5.4 The rupee figures on slides 3 and 4 are illustrative and undocumented — **STILL OPEN**
+## 5.4 The rupee figures on slides 3 and 4 had no written bill behind them — **RESOLVED**
 
-**Severity: medium — not an error, but an unprepared question.**
+**Severity: was medium — not an error, but an unprepared question.**
 
 ₹1.2 L, ₹78,400, ₹2 L, ₹45,000, ₹22,000, ₹1,26,900 and ₹48,500 are synthetic illustrative figures.
 That is legitimate for a concept paper and consistent with the brief's "synthetic or mock data"
 instruction. The risk is narrower: **there is currently no written bill behind them.** If a judge
 asks "show me how you got ₹78,400", the team needs an answer in ten seconds.
 
-**Action:** build one synthetic reference admission — an itemised bill and a settlement table in the
-form of §2.3 — that produces ₹1,26,900 under the private-room path and ₹48,500 under the
-semi-private path. Keep it as a one-page annexe. It costs an hour and closes the question
-permanently. It is also, not incidentally, the first test case for the adjudication engine.
+**Now built.** The reference admission exists, is itemised, and reconciles. It is `RC-2401` in
+`web/src/data/admissions.ts`: a single-level lumbar spinal fusion, five days, private room at
+₹10,000 a day against a ₹5,000 sub-limit, on a ₹5,00,000 policy.
+
+| | Private room | Semi-private |
+|---|---:|---:|
+| Hospital bill | ₹3,53,900 | ₹3,28,900 |
+| Room rent above the sub-limit | ₹25,000 | — |
+| Proportionate reduction on room-linked charges | ₹53,400 | — |
+| Implant above its sub-limit | ₹25,000 | ₹25,000 |
+| Outside the pre/post-hospitalisation window | ₹11,600 | ₹11,600 |
+| List I non-payables | ₹11,900 | ₹11,900 |
+| **Patient pays** | **₹1,26,900** | **₹48,500** |
+
+₹1,26,900 − ₹48,500 = ₹78,400, which is decision 2 on slide 3. The room rate is the only thing that
+changes between the two columns; everything else follows from it.
+
+The bill is not stored as those totals — it is assembled line by line from the procedure's cost
+model and the hospital's tariff, then put through the same adjudication engine the prototype runs
+on, so the figures are derived rather than asserted. `npm run check` in `web/` asserts all three
+against the engine and fails the build if the deck and the arithmetic ever disagree.
 
 ## 5.5 Reference 3 could not be verified
 

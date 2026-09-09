@@ -39,6 +39,7 @@ every deduction cited to the clause that produced it.
 | `src/deckkit.py` | Shared layout helpers, palette, template loader. |
 | `finalize.ps1` | Copies the build output to the required submission filenames. |
 | `reference/` | The official PCC 2026 template and the Hospitality problem statement. |
+| `web/` | **The prototype.** A working front end over the adjudication engine, on synthetic data. |
 
 **`ClaimCast.md` is the document to read.** It is written for someone who has never opened an
 Indian health-insurance policy: it defines every term before using it, works the proportionate
@@ -73,6 +74,27 @@ of where the repository is checked out.
   and mark its verification status. Nothing goes on a submitted slide because it sounds right.
 
 ---
+
+## The prototype
+
+A local, front-end-only proof of concept. No server, no network calls, no real data.
+
+```powershell
+cd web
+npm install
+npm run dev      # http://localhost:5174
+```
+
+Four tabs over one shared admission: **Forecast** (what the policy will not pay, as a range, and which remaining decisions still move it), **Bill** (the same bill with the insurer's working shown line by line, each deduction citing its clause), **Alternatives** (the admission re-adjudicated in full under every room class and hospital still available) and **Database** (the ten hospitals, fourteen procedures, six policy structures, sixteen settled admissions, IRDAI Lists I-IV and the clause registry the engine draws on).
+
+Every hospital, insurer, product, patient and bill is invented. The sixteen stored admissions are chosen for what each one breaks — the room exactly at the sub-limit, the intensive-care stay that nothing may be scaled against, the claim refused five hours short of twenty-four, the sum insured that ran out in March, the nursing home with a single room class and therefore no cheaper bed to move to.
+
+```powershell
+npm run typecheck
+npm run check    # engine reproduces the deck's figures; every tab renders on every case
+```
+
+`npm run check` is the guard on the deck. It asserts the rupee figures on slide 3 against the engine, so if the two ever disagree the build fails rather than the slide going out wrong.
 
 ## Sources
 

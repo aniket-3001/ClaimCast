@@ -1,0 +1,161 @@
+import type { Paise } from "./money";
+
+/**
+ * How a bill line behaves under a room-rent sub-limit.
+ *
+ * This is the whole game. IRDAI/HLT/REG/CIR/151/06/2020 lets an insurer scale
+ * down the charges that a hospital prices BY ROOM CATEGORY when the room taken
+ * is dearer than the policy allows — and forbids scaling the rest. Getting the
+ * membership of `associated` wrong by one category is worth tens of thousands
+ * of rupees on a single admission.
+ */
+export type LineKind =
+  /** The room itself. Capped at the policy's per-day limit; excess is the patient's. */
+  | "room"
+  /** Priced by room category, so it moves with the room: surgeon, OT, anaesthesia, nursing. */
+  | "associated"
+  /** ICU. Its own per-day cap. Explicitly OUTSIDE proportionate deduction. */
+  | "icu"
+  /** Diagnostics, pharmacy, physiotherapy. Same price in any room. Never scaled. */
+  | "independent"
+  /** Implants and high-value consumables, against their own sub-limit. */
+  | "implant"
+  /** Pre- or post-hospitalisation spend outside the policy's window. */
+  | "outside_window"
+  /** IRDAI List I. Never payable, in any room, under any policy. */
+  | "non_payable";
+
+export interface BillLine {
+  id: string;
+  label: string;
+  kind: LineKind;
+  amount: Paise;
+  /** Set on `room` and `icu` lines so a per-day cap can be compared like for like. */
+  days?: number;
+  perDay?: Paise;
+  note?: string;
+}
+
+export type RoomClass = "general" | "semi_private" | "private" | "deluxe" | "suite" | "icu";
+
+export interface RoomTariff {
+  cls: RoomClass;
+  perDay: Paise;
+}
+
+export interface Hospital {
+  id: string;
+  name: string;
+  city: string;
+  /** NHA city classification, which drives the CGHS rate band. */
+  tier: "X" | "Y" | "Z";
+  beds: number;
+  /** Which insurers hold a cashless network agreement with this hospital. */
+  network: string[];
+  pmjayEmpanelled: boolean;
+  cghsRateBand: "X" | "Y" | "Z" | null;
+  rooms: RoomTariff[];
+  /** Median days from discharge to reimbursement settlement, observed. */
+  settlementDays: number;
+  /** Median cashless pre-authorisation turnaround, in hours. */
+  preAuthHours: number | null;
+  flags?: string[];
+}
+
+/**
+ * Enough of a bill to rebuild one.
+ *
+ * The forecast is not a lookup of a stored total. It assembles the bill line by
+ * line so that each line can be classified, and only then adjudicated — which
+ * is the only way a deduction can be attributed to the charge that caused it.
+ */
+export interface CostModel {
+  /** Surgeon, theatre and anaesthesia together. Scales with room class. */
+  surgical: Paise;
+  /** In-patient nursing. Scales with room class. */
+  nursingPerDay: Paise;
+  icuPerDay: Paise | null;
+  diagnostics: Paise;
+  pharmacyPerDay: Paise;
+  implant: Paise | null;
+  otherIndependent: Paise;
+  /** IRDAI List I, the part billed once per admission. */
+  nonPayableFixed: Paise;
+  /** IRDAI List I, the part billed every day. */
+  nonPayablePerDay: Paise;
+  /** Pre-hospitalisation spend that fell outside the policy window. */
+  outsideWindow: Paise;
+}
+
+export interface Procedure {
+  id: string;
+  name: string;
+  /** PM-JAY Health Benefit Package code, where one exists. */
+  hbpCode: string | null;
+  specialty: string;
+  /** True where the procedure is on the policy's day-care list, so the
+   *  24-hour in-patient rule does not apply. */
+  dayCare: boolean;
+  medianStayDays: number;
+  usesImplant: boolean;
+  /** Public reference rates, for the forecast band. */
+  pmjayRate: Paise | null;
+  cghsRate: Paise | null;
+  /** Observed private-sector spread, before any room-class effect. */
+  privateLow: Paise;
+  privateHigh: Paise;
+  costs: CostModel;
+}
+
+export interface Policy {
+  id: string;
+  insurer: string;
+  product: string;
+  sumInsured: Paise;
+  /** Per-day room limit. Either an absolute figure or a percentage of sum insured. */
+  roomCapPerDay: Paise | null;
+  roomCapPctOfSI: number | null;
+  icuCapPerDay: Paise | null;
+  icuCapPctOfSI: number | null;
+  /** Some products buy the clause out. When false, no scaling ever happens. */
+  proportionateDeduction: boolean;
+  copayPct: number;
+  implantSubLimit: Paise | null;
+  preHospDays: number;
+  postHospDays: number;
+  dayCareCovered: boolean;
+  /** Months elapsed on this policy. Drives waiting periods and moratorium. */
+  monthsInForce: number;
+  pedWaitingMonths: number;
+  moratoriumMonths: number;
+  notes?: string;
+}
+
+/** A clause that can be cited as the cause of a deduction. */
+export interface Clause {
+  id: string;
+  cite: string;
+  source: string;
+  text: string;
+}
+
+export type Route = "cashless" | "reimbursement";
+
+export interface Admission {
+  id: string;
+  /** Synthetic patient reference. No real person. */
+  ref: string;
+  date: string;
+  hospitalId: string;
+  procedureId: string;
+  policyId: string;
+  roomClass: RoomClass;
+  route: Route;
+  lines: BillLine[];
+  /** What made this record worth keeping in the reference set. */
+  edgeCase: string | null;
+  /** Sum insured already consumed this policy year, before this admission. */
+  siUsed?: Paise;
+  /** Set where the claim was refused outright rather than reduced. */
+  repudiated?: { reason: string; clause: string };
+}

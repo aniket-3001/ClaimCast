@@ -1,0 +1,25 @@
+{
+  "name": "claimcast-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ClaimCast proof of concept. Frontend only, synthetic data, no network calls.",
+  "scripts": {
+    "dev": "vite --port 5174 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 5174",
+    "typecheck": "tsc --noEmit",
+    "check": "esbuild src/lib/selfcheck.ts --bundle --platform=node --format=cjs --outfile=node_modules/.selfcheck.cjs && node node_modules/.selfcheck.cjs && esbuild src/smoke.tsx --bundle --platform=node --format=cjs --jsx=automatic --outfile=node_modules/.smoke.cjs && node node_modules/.smoke.cjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}
