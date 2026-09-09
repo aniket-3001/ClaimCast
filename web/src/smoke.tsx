@@ -9,7 +9,7 @@
 import { renderToString } from "react-dom/server";
 import { evaluate, type CaseInput } from "./lib/case";
 import { Controls } from "./components/Controls";
-import { Forecast } from "./components/Forecast";
+import { Journey } from "./components/Journey";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Database } from "./components/Database";
@@ -49,7 +49,7 @@ let rendered = 0;
 for (const c of cases) {
   const e = evaluate(c);
   renderToString(<Controls value={c} onChange={noop} />);
-  renderToString(<Forecast e={e} />);
+  renderToString(<Journey e={e} onPick={noop} />);
   renderToString(<BillView e={e} />);
   renderToString(<Alternatives e={e} onPick={noop} />);
   rendered++;

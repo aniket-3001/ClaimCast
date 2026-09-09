@@ -146,8 +146,10 @@ function Hospitals() {
   return (
     <>
       <p className="lede">
-        Ten hospitals across the three NHA city bands. Tariffs are per day. Settlement is the observed
-        median from discharge to money in the account on the reimbursement route.
+        Ten hospitals across the three NHA city bands. Tariffs are per day. The clinical index is what
+        the building charges for the surgical work, nursing, diagnostics and pharmacy against a metro
+        corporate hospital at 1.00; it never touches the implant or the List I items. Settlement is
+        the observed median from discharge to money in the account on the reimbursement route.
       </p>
       <div className="scroll">
         <table>
@@ -159,6 +161,7 @@ function Hospitals() {
               <th className="num">Semi-private</th>
               <th className="num">Private</th>
               <th className="num">ICU</th>
+              <th className="num">Clinical</th>
               <th className="num">Settles in</th>
             </tr>
           </thead>
@@ -185,6 +188,7 @@ function Hospitals() {
                   <td className="num">{at("semi_private") ? fmt(at("semi_private")!.perDay) : "—"}</td>
                   <td className="num">{at("private") ? fmt(at("private")!.perDay) : "—"}</td>
                   <td className="num">{at("icu") ? fmt(at("icu")!.perDay) : "—"}</td>
+                  <td className="num">{h.costIndex.toFixed(2)}</td>
                   <td className="num">{h.settlementDays} d</td>
                 </tr>
               );

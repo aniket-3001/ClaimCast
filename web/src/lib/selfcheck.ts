@@ -11,6 +11,8 @@ import { adjudicate } from "./engine";
 import { fmt, rupees as r } from "./money";
 import { ADMISSIONS, admission } from "../data/admissions";
 import { policy } from "../data/policies";
+import { HOSPITALS } from "../data/hospitals";
+import { evaluate, fixedRegardless, repair } from "./case";
 
 let failures = 0;
 
@@ -70,6 +72,42 @@ for (const a of ADMISSIONS) {
   }
 }
 if (!failures) console.log("  ok   shares reconcile, no scaling outside the associated block");
+
+// The tree tells a family that three deductions survive every choice on it.
+// That has to be true of the data, not just of the wording.
+console.log("\nThe claim the tree makes");
+{
+  const base = evaluate(
+    repair({
+      hospitalId: "h-meridian",
+      procedureId: "p-spine-fusion",
+      policyId: "pol-classic",
+      roomClass: "private",
+      route: "cashless",
+      days: 5,
+      icuDays: 0,
+      siUsed: 0,
+    }),
+  );
+  const key = (e: ReturnType<typeof evaluate>) =>
+    fixedRegardless(e)
+      .map((f) => `${f.clause}:${f.amount}`)
+      .join("|");
+  const want = key(base);
+  const moved: string[] = [];
+  for (const h of HOSPITALS) {
+    for (const room of h.rooms) {
+      const at = evaluate(repair({ ...base.input, hospitalId: h.id, roomClass: room.cls }));
+      if (key(at) !== want) moved.push(`${h.name}, ${room.cls}`);
+    }
+  }
+  if (moved.length) {
+    failures++;
+    console.log(`FAIL  a deduction billed as unavoidable moved at ${moved[0]}`);
+  } else {
+    console.log("  ok   the unavoidable deductions survive every hospital and every room class");
+  }
+}
 
 console.log(failures ? `\n${failures} failed` : "\nall checks passed");
 declare const process: { exit(code: number): never };

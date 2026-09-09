@@ -46,3 +46,7 @@ export function ratioSplit(total: Paise, keepRatio: number): { keep: Paise; drop
   const keep = Math.round(total * keepRatio);
   return { keep, drop: total - keep };
 }
+
+/** A difference, with its direction in front of the symbol: −₹78,400. */
+export const signed = (p: Paise): string =>
+  p === 0 ? fmt(0) : (p < 0 ? "−" : "+") + fmt(Math.abs(p));

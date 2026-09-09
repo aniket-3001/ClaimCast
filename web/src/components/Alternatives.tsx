@@ -1,7 +1,5 @@
-import { fmt } from "../lib/money";
+import { fmt, signed } from "../lib/money";
 import { hospitalOptions, roomOptions, type CaseInput, type Evaluated, type Option } from "../lib/case";
-import type { RoomClass } from "../lib/types";
-import { hospital } from "../data/hospitals";
 
 /**
  * The same admission, counted again under every choice still available.
@@ -16,42 +14,24 @@ export function Alternatives({ e, onPick }: { e: Evaluated; onPick: (next: CaseI
 
   return (
     <>
-      <p className="lede">
-        Every row is a full re-adjudication of this admission, not a rule of thumb. Pick one to carry
-        it through to the other tabs.
-      </p>
-
       <section className="section">
         <div className="section-head">
-          <h2>Room class at {e.hospital.name}</h2>
+          <h2>Every room class at {e.hospital.name}</h2>
           <span className="aside">Room limit {e.result.roomCapPerDay === null ? "none" : `${fmt(e.result.roomCapPerDay)} / day`}</span>
         </div>
         <Table
           options={rooms}
-          onPick={(o) => onPick({ ...e.input, roomClass: o.key as RoomClass })}
+          onPick={(o) => onPick(o.next)}
           emptyNote="This hospital has one room class."
         />
       </section>
 
       <section className="section">
         <div className="section-head">
-          <h2>Hospital</h2>
-          <span className="aside">Cheapest room class at each, same procedure and policy</span>
+          <h2>Every hospital in the set</h2>
+          <span className="aside">Same room class where they stock it, nearest by tariff where they do not</span>
         </div>
-        <Table
-          options={hospitals}
-          onPick={(o) => {
-            const h = hospital(o.key);
-            const best = h.rooms.filter((r) => r.cls !== "icu");
-            const cls = best.length ? best[0].cls : "icu";
-            onPick({
-              ...e.input,
-              hospitalId: o.key,
-              roomClass: cls,
-              route: h.network.includes(e.policy.insurer) ? e.input.route : "reimbursement",
-            });
-          }}
-        />
+        <Table options={hospitals} onPick={(o) => onPick(o.next)} />
       </section>
     </>
   );
@@ -90,7 +70,7 @@ function Table({
               <td className="num">{fmt(o.billTotal)}</td>
               <td className="num">{fmt(o.patientPays)}</td>
               <td className="num" style={{ color: o.delta < 0 ? "var(--paid)" : o.delta > 0 ? "var(--loss)" : undefined }}>
-                {o.delta === 0 ? "—" : (o.delta < 0 ? "−" : "+") + fmt(Math.abs(o.delta)).slice(1)}
+                {o.delta === 0 ? "—" : signed(o.delta)}
               </td>
             </tr>
           ))}

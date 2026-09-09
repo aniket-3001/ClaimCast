@@ -56,6 +56,15 @@ export interface Hospital {
   cghsRateBand: "X" | "Y" | "Z" | null;
   rooms: RoomTariff[];
   /** Median days from discharge to reimbursement settlement, observed. */
+  /**
+   * What this hospital charges for the clinical work, against a metro corporate
+   * hospital at 1.00. Applies to the surgical block, nursing, diagnostics,
+   * pharmacy and ancillary services — never to the implant, which is a device
+   * at list price, and never to the List I items, which are small fixed
+   * charges. Keeping those two out is what makes the tree's "refused whichever
+   * path you take" node literally true.
+   */
+  costIndex: number;
   settlementDays: number;
   /** Median cashless pre-authorisation turnaround, in hours. */
   preAuthHours: number | null;

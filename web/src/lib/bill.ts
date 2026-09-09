@@ -20,7 +20,8 @@ export const tariff = (h: Hospital, cls: RoomClass): Paise | null =>
  * line by line from the procedure's cost model rather than pulled out as a
  * total. Only the room line changes when the room class changes: the surgeon
  * charges the same fee either way. That the patient's share moves anyway is
- * the point being demonstrated.
+ * the point being demonstrated. Moving hospital changes both, because the
+ * clinical work is priced differently building to building.
  */
 export function buildBill(args: {
   procedure: Procedure;
@@ -36,6 +37,9 @@ export function buildBill(args: {
   const icuDays = args.icuDays ?? 0;
   const wardDays = Math.max(0, days - icuDays);
   const lines: BillLine[] = [];
+  // What this hospital charges for the clinical work. The implant and the
+  // List I items are deliberately left out of it — see Hospital.costIndex.
+  const k = (amount: Paise): Paise => Math.round(amount * h.costIndex);
 
   const perDay = tariff(h, roomClass) ?? 0;
   if (wardDays > 0) {
@@ -65,15 +69,16 @@ export function buildBill(args: {
   // for legibility, with the remainder landing on the last line so the three
   // still sum to the block exactly.
   if (c.surgical > 0) {
-    const surgeon = Math.round(c.surgical * 0.65);
-    const theatre = Math.round(c.surgical * 0.22);
+    const surgical = k(c.surgical);
+    const surgeon = Math.round(surgical * 0.65);
+    const theatre = Math.round(surgical * 0.22);
     lines.push({ id: "surgeon", label: "Surgeon's fee", kind: "associated", amount: surgeon });
     lines.push({ id: "ot", label: "Operation theatre", kind: "associated", amount: theatre });
     lines.push({
       id: "anaes",
       label: "Anaesthetist",
       kind: "associated",
-      amount: c.surgical - surgeon - theatre,
+      amount: surgical - surgeon - theatre,
     });
   }
 
@@ -82,9 +87,9 @@ export function buildBill(args: {
       id: "nursing",
       label: "In-patient nursing",
       kind: "associated",
-      amount: c.nursingPerDay * days,
+      amount: k(c.nursingPerDay) * days,
       days,
-      perDay: c.nursingPerDay,
+      perDay: k(c.nursingPerDay),
     });
   }
 
@@ -93,7 +98,7 @@ export function buildBill(args: {
       id: "diag",
       label: "Investigations and imaging",
       kind: "independent",
-      amount: c.diagnostics,
+      amount: k(c.diagnostics),
     });
   }
 
@@ -102,9 +107,9 @@ export function buildBill(args: {
       id: "pharm",
       label: "Pharmacy and consumables",
       kind: "independent",
-      amount: c.pharmacyPerDay * days,
+      amount: k(c.pharmacyPerDay) * days,
       days,
-      perDay: c.pharmacyPerDay,
+      perDay: k(c.pharmacyPerDay),
     });
   }
 
@@ -117,7 +122,7 @@ export function buildBill(args: {
       id: "other",
       label: "Physiotherapy and other services",
       kind: "independent",
-      amount: c.otherIndependent,
+      amount: k(c.otherIndependent),
     });
   }
 
@@ -126,6 +131,8 @@ export function buildBill(args: {
       id: "prehosp",
       label: "Pre-hospitalisation tests",
       kind: "outside_window",
+      // Done at an outside lab before admission, so the hospital's own pricing
+      // does not govern it and the cost index is not applied.
       amount: c.outsideWindow,
       note: "Done 42 days before admission. The policy window is 30 days.",
     });

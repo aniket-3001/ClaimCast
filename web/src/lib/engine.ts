@@ -216,26 +216,6 @@ export function adjudicate(args: {
   };
 }
 
-/**
- * What is worth showing.
- *
- * A caregiver deciding between two rooms in a corridor cannot read fourteen
- * deduction lines. Anything under the threshold is true but not actionable, so
- * it is summed into one line rather than dropped.
- */
-export function material(
-  deductions: Deduction[],
-  threshold: Paise,
-): { shown: Deduction[]; restTotal: Paise; restCount: number } {
-  const shown = deductions.filter((d) => d.amount >= threshold);
-  const rest = deductions.filter((d) => d.amount < threshold);
-  return {
-    shown: [...shown].sort((a, b) => b.amount - a.amount),
-    restTotal: rest.reduce((t, d) => t + d.amount, 0),
-    restCount: rest.length,
-  };
-}
-
 // Local, so the engine stays free of formatting concerns everywhere but here,
 // where the reason strings have to read as sentences.
 function inr(p: Paise): string {

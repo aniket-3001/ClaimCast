@@ -1,6 +1,6 @@
 import type { BillLine, Hospital, Policy, Procedure, RoomClass, Route } from "./types";
 import { adjudicate, type Adjudication } from "./engine";
-import { buildBill, ROOM_LABEL } from "./bill";
+import { buildBill, ROOM_LABEL, tariff } from "./bill";
 import { rupees, type Paise } from "./money";
 import { hospital, HOSPITALS } from "../data/hospitals";
 import { procedure } from "../data/procedures";
@@ -55,6 +55,27 @@ function admissibility(p: Procedure, pol: Policy, days: number) {
     };
   }
   return null;
+}
+
+/**
+ * Force an input back into a combination that actually exists.
+ *
+ * Changing one field can invalidate another — a hospital that does not stock
+ * the selected room class, an insurer with no agreement at the new hospital.
+ * Every entry point runs through here so no unreachable case is ever evaluated.
+ */
+export function repair(c: CaseInput): CaseInput {
+  const h = hospital(c.hospitalId);
+  const pol = policy(c.policyId);
+  const next = { ...c };
+  if (!h.rooms.some((r) => r.cls === next.roomClass)) {
+    next.roomClass = h.rooms.find((r) => r.cls !== "icu")?.cls ?? "icu";
+  }
+  if (next.icuDays > next.days) next.icuDays = next.days;
+  // Cashless is not a preference. It exists only where the hospital and the
+  // insurer already have an agreement.
+  if (!h.network.includes(pol.insurer)) next.route = "reimbursement";
+  return next;
 }
 
 export function evaluate(input: CaseInput): Evaluated {
@@ -126,6 +147,8 @@ export interface Option {
   delta: Paise;
   current: boolean;
   available: boolean;
+  /** The case this option produces, already repaired. */
+  next: CaseInput;
 }
 
 /** The same admission in every room class this hospital actually has. */
@@ -134,8 +157,10 @@ export function roomOptions(e: Evaluated): Option[] {
   return e.hospital.rooms
     .filter((r) => r.cls !== "icu")
     .map((r) => {
-      const alt = evaluate({ ...e.input, roomClass: r.cls });
+      const next = repair({ ...e.input, roomClass: r.cls });
+      const alt = evaluate(next);
       return {
+        next,
         key: r.cls,
         label: ROOM_LABEL[r.cls],
         detail: `${inr(r.perDay)} a day`,
@@ -152,29 +177,32 @@ export function roomOptions(e: Evaluated): Option[] {
 /**
  * The same admission at every hospital in the set.
  *
- * The cheapest room class available at each is used, because that is the
- * comparison a family can act on. A hospital outside the insurer's network is
- * still listed — it may well be the right choice — but the entry says what
- * choosing it means for the money the family has to find on the day.
+ * Like for like: the same room class where they stock it, and the nearest by
+ * tariff where they do not. Comparing each hospital at its own cheapest bed
+ * would flatter the cheap ones and answer a question nobody asked.
  */
 export function hospitalOptions(e: Evaluated): Option[] {
   const here = e.result.patientPays;
+  const want = tariff(e.hospital, e.input.roomClass) ?? 0;
   return HOSPITALS.map((h) => {
     const classes = h.rooms.filter((r) => r.cls !== "icu");
     if (!classes.length) return null;
-    const best = classes
-      .map((r) => evaluate({ ...e.input, hospitalId: h.id, roomClass: r.cls }))
-      .sort((a, b) => a.result.patientPays - b.result.patientPays)[0];
+    const match =
+      classes.find((r) => r.cls === e.input.roomClass) ??
+      [...classes].sort((a, b) => Math.abs(a.perDay - want) - Math.abs(b.perDay - want))[0];
+    const next = repair({ ...e.input, hospitalId: h.id, roomClass: match.cls });
+    const alt = evaluate(next);
     const inNetwork = h.network.includes(e.policy.insurer);
     return {
+      next,
       key: h.id,
       label: h.name,
-      detail: `${h.city} · ${ROOM_LABEL[best.input.roomClass].toLowerCase()} · ${
+      detail: `${h.city} · ${ROOM_LABEL[match.cls].toLowerCase()} · ${
         inNetwork ? "cashless" : `reimbursement, ${h.settlementDays} days`
       }`,
-      patientPays: best.result.patientPays,
-      billTotal: best.result.billTotal,
-      delta: best.result.patientPays - here,
+      patientPays: alt.result.patientPays,
+      billTotal: alt.result.billTotal,
+      delta: alt.result.patientPays - here,
       current: h.id === e.input.hospitalId,
       available: inNetwork,
     };
@@ -183,96 +211,191 @@ export function hospitalOptions(e: Evaluated): Option[] {
     .sort((a, b) => a.patientPays - b.patientPays);
 }
 
-export interface Fork {
-  stage: string;
-  decision: string;
-  mechanic: string;
-  /** Rupees riding on this one choice. Null where the fork is not in play. */
-  amount: Paise | null;
-  detail: string;
-}
-
-/**
- * The five points on the journey where a choice is still open.
- *
- * Every amount here is the difference between two full adjudications, not a
- * headline figure. Where a fork has nothing riding on it — a hospital with one
- * room class, a stay far past 24 hours — it says so rather than inventing a
- * number to fill the space.
- */
-export function forks(e: Evaluated): Fork[] {
-  const rooms = roomOptions(e);
-  const bestRoom = rooms[0];
-  const hospitals = hospitalOptions(e);
-  const bestHospital = hospitals.find((h) => h.available) ?? hospitals[0];
-  const inNetwork = e.hospital.network.includes(e.policy.insurer);
-
-  const implantExcess = e.result.deductions
-    .filter((d) => d.clause === "IMPLANT_SUBLIMIT" || d.clause === "LIST_I")
-    .reduce((t, d) => t + d.amount, 0);
-
-  const stay = e.input.days;
-
-  return [
-    {
-      stage: "Admission",
-      decision: "Which hospital",
-      mechanic: "network or not",
-      amount: bestHospital && bestHospital.delta < 0 ? -bestHospital.delta : null,
-      detail:
-        bestHospital && bestHospital.delta < 0
-          ? `${bestHospital.label} settles the same admission for less.`
-          : inNetwork
-            ? "Already the cheapest of the ten on this policy."
-            : "Outside the network. No cheaper option in the set either.",
-    },
-    {
-      stage: "Admission",
-      decision: "Which room class",
-      mechanic: "proportionate deduction",
-      amount: bestRoom && bestRoom.delta < 0 ? -bestRoom.delta : null,
-      detail:
-        bestRoom && bestRoom.delta < 0
-          ? `${bestRoom.label} instead, ${bestRoom.detail}.`
-          : e.hospital.rooms.filter((r) => r.cls !== "icu").length === 1
-            ? "One room class in the building. Nothing to move to."
-            : "Already on the cheapest terms this hospital offers.",
-    },
-    {
-      stage: "Investigation",
-      decision: "Cashless or reimbursement",
-      mechanic: "what the family must float",
-      amount: inNetwork ? null : e.result.billTotal,
-      detail: inNetwork
-        ? `Cashless. Pre-authorisation runs about ${e.hospital.preAuthHours} hours.`
-        : `The whole bill, then a wait of about ${e.hospital.settlementDays} days.`,
-    },
-    {
-      stage: "Procedure",
-      decision: "Implant and consumables",
-      mechanic: "sub-limits and IRDAI List I",
-      amount: implantExcess || null,
-      detail: implantExcess
-        ? "Refused whatever room is taken and whatever the sum insured is."
-        : "No implant, and the non-medical items are immaterial here.",
-    },
-    {
-      stage: "Recovery",
-      decision: "The 24-hour rule",
-      mechanic: "day-care or in-patient",
-      amount: e.procedure.dayCare || stay > 1 ? null : e.result.billTotal,
-      detail: e.procedure.dayCare
-        ? "On the day-care list. No minimum stay applies."
-        : stay > 1
-          ? `A ${stay}-day stay. The rule is not in play.`
-          : "A single day, and not a listed day-care procedure. The whole claim turns on the clock.",
-    },
-  ];
-}
-
 function inr(p: Paise): string {
   const n = Math.round(p / 100);
   const s = String(n);
   if (s.length <= 3) return "₹" + s;
   return "₹" + s.slice(0, -3).replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + s.slice(-3);
 }
+
+/* ── The journey, as a tree ──────────────────────────────────────────────── */
+
+export interface Branch {
+  key: string;
+  label: string;
+  note: string;
+  patientPays: Paise;
+  /** Against the path currently taken. */
+  delta: Paise;
+  chosen: boolean;
+  /** Why this branch is shut, where it is shut. */
+  blocked: string | null;
+  next: CaseInput;
+}
+
+export interface Stage {
+  id: string;
+  step: number;
+  /** Where on the care journey this is faced. The deck's five points, in order. */
+  phase: string;
+  question: string;
+  mechanic: string;
+  clause: string | null;
+  branches: Branch[];
+  /** Set where the stage exists but has nothing left to decide. */
+  settled: string | null;
+}
+
+/** Four is as many branches as a person reads at an admission desk. */
+const BRANCH_CAP = 4;
+
+/**
+ * The choices still open, in the order they are actually faced.
+ *
+ * Each branch is a full re-adjudication, so the rupee figure under it is what
+ * the family would pay on that path rather than an adjustment applied to this
+ * one. The hospital stage is capped at four: the one being used and the three
+ * that move the number most. The rest are on the Working tab, in full.
+ */
+export function journey(e: Evaluated): Stage[] {
+  const here = e.result.patientPays;
+
+  const all = hospitalOptions(e);
+  const current = all.find((o) => o.current)!;
+  const shown = [current, ...all.filter((o) => !o.current).slice(0, BRANCH_CAP - 1)].sort(
+    (a, b) => a.patientPays - b.patientPays,
+  );
+  const where: Stage = {
+    id: "hospital",
+    step: 1,
+    phase: "Admission",
+    question: "Where",
+    mechanic: "Room tariff against the sub-limit",
+    clause: "ROOM_CAP",
+    settled: null,
+    branches: shown.map((o) => ({
+      key: o.key,
+      label: o.label,
+      note: o.detail,
+      patientPays: o.patientPays,
+      delta: o.delta,
+      chosen: o.current,
+      blocked: null,
+      next: o.next,
+    })),
+  };
+
+  const inNetwork = e.hospital.network.includes(e.policy.insurer);
+  const how: Stage = {
+    id: "route",
+    step: 3,
+    phase: "Investigation",
+    question: "How you claim",
+    mechanic: "What the family has to find on the day",
+    clause: null,
+    settled: inNetwork
+      ? null
+      : `${e.hospital.name} has no agreement with ${e.policy.insurer}. Only one route is open.`,
+    branches: (["cashless", "reimbursement"] as Route[]).map((r) => ({
+      key: r,
+      label: r === "cashless" ? "Cashless" : "Reimbursement",
+      note:
+        r === "cashless"
+          ? inNetwork
+            ? `Pre-authorisation, about ${e.hospital.preAuthHours} hours`
+            : "No agreement with this insurer"
+          : `Pay the bill, wait about ${e.hospital.settlementDays} days`,
+      // The route changes nothing about what is owed, only when it is owed.
+      patientPays: here,
+      delta: 0,
+      chosen: e.input.route === r,
+      blocked: r === "cashless" && !inNetwork ? "Not available here" : null,
+      next: repair({ ...e.input, route: r }),
+    })),
+  };
+
+  const rooms = roomOptions(e);
+  const which: Stage = {
+    id: "room",
+    step: 2,
+    phase: "Admission",
+    question: "Which bed",
+    mechanic: "Proportionate deduction on room-linked charges",
+    clause: e.policy.proportionateDeduction ? "PROPORTIONATE" : "ROOM_CAP",
+    settled:
+      rooms.length === 1
+        ? "One room class in the building. There is nowhere cheaper to move."
+        : rooms.every((r) => r.delta >= 0)
+          ? "Already on the cheapest terms this hospital offers."
+          : null,
+    branches: rooms.map((o) => ({
+      key: o.key,
+      label: o.label,
+      note: o.detail,
+      patientPays: o.patientPays,
+      delta: o.delta,
+      chosen: o.current,
+      blocked: null,
+      next: o.next,
+    })),
+  };
+
+  return [where, which, how];
+}
+
+/** The gate every claim passes before any of the arithmetic matters. */
+export interface Gate {
+  question: string;
+  test: string;
+  passed: boolean;
+  clause: string;
+  detail: string;
+}
+
+export function gate(e: Evaluated): Gate {
+  const p = e.procedure;
+  return {
+    question: "Is this a claim at all?",
+    test: p.dayCare ? "On the day-care list" : "At least 24 hours in a bed",
+    passed: e.repudiation === null,
+    clause: e.repudiation?.clause ?? "DAY_CARE",
+    detail:
+      e.repudiation?.reason ??
+      (p.dayCare
+        ? "A listed day-care procedure. No minimum stay applies."
+        : `${e.input.days} ${e.input.days === 1 ? "night" : "nights"}. The definition is met.`),
+  };
+}
+
+/** Deductions no branch of the tree can move. */
+const IMMOVABLE = ["LIST_I", "IMPLANT_SUBLIMIT", "PRE_POST_WINDOW"];
+
+export interface Fixed {
+  clause: string;
+  label: string;
+  amount: Paise;
+}
+
+/**
+ * What is refused whichever path is taken.
+ *
+ * These come off the procedure and the policy schedule, never off the room
+ * tariff, so they survive every choice on the tree. Saying so plainly is more
+ * use than letting a family go on hunting for a cheaper bed to fix them.
+ */
+export function fixedRegardless(e: Evaluated): Fixed[] {
+  const by = new Map<string, Fixed>();
+  for (const d of e.result.deductions) {
+    if (!IMMOVABLE.includes(d.clause)) continue;
+    const at = by.get(d.clause);
+    if (at) at.amount += d.amount;
+    else by.set(d.clause, { clause: d.clause, label: LABEL[d.clause] ?? d.line, amount: d.amount });
+  }
+  return [...by.values()].sort((a, b) => b.amount - a.amount);
+}
+
+const LABEL: Record<string, string> = {
+  LIST_I: "Non-medical items",
+  IMPLANT_SUBLIMIT: "Implant above its sub-limit",
+  PRE_POST_WINDOW: "Outside the pre and post-hospitalisation window",
+};

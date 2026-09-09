@@ -1,19 +1,18 @@
 import { useMemo, useState } from "react";
 import { rupees } from "./lib/money";
-import { evaluate, type CaseInput } from "./lib/case";
+import { evaluate, repair, type CaseInput } from "./lib/case";
 import { Controls } from "./components/Controls";
-import { Forecast } from "./components/Forecast";
+import { Journey } from "./components/Journey";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Database } from "./components/Database";
 
-type Tab = "forecast" | "bill" | "alternatives" | "database";
+type Tab = "journey" | "working" | "database";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "forecast", label: "Forecast" },
-  { id: "bill", label: "Bill" },
-  { id: "alternatives", label: "Alternatives" },
-  { id: "database", label: "Database" },
+const TABS: { id: Tab; label: string; blurb: string }[] = [
+  { id: "journey", label: "The path", blurb: "Every choice still open, and what each one costs" },
+  { id: "working", label: "The working", blurb: "The bill, the arithmetic, and every alternative in full" },
+  { id: "database", label: "Database", blurb: "What the system already knows" },
 ];
 
 /** The reference admission from the deck: RC-2401, before it happened. */
@@ -29,14 +28,19 @@ const START: CaseInput = {
 };
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>("forecast");
-  const [input, setInput] = useState<CaseInput>(START);
+  const [tab, setTab] = useState<Tab>("journey");
+  const [input, setInput] = useState<CaseInput>(repair(START));
   const e = useMemo(() => evaluate(input), [input]);
 
+  // One entry point for every change, so no unreachable combination is ever
+  // put on screen — a hospital that has no private room, a cashless route at a
+  // hospital outside the network.
+  const pick = (c: CaseInput) => setInput(repair(c));
   const open = (c: CaseInput) => {
-    setInput(c);
-    setTab("forecast");
+    pick(c);
+    setTab("journey");
   };
+  const here = TABS.find((t) => t.id === tab)!;
 
   return (
     <div className="wrap">
@@ -62,20 +66,22 @@ export default function App() {
         ))}
       </nav>
 
-      {tab !== "database" && <Controls value={input} onChange={setInput} />}
+      <p className="lede">{here.blurb}</p>
 
-      {tab === "forecast" && <Forecast e={e} />}
-      {tab === "bill" && <BillView e={e} />}
-      {tab === "alternatives" && <Alternatives e={e} onPick={setInput} />}
+      {tab !== "database" && <Controls value={input} onChange={pick} />}
+
+      {tab === "journey" && <Journey e={e} onPick={pick} />}
+      {tab === "working" && (
+        <>
+          <BillView e={e} />
+          <Alternatives e={e} onPick={pick} />
+        </>
+      )}
       {tab === "database" && <Database onOpen={open} />}
 
       <footer className="foot">
-        <span>
-          Team Rocket · IIIT-Delhi · GE HealthCare Precision Care Challenge 2026
-        </span>
-        <span>
-          No real patient, hospital, insurer or bill appears anywhere in this prototype.
-        </span>
+        <span>Team Rocket · IIIT-Delhi · GE HealthCare Precision Care Challenge 2026</span>
+        <span>No real patient, hospital, insurer or bill appears anywhere in this prototype.</span>
       </footer>
     </div>
   );

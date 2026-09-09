@@ -264,48 +264,376 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* ── The headline ───────────────────────────────────────── */
+/* ── The path ───────────────────────────────────────────── */
 
-.headline {
-  padding: 26px 0 22px;
-  border-top: 1px solid var(--hair);
-  border-bottom: 1px solid var(--hair);
-  margin-top: 28px;
-}
+/*
+ * A flowchart drawn in CSS rather than SVG, so it reflows on a phone and the
+ * branch cards stay real buttons. Connectors are pseudo-elements: a stem down
+ * from each node, a horizontal bus spanning the centres of the outermost
+ * branches, and a stub up from each branch to meet it. The path actually taken
+ * is drawn heavier, everything else stays hairline.
+ */
 
-.headline-row {
+.tree {
+  --gap: 12px;
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 28px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 30px;
 }
 
-.big {
+.tlink {
+  align-self: center;
+  width: 1px;
+  height: 22px;
+  background: var(--hair);
+  flex: none;
+}
+
+.tnode {
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 18px 20px;
+  text-align: center;
+}
+
+.tnode-k {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ink-3);
+}
+
+.tnode-v {
+  font-family: var(--serif);
+  font-size: 25px;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-top: 5px;
+}
+
+.tnode-v.loss {
   font-family: var(--num);
-  font-size: 42px;
+  font-size: 36px;
   font-weight: 500;
-  letter-spacing: -0.03em;
-  line-height: 1;
+  letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
-}
-
-.big.loss {
   color: var(--loss);
 }
 
-.big-label {
-  font-size: 12.5px;
-  color: var(--ink-3);
-  margin-top: 9px;
+.tnode-sub {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 7px auto 0;
+  max-width: 64ch;
 }
 
-.range {
-  font-family: var(--num);
-  font-size: 16px;
-  font-variant-numeric: tabular-nums;
+.tnode.start {
+  border-style: dashed;
+  background: none;
+}
+
+.tnode.end {
+  border: 1.5px solid var(--ink);
+}
+
+.tnode.end.refused {
+  border-color: var(--loss);
+}
+
+.tnode.end .split {
+  margin-top: 18px;
+}
+
+.tnode.fixed {
+  text-align: left;
+  background: var(--hair-2);
+}
+
+.tnode.fixed .rows {
+  margin: 12px 0 0;
+}
+
+.tnode.fixed .tnode-sub {
+  margin: 12px 0 0;
+}
+
+/* The one true decision node: does this count as hospitalisation at all. */
+.tgate {
+  position: relative;
+  align-self: center;
+  width: 100%;
+  max-width: 560px;
+  text-align: center;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 20px 22px 18px;
+}
+
+.tgate::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 13px;
+  height: 13px;
+  margin-left: -7px;
+  background: var(--surface);
+  border-left: 1px solid var(--hair);
+  border-top: 1px solid var(--hair);
+  transform: rotate(45deg);
+}
+
+.tgate.fail,
+.tgate.fail::before {
+  border-color: var(--loss);
+}
+
+.tgate-q {
+  font-family: var(--serif);
+  font-size: 19px;
+  letter-spacing: -0.01em;
+}
+
+.tgate-test {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 3px;
+}
+
+.tgate-verdict {
+  font-family: var(--serif);
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  margin-top: 10px;
+  line-height: 1;
+}
+
+.tgate.pass .tgate-verdict {
+  color: var(--paid);
+}
+
+.tgate.fail .tgate-verdict {
+  color: var(--loss);
+}
+
+.tgate-detail {
+  font-size: 13px;
   color: var(--ink-2);
-  text-align: right;
+  margin-top: 6px;
+}
+
+/* Where on the care journey this sits. Emitted only when it changes, so the
+   rail reads Admission → Investigation → Procedure rather than repeating. */
+.phase {
+  align-self: center;
+  margin: 4px 0;
+  padding: 3px 12px;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  background: var(--bg);
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.stage {
+  display: flex;
+  flex-direction: column;
+}
+
+.stage-q {
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 8px 20px 8px 9px;
+}
+
+.stage-n {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--bg);
+  display: grid;
+  place-items: center;
+  font-family: var(--num);
+  font-size: 12px;
+}
+
+.stage-t {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+  text-align: left;
+}
+
+.stage-h {
+  font-family: var(--serif);
+  font-size: 17px;
+  letter-spacing: -0.01em;
+}
+
+.stage-m {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.branches {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  gap: var(--gap);
+  padding: 18px 0;
+}
+
+/* Spans the centre of the first branch to the centre of the last, exactly. */
+.branches::before,
+.branches::after {
+  content: "";
+  position: absolute;
+  left: calc((100% - (var(--n) - 1) * var(--gap)) / (var(--n) * 2));
+  right: calc((100% - (var(--n) - 1) * var(--gap)) / (var(--n) * 2));
+  height: 1px;
+  background: var(--hair);
+}
+
+.branches::before {
+  top: 0;
+}
+
+.branches::after {
+  bottom: 0;
+}
+
+.branch {
+  position: relative;
+  appearance: none;
+  font: inherit;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  border-radius: 11px;
+  padding: 13px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: border-color 0.12s ease;
+}
+
+.branch::before,
+.branch::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 1px;
+  height: 18px;
+  background: var(--hair);
+}
+
+.branch::before {
+  top: -18px;
+}
+
+.branch::after {
+  top: 100%;
+}
+
+.branch:hover:not(:disabled) {
+  border-color: var(--ink-2);
+}
+
+.branch.on {
+  border: 1.5px solid var(--ink);
+  padding: 12.5px 13.5px;
+  cursor: default;
+}
+
+.branch.on::before,
+.branch.on::after {
+  background: var(--ink);
+  width: 2px;
+  margin-left: -0.5px;
+}
+
+.branch.shut {
+  border-style: dashed;
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.branch-label {
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 1.25;
+}
+
+.branch-note {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.32;
+}
+
+.branch-pay {
+  font-family: var(--num);
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  margin-top: 7px;
+}
+
+.branch-delta {
+  font-family: var(--num);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+
+.branch-delta.good {
+  color: var(--paid);
+}
+
+.branch-delta.bad {
+  color: var(--loss);
+}
+
+.stage-settled {
+  align-self: center;
+  max-width: 62ch;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+/* Below this the fan does not fit, so the connectors come off and the
+   branches stack. The heavier border still marks the path taken. */
+@media (max-width: 720px) {
+  .branches {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .branches::before,
+  .branches::after,
+  .branch::before,
+  .branch::after {
+    display: none;
+  }
+}
+
+@media (max-width: 440px) {
+  .branches {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Two shares of one bill, drawn to scale. */
@@ -325,74 +653,6 @@ button:disabled {
 
 .split-loss {
   background: var(--loss);
-}
-
-.split-legend {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 9px;
-  font-size: 12.5px;
-  color: var(--ink-3);
-  flex-wrap: wrap;
-}
-
-.split-legend .num {
-  font-family: var(--num);
-  font-variant-numeric: tabular-nums;
-  color: var(--ink);
-}
-
-/* ── Forks ──────────────────────────────────────────────── */
-
-.forks {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(178px, 1fr));
-  gap: 0;
-  border-top: 1px solid var(--hair);
-}
-
-.fork {
-  padding: 16px 18px 18px 0;
-  border-bottom: 1px solid var(--hair-2);
-}
-
-.fork-stage {
-  font-size: 10.5px;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-.fork-decision {
-  font-size: 14px;
-  font-weight: 550;
-  margin-top: 5px;
-}
-
-.fork-mechanic {
-  font-size: 12.5px;
-  color: var(--ink-3);
-}
-
-.fork-amt {
-  font-family: var(--num);
-  font-size: 20px;
-  font-variant-numeric: tabular-nums;
-  color: var(--loss);
-  margin-top: 10px;
-}
-
-.fork-amt.idle {
-  color: var(--ink-3);
-  font-size: 14px;
-}
-
-.fork-detail {
-  font-size: 12.5px;
-  color: var(--ink-2);
-  margin-top: 6px;
-  line-height: 1.5;
 }
 
 /* ── Rows and tables ────────────────────────────────────── */
