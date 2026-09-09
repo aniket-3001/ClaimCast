@@ -1,0 +1,14 @@
+# Build output of src/build_poster.py. finalize.ps1 copies these to the
+# submission filenames, which ARE tracked.
+Team Rocket_IIIT Delhi - C Poster.pptx
+Team Rocket_IIIT Delhi - C Poster.pdf
+
+__pycache__/
+*.py[cod]
+
+# PowerPoint / Office lock and autosave files
+~$*
+*.tmp
+
+.DS_Store
+Thumbs.db

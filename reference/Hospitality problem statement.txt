@@ -1,0 +1,69 @@
+Precision Care Challenge 2026
+Hospitality: Holistic Optimization System for Policy-Integrated
+Admission & Treatment Intelligence
+Problem Statement
+A large majority of individuals today are covered by one or more health insurance schemes. The
+government has also rolled out a number of health provisions in the form of schemes like ESI, PM-JAY,
+Arogya Karnataka, Yeshaswini etc.. This is beyond the private/employer insurance schemes. However,
+during medical emergencies or hospital admissions, patients and caregivers often face significant
+confusion due to lack of timely, structured information. Critical questions, such as which hospitals are
+covered, what type of room is eligible, what procedures or consumables are reimbursable, and what
+alternatives exist, are frequently answered too late, resulting in financial stress, delayed care, or
+suboptimal decisions.
+Insurance policy details, hospital capabilities, and treatment progress information typically exist
+across disconnected documents, portals, and manual processes. Moreover, this information is not
+readily available to caregivers and is mostly available with the patients themselves. Patients are
+required to interpret complex policy language while simultaneously managing medical stress, leading
+to avoidable errors and inefficiencies.
+There is a need for a unified India-specific solution that consolidates insurance policy information,
+publicly available hospital data, and treatment progress signals to assist patients and caregivers in
+making informed, real-time decisions during hospital admission and care.
+Challenge Objective
+The objective of this challenge is to design and build a system that helps users navigate hospital care
+using their insurance coverage as a guiding constraint.
+The platform should:
+● Map a userʼs insurance details to hospital options and treatment pathways.
+● Suggest eligible hospitals, room categories, and care alternatives based on available data.
+● Track the patientʼs treatment journey and continuously surface relevant insurance-aware
+guidance.
+The solution must function strictly as a decision-support and information platform and must not
+provide medical diagnoses, clinical treatment recommendations, or binding insurance advice.
+Guidelines to the Solution Capabilities:
+The following is an indicative set of features that could be considered while building a solution to
+alleviate this issue. However, participants are urged to think creatively and beyond the suggested
+guidelines below.
+● Insurance and User Data Ingestion
+o Allow users to input or upload structured insurance details such as: Insurer name,
+policy type, coverage limits, room eligibility, exclusions.
+o Normalize policy information into a standardized internal representation.
+o Use only synthetic or user-provided mock data for insurance details.
+● Hospital and Care Option Mapping
+o Integrate publicly available or simulated hospital datasets, including, the hospital
+location, specialties, room types, indicative costs, and network status.
+o Map insurance constraints (e.g., room category eligibility, network hospitals) to
+hospital options.
+o Suggest suitable hospitals and room categories based on user constraints and context.
+● Care Journey Tracking and Contextual Suggestions
+o Track the high-level progress of a patientʼs hospital journey (e.g., admission,
+investigation, procedure, recovery).
+o At each stage, surface context-aware information such as:
+▪ Expected insurance coverage for the current phase.
+▪ Possible alternatives (e.g., room downgrade/upgrade implications, transfer
+options).
+o Provide descriptive explanations for all suggestions using clear, non-technical
+language.
+● User-Facing Experience
+o Provide a simple web-based interface for patients or caregivers.
+o Display:
+▪ Insurance summary and key constraints.
+▪ Suggested hospitals and room categories.
+▪ A timeline view of the care journey with informational prompts.
+o Ensure usability for non-expert users under stressful conditions.
+Data Guidance
+No data will be provided from GE HealthCare and will rely on participantsʼ enterprise to obtain
+relevant information.
+Evaluation Criteria
+● A convincing vision of the solution, and clear pathway to implement it. (20%)
+● A working solution, even if scope is narrow (30%)
+● Innovative use of AI to solve practical problems (30%)
+● Enterprise in understanding problem, sourcing data, presentation skills etc. (20%)
