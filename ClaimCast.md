@@ -380,10 +380,11 @@ The logic is straightforward: the price of a stent, an MRI, or a vial of antibio
 because you are in a nicer room, so it is not an "associated" expense and may not be scaled. Before
 June 2020 some insurers were scaling the whole bill. The circular stopped that.
 
-> **This matters for the submitted deck.** Slide 2 currently reads *"Surgeon, OT, ICU, diagnostics:
-> every associated charge is scaled down by that same ratio."* **ICU and diagnostics are exactly
-> the two categories the circular excludes.** See Part 5.1 for the correction and the replacement
-> wording.
+> **This caught an error in the deck.** An earlier revision of slide 2 read *"Surgeon, OT, ICU,
+> diagnostics: every associated charge is scaled down by that same ratio."* **ICU and diagnostics
+> are exactly the two categories the circular excludes** — and the sentence sat directly above a
+> caption citing that circular. It now reads *"Surgeon, OT, anaesthesia, nursing: every charge your
+> policy ties to room category…"*. See §5.1.
 
 ## 2.3 A worked example, end to end
 
@@ -481,37 +482,42 @@ The framing sentence. It locates the problem at a **specific moment** rather tha
 diffuse systemic issue, which is what makes it addressable by a product. Three claims are packed
 into it: the decision is *expensive*, it is *fast*, and it is made *uninformed*.
 
-> "Claims are approved, but the amounts paid are lower than customers expect."
-> — **AJAY SETH, CHAIRMAN, IRDAI**
+> IRDAI's chairman has said claim payouts often fall short of what policyholders expect.
+> — **AJAY SETH, CHAIRMAN, IRDAI · NOV 2025**
 
 **Who he is.** Ajay Seth is the Chairman of IRDAI, appointed in 2025 — the head of India's
-insurance regulator. He made remarks along these lines at a Bima Lokpal Day event around 11
-November 2025, reported by Business Standard under the headline *"Irdai monitoring gaps in health
-insurance claim settlements: Chairman Seth"*, which paraphrases him as saying claim payouts often
-fall short of expectations, citing sub-limits and co-pays.
+insurance regulator. He made remarks to this effect at a Bima Lokpal Day event around 11 November
+2025, reported by Business Standard under the headline *"Irdai monitoring gaps in health insurance
+claim settlements: Chairman Seth"*, which paraphrases him as saying claim payouts often fall short
+of expectations, citing sub-limits and co-pays.
 
-**Why this quotation and not a statistic.** It pre-empts the most dangerous objection a judge can
+**Why the regulator and not a statistic.** It pre-empts the most dangerous objection a judge can
 raise: *"isn't this a fringe problem?"* When the regulator himself names the gap, the problem is
 established by authority rather than argued. The follow-on line then converts that into the market
 gap: *"The regulator has named the gap. Policy bots explain the wording; none of them price the
 decision in front of you."*
 
-**Status: [UNVERIFIED as a verbatim quotation].** The substance is confirmed and the attribution is
-correct, but the Business Standard article returned HTTP 403 and the exact sentence inside quotation
-marks could not be matched against a primary transcript. See Part 5.2 — this is the highest-risk
-item on the deck.
+**Status: [VERIFIED as reported speech].** An earlier revision of this slide rendered a sentence in
+quotation marks. The substance and attribution were right, but the Business Standard article
+returned HTTP 403 and the exact wording could not be matched to a primary transcript, so the slide
+now states the substance as reported speech with no quotation marks and carries the date of the
+address. See §5.2 for the reasoning and for the stronger figure available as a backup.
 
 > **THE ROOM-RENT TRAP · 50% of the bill can be refused**
 > Your policy caps the room at ₹5,000 a day. The hospital gave you one at ₹10,000. Surgeon, OT,
-> ICU, diagnostics: every associated charge is scaled down by that same ratio.
+> anaesthesia, nursing: every charge your policy ties to room category is scaled down by that same
+> ratio.
 > *Proportionate deduction · IRDAI/HLT/REG/CIR/151/06/2020 · maximal case; scope varies by policy
 > wording*
 
 The mechanic, explained in full in Part 2. The circular number is real and correctly cited
-**[VERIFIED]**. The 50% is the ratio, correctly hedged by the caption (§2.4). **The list "Surgeon,
-OT, ICU, diagnostics" is wrong on two of its four items** — see Part 5.1.
+**[VERIFIED]**. The 50% is the ratio, correctly hedged by the caption (§2.4). All four named
+charges are genuine associated medical expenses, and the phrase *"your policy ties to room
+category"* matches the circular's own framing — deduction applies to expenses that vary with the
+room category **as defined in the policy**. An earlier revision named ICU and diagnostics here,
+which the circular excludes; see §5.1.
 
-> **₹39,085** — mean out-of-pocket per hospitalisation episode
+> **₹39,085** — mean out-of-pocket per cancer hospitalisation
 > *12,148-patient multi-centre Indian study*
 > **₹3.31 L** — out-of-pocket per cancer patient, per year
 > *diagnostics 36% · medicines 45%*
@@ -521,7 +527,7 @@ Public Health*, 2023 (full citation in Part 4.2):
 
 | Deck figure | Study figure | Note |
 |---|---|---|
-| ₹39,085 | ₹39,085 (US$492) mean OOPE per hospitalisation episode | **cancer patients** |
+| ₹39,085 | ₹39,085 (US$492) mean OOPE per hospitalisation episode | **cancer patients** — the slide caption says so |
 | ₹3.31 L | ₹3,31,177 (US$4,171) annual OOPE per patient | cancer patients |
 | diagnostics 36% | 36.4% of OOPE | |
 | medicines 45% | 45% of OOPE | |
@@ -534,9 +540,11 @@ proportionate deduction and that PM-JAY HBP and CGHS rate lists publish prices f
 bridge from "here is a problem" to "here is why our data sources can actually forecast it". The two
 percentages are the reason slide 5's data strategy is credible.
 
-**One qualification the slide does not make.** These figures are **cancer-specific** — this is a
-study of cancer patients at oncology centres. The caption "mean out-of-pocket per hospitalisation
-episode" reads as though it covers all hospitalisation. See Part 5.3.
+**The cancer qualification.** These figures are **cancer-specific** — this is a study of cancer
+patients at oncology centres, not an all-cause hospitalisation average. Both captions now say so
+("per cancer hospitalisation", "per cancer patient, per year"). This costs nothing rhetorically:
+cancer is the single largest driver of catastrophic health expenditure in India, so naming it
+strengthens the slide. An earlier revision left the first caption unqualified; see §5.3.
 
 > Cost shock drives distress financing, delayed care and outright treatment abandonment. It decides
 > whether treatment finishes.
@@ -627,7 +635,7 @@ The architectural principle in three lines. The last is the safety guarantee: a 
 deterministic code. This is what makes the output auditable, reproducible, and defensible — and it
 is what an insurer or hospital would require before deploying it.
 
-> **TWO HALVES, DELIBERATELY SEPARATED**
+> **TWO HALVES, DELIBERATELY SEPARATED · PLUS A SOLVER**
 > **A · FORECAST** — Predicts the itemised bill from published tariff data. Uncertain, so it returns
 > a range.
 > **B · ADJUDICATION** — Computes what the policy refuses, line by line. Exact, with every ₹ cited
@@ -635,8 +643,7 @@ is what an insurer or hospital would require before deploying it.
 > **C · COUNTERFACTUAL** — Re-runs the claim for every legal alternative and ranks them by what you
 > keep.
 
-(The heading says "two halves" while three components are listed: A and B are the two halves —
-uncertain and exact — and C is the solver built on top of them.)
+A and B are the two halves — uncertain and exact — and C is the solver built on top of them.
 
 - **A — Forecast** is the ML component. It predicts what the hospital will charge, using PM-JAY HBP
   and CGHS rates as the price base. It returns a **range**, not a point estimate, because the
@@ -760,8 +767,8 @@ empanelled-hospital registry gives **network membership** for decision 1.
    **[VERIFIED]** — Part 4.1.
 2. **Financial toxicity of cancer treatment in India, Front. Public Health, 2023 (n = 12,148).**
    **[VERIFIED]** — Part 4.2.
-3. **Out-of-pocket payment & financial risk protection, Lancet Reg. Health SE Asia, 2024.**
-   **[UNVERIFIED]** — Part 4.3 and Part 5.5.
+3. **Catastrophic expenditure & treatment attrition, Lancet Reg. Health SE Asia, 2022;6:100058.**
+   **[VERIFIED]** — Part 4.3. (This replaced an earlier, unverifiable reference; see Part 5.5.)
 4. **IRDAI Master Circular on Health Insurance Business, 2024.** **[VERIFIED]** — Part 4.4.
 
 > **SAFE BY CONSTRUCTION** — every field is user-confirmed · outputs are labelled estimates, never
@@ -825,31 +832,43 @@ OOPE down **by category** — and that breakdown (diagnostics + medicines = 81%)
 ClaimCast's public-tariff data strategy credible. A national average total tells you the problem is
 big; a category split tells you it is *computable*.
 
-## 4.3 Out-of-pocket payment and financial risk protection — Lancet Reg. Health SE Asia, 2024
+## 4.3 Catastrophic expenditure and treatment attrition — Lancet Reg. Health SE Asia, 2022
 
-**Status: [UNVERIFIED].** No paper matching this exact title and year was retrieved.
+**Status: [VERIFIED].**
 
-*The Lancet Regional Health – Southeast Asia* is a real journal that publishes extensively on
-Indian out-of-pocket expenditure, catastrophic health expenditure and financial risk protection,
-and the underlying claim is uncontroversial and well supported in that literature. But reference 3
-as written on slide 5 could not be matched to a specific article. Neighbouring, real papers found
-in the same journal include:
+**Full citation:** CROCODILE study group. *Catastrophic expenditure and treatment attrition in
+patients seeking comprehensive colorectal cancer treatment in India: a prospective multicentre
+study.* **The Lancet Regional Health – Southeast Asia** 2022;**6**:100058.
+doi:10.1016/j.lansea.2022.100058. PubMed ID 36408078.
 
-- Shastri S, et al. *Averting catastrophic tuberculosis costs in an Indian state.* Lancet Reg
-  Health Southeast Asia 2024;22:100327.
-- *Evolution of government-funded health insurance for universal health coverage in India.* Lancet
-  Reg Health Southeast Asia 2023.
-- *Catastrophic expenditure and treatment attrition in patients seeking comprehensive colorectal
-  cancer treatment in India: a prospective multicentre study.* Lancet Reg Health Southeast Asia
-  2022;6:100058.
+**Design:** prospective, multicentre, conducted across Indian tertiary centres in 2020. It measures
+**out-of-pocket payments (OOPP)** at time of service, applies the standard 25%-of-annual-income
+threshold for catastrophic expenditure, and tracks **treatment attrition** — defined as unplanned
+interruption of a treatment course not recommended by the clinical team.
 
-Supporting context from the same literature: cancer is the leading driver of catastrophic health
+**Findings:** most colorectal cancer treatment cost in India is paid out of pocket, and catastrophic
+expenditure is common. Attrition rates *at tertiary centres* were low, which the authors read as
+evidence that greater attrition happens **earlier in the care pathway** — before patients reach a
+tertiary centre at all.
+
+**Why it is on the deck.** It is the citation for slide 2's closing sentence: *"Cost shock drives
+distress financing, delayed care and outright treatment abandonment. It decides whether treatment
+finishes."* Reference 2 (§4.2) establishes the **size** of the out-of-pocket burden; this one
+establishes that the burden **changes clinical behaviour**. That is the step from a money problem to
+a care problem, and it is the argument for why a decision-support tool belongs at the point of
+admission rather than in a claims department.
+
+The finding that attrition concentrates *earlier* in the pathway is a direct argument for
+ClaimCast's timing thesis, and worth having ready for Q&A.
+
+**Supporting context from the same literature:** cancer is the leading driver of catastrophic health
 expenditure in India, with medicines making up more than 60% of out-of-pocket expenditure; cancer
 shows the highest incidence of CHE (~79%) and the highest prevalence of distress financing,
 affecting ~43% of affected households.
 
-**Action required — see Part 5.5.** Either locate the intended paper and give it a full citation,
-or substitute one of the verified alternatives above.
+**Note on what this replaced.** Slide 5's reference 3 previously read *"Out-of-pocket payment &
+financial risk protection, Lancet Reg. Health SE Asia, 2024"*, which could not be matched to any
+locatable paper. See §5.5.
 
 ## 4.4 IRDAI Master Circular on Health Insurance Business, 2024
 
@@ -942,74 +961,74 @@ Part 5.2.
 
 ---
 
-# Part 5 — Known problems in the submitted deck
+# Part 5 — Corrections applied, and what remains open
 
-Read this section before any presentation, interview or Phase-2 submission. Items are ordered by
-risk.
+Five corrections were applied to the deck after the research in Part 4 was completed; §§5.1–5.3,
+5.5 and 5.6 record what was wrong, what it was changed to, and why, so the reasoning survives.
+**§5.4 and §5.7 are still open and need your attention.**
 
-## 5.1 Slide 2 lists ICU and diagnostics as subject to proportionate deduction — they are not
+## 5.1 Slide 2 listed ICU and diagnostics as subject to proportionate deduction — they are not
 
-**Severity: high. This is a factual error, and it is on the same slide that cites the circular.**
+**Severity: was high. A factual error, on the same slide that cites the circular. RESOLVED.**
 
-Current wording:
+Previous wording:
 
 > Your policy caps the room at ₹5,000 a day. The hospital gave you one at ₹10,000. **Surgeon, OT,
 > ICU, diagnostics:** every associated charge is scaled down by that same ratio.
 
 IRDAI/HLT/REG/CIR/151/06/2020 **explicitly excludes diagnostics and ICU charges** from proportionate
 deduction (§2.2). ICU has its own separate sub-limit; diagnostics do not vary with room category and
-so are not "associated medical expenses". Two of the four items named are wrong, and the sentence
-appears directly above a caption citing the very circular that excludes them. Anyone in the room who
-works in health insurance will catch it.
+so are not "associated medical expenses". Two of the four items named were wrong, and the sentence
+sat directly above a caption citing the very circular that excludes them — anyone in the room who
+works in health insurance would have caught it.
 
-**Recommended replacement (same length, fits the existing text box):**
+**Now reads:**
 
 > Your policy caps the room at ₹5,000 a day. The hospital gave you one at ₹10,000. **Surgeon, OT,
 > anaesthesia, nursing:** every charge your policy ties to room category is scaled down by that same
 > ratio.
 
-All four replacements are genuine associated medical expenses. The phrase *"your policy ties to room
-category"* also matches the circular's own framing ("as defined in the policy") and is consistent
-with the existing caption *"scope varies by policy wording"*.
+All four named charges are genuine associated medical expenses. The phrase *"your policy ties to
+room category"* also matches the circular's own framing ("as defined in the policy") and is
+consistent with the caption *"scope varies by policy wording"* beneath it.
 
-## 5.2 The Ajay Seth quotation is presented as verbatim but is not verified
+## 5.2 The Ajay Seth quotation was presented as verbatim but could not be verified
 
-**Severity: high — a direct quotation attributed to a named sitting regulator.**
+**Severity: was high — a direct quotation attributed to a named sitting regulator. RESOLVED.**
 
-Slide 2 renders in quotation marks: *"Claims are approved, but the amounts paid are lower than
-customers expect."* The substance is right and the attribution is right, but the exact sentence
-could not be matched to a primary source (§4.8).
+Slide 2 previously rendered in quotation marks: *"Claims are approved, but the amounts paid are
+lower than customers expect."* The substance was right and the attribution was right, but the exact
+sentence could not be matched to a primary source (§4.8) — the Business Standard article returns
+HTTP 403.
 
-Three options, in order of preference:
+**Now reads**, as reported speech with no quotation marks, and dated:
 
-1. **Verify it.** Watch IRDAI's own recording of the Chairman's Bima Lokpal Day 2025 address on
-   YouTube and either confirm the sentence or capture the actual one. This is the clean fix.
-2. **Reframe as reported speech**, removing the quotation marks:
-   > IRDAI's Chairman has said claim payouts often fall short of what policyholders expect —
-   > pointing to sub-limits and co-pays.
-   > *Reported at Bima Lokpal Day, November 2025.*
-3. **Substitute a verified hard number** from the same address: *54% of all complaints to the
-   Insurance Ombudsman relate to health insurance* (FY 2023–24, ~53,230 complaints). This is
-   arguably a stronger opening than the quotation, because it is a countable fact.
+> IRDAI's chairman has said claim payouts often fall short of what policyholders expect.
+> **AJAY SETH, CHAIRMAN, IRDAI · NOV 2025**
 
-## 5.3 ₹39,085 is a cancer-specific figure presented as a general one
+This keeps the rhetorical position — the regulator naming the gap — while claiming only what can be
+defended. Two things are still worth doing:
 
-**Severity: medium.**
+1. **If you want the quotation back**, IRDAI published the Chairman's Bima Lokpal Day 2025 address
+   on YouTube. Watch it, capture his actual sentence, and you can restore quotation marks with a
+   citable source.
+2. **A stronger backup exists.** From the same address: *54% of all complaints to the Insurance
+   Ombudsman relate to health insurance* (FY 2023–24, ~53,230 complaints, up from ~52,300 the year
+   before). If anyone challenges the framing in Q&A, that is a countable fact and a better answer
+   than any quotation.
 
-Slide 2 captions ₹39,085 as *"mean out-of-pocket per hospitalisation episode"* with the sub-caption
-*"12,148-patient multi-centre Indian study"*. The study is entirely a **cancer** cohort (§4.2). As
-written, a reader will take it as an all-cause hospitalisation average.
+## 5.3 ₹39,085 was a cancer-specific figure presented as a general one
 
-**Recommended fix — change the caption to:**
+**Severity: was medium. RESOLVED.**
 
-> mean out-of-pocket per hospitalisation episode, **cancer patients**
+Slide 2 previously captioned ₹39,085 as *"mean out-of-pocket per hospitalisation episode"*. The
+study is entirely a **cancer** cohort (§4.2), so a reader would have taken it as an all-cause
+hospitalisation average.
 
-The ₹3.31 L figure below it is already correctly captioned *"per cancer patient, per year"*, so the
-fix simply makes the two consistent. This costs nothing rhetorically — cancer is the single largest
-driver of catastrophic health expenditure in India, so naming it strengthens rather than weakens
-the slide.
+**Now reads:** *"mean out-of-pocket per cancer hospitalisation"* — consistent with the ₹3.31 L
+figure beside it, which was already captioned *"per cancer patient, per year"*.
 
-## 5.4 The rupee figures on slides 3 and 4 are illustrative and undocumented
+## 5.4 The rupee figures on slides 3 and 4 are illustrative and undocumented — **STILL OPEN**
 
 **Severity: medium — not an error, but an unprepared question.**
 
@@ -1025,21 +1044,31 @@ permanently. It is also, not incidentally, the first test case for the adjudicat
 
 ## 5.5 Reference 3 could not be verified
 
-**Severity: medium.**
+**Severity: was medium. RESOLVED.**
 
-*"Out-of-pocket payment & financial risk protection, Lancet Reg. Health SE Asia, 2024"* (slide 5,
-ref 3) does not match a paper found during this research (§4.3). An unverifiable citation on a
-submitted document is a liability. Either recover the intended paper and cite it fully (authors,
-volume, article number, DOI), or replace it with one of the verified alternatives listed in §4.3.
+*"Out-of-pocket payment & financial risk protection, Lancet Reg. Health SE Asia, 2024"* did not
+match any paper found during this research (§4.3). An unverifiable citation on a submitted document
+is a liability.
+
+**Now reads:** *"Catastrophic expenditure & treatment attrition, Lancet Reg. Health SE Asia,
+2022;6:100058."*
+
+This is the CROCODILE study group's prospective multicentre study of colorectal cancer patients in
+India (PMID 36408078, DOI 10.1016/j.lansea.2022.100058) — fully verified, and a **better** fit than
+the reference it replaced. It measures exactly the two things slide 2 closes on: that most
+colorectal cancer treatment cost in India is paid out of pocket and catastrophic expenditure is
+common, and that this drives **treatment attrition** — unplanned interruption of a treatment course
+not recommended by the clinical team. Slide 2's final sentence, *"It decides whether treatment
+finishes,"* now has a citation that measured precisely that.
 
 ## 5.6 Minor: "TWO HALVES" heading over three items
 
-**Severity: cosmetic.** Slide 4's heading reads *"TWO HALVES, DELIBERATELY SEPARATED"* above three
-labelled blocks A, B and C. The intent is clear — A and B are the two halves (uncertain vs exact),
-C is the solver on top — but a reader may pause. If the slide is ever revised, *"TWO HALVES, AND A
-SOLVER"* removes the friction without losing the point.
+**Severity: was cosmetic. RESOLVED.** Slide 4's heading read *"TWO HALVES, DELIBERATELY SEPARATED"*
+above three labelled blocks A, B and C. It now reads *"TWO HALVES, DELIBERATELY SEPARATED · PLUS A
+SOLVER"*, which keeps the point — A and B are the two halves, uncertain and exact; C is the solver
+built on top — without the momentary friction.
 
-## 5.7 Open items unrelated to content
+## 5.7 Open items unrelated to content — **STILL OPEN**
 
 - Whether individual team-member names should appear on slide 1 alongside "Team Rocket" — check the
   submission rules.
@@ -1052,34 +1081,40 @@ SOLVER"* removes the friction without losing the point.
 The deck is generated from code, not edited by hand. This matters because it means a correction
 from Part 5 is applied by editing one line and re-running, and the layout cannot drift.
 
+The repository root is `ClaimCast/`.
+
 ```
-D:\Aniket\Precision Care Challenge\
-├── 6a731e6ba3633_PCC_2026_Problem_Statements__Template\
-│   └── PCC 2026 Problem Statements & Template\
-│       ├── PCC 2026 TEMPLATE.pptx          <- the official template, source of truth
-│       └── Hospitality_ ... Intelligence.pdf   <- the problem statement
+ClaimCast\
+├── README.md                               <- what this project is
+├── ClaimCast.md                            <- this document
+├── Team Rocket_IIIT Delhi.pptx             <- THE SUBMISSION
+├── Team Rocket_IIIT Delhi.pdf              <- THE SUBMISSION (PDF)
+├── Team Rocket_IIIT Delhi - C Poster.pptx  <- build output (gitignored)
+├── finalize.ps1                            <- copies build output to the submission names
 ├── src\
 │   ├── deckkit.py                          <- shared helpers, palette, template loader
 │   └── build_poster.py                     <- builds the five slides
-├── finalize.ps1                            <- renames the build output to the submission name
-├── Team Rocket_IIIT Delhi - C Poster.pptx  <- build output
-├── Team Rocket_IIIT Delhi.pptx             <- THE SUBMISSION
-├── Team Rocket_IIIT Delhi.pdf              <- THE SUBMISSION (PDF)
-└── ClaimCast\
-    └── ClaimCast.md                        <- this document
+└── reference\
+    ├── PCC 2026 TEMPLATE.pptx              <- the official template, source of truth
+    ├── Hospitality problem statement.pdf
+    └── Hospitality problem statement.txt
 ```
 
 **To rebuild:**
 
-```
+```powershell
 python src/build_poster.py
-powershell -File finalize.ps1 -Tag C
+.\finalize.ps1
 ```
 
-`build_poster.py` opens the official `PCC 2026 TEMPLATE.pptx`, so the organisers' master layout,
-page numbering and footer are preserved exactly; the script only fills the content frames.
-`deckkit.py` locates the template by searching the project tree, so the scripts run correctly
-regardless of where the project directory sits.
+`build_poster.py` produces only the `.pptx`; the `.pdf` is exported from PowerPoint itself (COM
+automation, `SaveAs(path, 32)`), so run that step before `finalize.ps1` if the PDF needs to change
+too.
+
+`build_poster.py` opens the official `PCC 2026 TEMPLATE.pptx` from `reference/`, so the organisers'
+master layout, page numbering and footer are preserved exactly; the script only fills the content
+frames. `deckkit.py` locates the template by searching the repository tree, so the scripts run
+correctly regardless of where the repository is checked out.
 
 **Typography and colour.** The palette is defined once in `build_poster.py`:
 
@@ -1105,8 +1140,9 @@ requires painting `a:solidFill` onto every `rPr` / `defRPr` in the shape's text 
 | Figure | Where | Meaning | Source | Status |
 |---|---|---|---|---|
 | 50% | S2 | Proportionate-deduction ratio, maximal case | IRDAI 2020 circular | **[VERIFIED]** (caption required) |
+| 54% | — | Ombudsman complaints that are health-insurance | Seth, Bima Lokpal Day 2025 | **[VERIFIED]** — not on the deck; backup for Q&A (§5.2) |
 | ₹5,000 / ₹10,000 | S2, S4 | Room cap vs actual room rate | Illustrative; matches Arogya Sanjeevani cap | **[VERIFIED]** as realistic |
-| ₹39,085 | S2 | Mean OOPE per hospitalisation episode | Prinja/Dixit 2023 | **[VERIFIED]** — cancer-specific (§5.3) |
+| ₹39,085 | S2 | Mean OOPE per cancer hospitalisation | Prinja/Dixit 2023 | **[VERIFIED]** |
 | ₹3.31 L | S2 | Annual OOPE per cancer patient | Prinja/Dixit 2023 (₹3,31,177) | **[VERIFIED]** |
 | 12,148 | S2 | Study sample size | Prinja/Dixit 2023 | **[VERIFIED]** |
 | 36% | S2 | Diagnostics share of OOPE | Prinja/Dixit 2023 (36.4%) | **[VERIFIED]** |
@@ -1126,5 +1162,6 @@ requires painting `a:solidFill` onto every `rPr` / `defRPr` in the shape's text 
 
 ---
 
-*Compiled 9 September 2026. Every source cited above was retrieved and read during compilation
-except where marked [PARTIAL] or [UNVERIFIED], which record exactly what could not be confirmed.*
+*Compiled 9 September 2026; revised the same day to reflect the five corrections applied to the
+deck (Part 5). Every source cited above was retrieved and read during compilation except where
+marked [PARTIAL] or [UNVERIFIED], which record exactly what could not be confirmed.*
