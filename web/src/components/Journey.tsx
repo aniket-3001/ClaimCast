@@ -43,16 +43,20 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
 
       <Link />
 
-      <div className={`tgate ${g.passed ? "pass" : "fail"}`}>
-        <div className="tgate-q">{g.question}</div>
-        <div className="tgate-test">
-          {g.test} <span className="cite">{CLAUSES[g.clause].cite}</span>
-        </div>
-        <div className="tgate-verdict">{g.passed ? "Yes" : "No"}</div>
-        <div className="tgate-detail">{g.detail}</div>
-      </div>
+      {g.relevant && (
+        <>
+          <div className={`tgate ${g.passed ? "pass" : "fail"}`}>
+            <div className="tgate-q">{g.question}</div>
+            <div className="tgate-test">
+              {g.test} <span className="cite">{CLAUSES[g.clause].cite}</span>
+            </div>
+            <div className="tgate-verdict">{g.passed ? "Yes" : "No"}</div>
+            <div className="tgate-detail">{g.detail}</div>
+          </div>
 
-      <Link />
+          <Link />
+        </>
+      )}
 
       {!g.passed ? (
         <div className="tnode end refused">
@@ -75,7 +79,6 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
 
           {fixedTotal > 0 && (
             <>
-              <div className="phase">Procedure</div>
               <div className="tnode fixed">
                 <div className="tnode-k">Refused whichever path you take</div>
                 <ul className="rows">
@@ -126,7 +129,7 @@ function StageBlock({ stage, onPick }: { stage: Stage; onPick: (next: CaseInput)
           <span className="stage-h">{stage.question}</span>
           <span className="stage-m">
             {stage.mechanic}
-            {stage.clause && <span className="cite">{CLAUSES[stage.clause].cite}</span>}
+            {stage.clause && <span className="cite"> {CLAUSES[stage.clause].cite}</span>}
           </span>
         </span>
       </div>
