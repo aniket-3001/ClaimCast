@@ -46,16 +46,19 @@ talking, and pause after every big number.**
 
 ### Live move #1 — the engine is real (0:30–1:00)
 
-*(You're already on "The path," already personalized. Just point.)*
+*(You're already on "The path," already personalized. Point at the red
+number in the bar at the very top — it's the first thing on the page.)*
 
-> This is Abhishek Jha. Spinal fusion. Private room. Bill: ₹3,53,900.
+> This is Abhishek Jha. Spinal fusion. Private room. As things stand, he
+> pays ₹1,26,900 on a ₹3,53,900 bill.
 
 *(Scroll to "Which implant." Click "Titanium cage, domestic make.")*
 
 > One click. Same surgery, same outcome, a domestic implant instead of
 > imported. *(pause — let the number move)* ₹25,000, back in his pocket. And
-> look — *(point up at the earlier numbers, now changed)* — everything above
-> it just updated too. One engine. Not four spreadsheets stapled together.
+> look — *(point back up at that same red number, now changed)* — the top of
+> the page just updated with it. One engine. Not four spreadsheets stapled
+> together.
 
 ---
 
