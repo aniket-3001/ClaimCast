@@ -39,10 +39,11 @@ early, so nobody mistakes them for real documents.
 > Before any of the arithmetic, this is where a real family would begin —
 > not a room, not a hospital, just: who are you, and what have you got.
 
-*(Type a name into "Your name" and "Policyholder's name.")*
+*(Type "Abhishek Jha" into "Your name" and "Policyholder's name" — the same
+name on the printed props, so the physical documents and the screen agree.)*
 
 > I'll enter a name here — watch the header. *(point top-right, "For
-> ___")* That's not cosmetic dressing. Everything downstream is now built
+> Abhishek Jha")* That's not cosmetic dressing. Everything downstream is now built
 > around this specific person's claim.
 
 *(Optionally hold up the printed `policy-card.png` / ID card here.)*
