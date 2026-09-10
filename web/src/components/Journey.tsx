@@ -31,85 +31,108 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
   const r = e.result;
 
   return (
-    <div className="tree">
-      <div className="tnode start">
-        <div className="tnode-k">The admission</div>
-        <div className="tnode-v">{e.procedure.name}</div>
-        <div className="tnode-sub">
-          {e.input.days} {e.input.days === 1 ? "night" : "nights"}
-          {e.input.icuDays > 0 && `, ${e.input.icuDays} in intensive care`} · {e.policy.product},{" "}
-          {fmt(e.policy.sumInsured)} sum insured
+    <>
+      {/* The answer before the reasoning. Someone seeing this page for the
+          first time has no way to know the tree ends in a number, and would
+          have to scroll to the bottom to find out. It moves the moment a
+          branch is clicked, which is the point of the whole page. */}
+      <div className="outcome">
+        <div className="outcome-main">
+          <span className="outcome-k">As things stand, you pay</span>
+          <span className="outcome-v">{fmt(r.patientPays)}</span>
+        </div>
+        <div className="outcome-of">
+          <span className="k">Insurer pays</span>
+          <span className="v paid">{fmt(r.insurerPays)}</span>
+        </div>
+        <div className="outcome-of">
+          <span className="k">Bill</span>
+          <span className="v">{fmt(r.billTotal)}</span>
         </div>
       </div>
 
-      <GovtFork e={e} />
-
-      <Link />
-
-      <div className={`tgate ${g.passed ? "pass" : "fail"}`}>
-        <div className="tgate-q">{g.question}</div>
-        <div className="tgate-test">
-          {g.test} <span className="cite">{CLAUSES[g.clause].cite}</span>
-        </div>
-        <div className="tgate-verdict">{g.passed ? "Yes" : "No"}</div>
-        <div className="tgate-detail">{g.detail}</div>
-      </div>
-
-      <Link />
-
-      {!g.passed ? (
-        <div className="tnode end refused">
-          <div className="tnode-k">Nothing is payable</div>
-          <div className="tnode-v loss">{fmt(r.billTotal)}</div>
-          <div className="tnode-sub">The claim fails before any deduction. The whole bill is the family&rsquo;s.</div>
-        </div>
-      ) : (
-        <>
-          {journey(e).map((s, i, all) => (
-            <Fragment key={s.id}>
-              {s.phase !== all[i - 1]?.phase && <div className="phase">{s.phase}</div>}
-              <StageBlock stage={s} onPick={onPick} />
-              <Link />
-            </Fragment>
-          ))}
-
-          {fixedTotal > 0 && (
-            <>
-              <div className="phase">Procedure</div>
-              <div className="tnode fixed">
-                <div className="tnode-k">Refused whichever path you take</div>
-                <ul className="rows">
-                  {fixed.map((x) => (
-                    <li className="row" key={x.clause}>
-                      <span className="row-l">
-                        <span>{x.label}</span>
-                        <span className="cite">{CLAUSES[x.clause].cite}</span>
-                      </span>
-                      <span className="row-amt loss">{fmt(x.amount)}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="tnode-sub">
-                  These come off the procedure, never off the room tariff. No cheaper bed and no
-                  other hospital moves them.
-                </div>
-              </div>
-              <Link />
-            </>
-          )}
-
-          <div className="tnode end">
-            <div className="tnode-k">You pay</div>
-            <div className="tnode-v loss">{fmt(r.patientPays)}</div>
-            <div className="tnode-sub">
-              {fmt(f.low.patientPays)} – {fmt(f.high.patientPays)} once the clinical bill is known.
-              The insurer pays {fmt(r.insurerPays)} of {fmt(r.billTotal)}.
-            </div>
-            <Split insurer={r.insurerPays} total={r.billTotal} patient={r.patientPays} />
+      <div className="tree">
+        <div className="tnode start">
+          <div className="tnode-k">The admission</div>
+          <div className="tnode-v">{e.procedure.name}</div>
+          <div className="tnode-sub">
+            {e.input.days} {e.input.days === 1 ? "night" : "nights"}
+            {e.input.icuDays > 0 && `, ${e.input.icuDays} in intensive care`} · {e.policy.product},{" "}
+            {fmt(e.policy.sumInsured)} sum insured
           </div>
-        </>
-      )}
-    </div>
+        </div>
+
+        <GovtFork e={e} />
+
+        <Link />
+
+        <div className={`tgate ${g.passed ? "pass" : "fail"}`}>
+          <div className="tgate-q">{g.question}</div>
+          <div className="tgate-test">
+            {g.test} <span className="cite">{CLAUSES[g.clause].cite}</span>
+          </div>
+          <div className="tgate-verdict">{g.passed ? "Yes" : "No"}</div>
+          <div className="tgate-detail">{g.detail}</div>
+        </div>
+
+        <Link />
+
+        {!g.passed ? (
+          <div className="tnode end refused">
+            <div className="tnode-k">Nothing is payable</div>
+            <div className="tnode-v loss">{fmt(r.billTotal)}</div>
+            <div className="tnode-sub">
+              The claim fails before any deduction. The whole bill is the family&rsquo;s.
+            </div>
+          </div>
+        ) : (
+          <>
+            {journey(e).map((s, i, all) => (
+              <Fragment key={s.id}>
+                {s.phase !== all[i - 1]?.phase && <div className="phase">{s.phase}</div>}
+                <StageBlock stage={s} onPick={onPick} />
+                <Link />
+              </Fragment>
+            ))}
+
+            {fixedTotal > 0 && (
+              <>
+                <div className="phase">Procedure</div>
+                <div className="tnode fixed">
+                  <div className="tnode-k">Refused whichever path you take</div>
+                  <ul className="rows">
+                    {fixed.map((x) => (
+                      <li className="row" key={x.clause}>
+                        <span className="row-l">
+                          <span>{x.label}</span>
+                          <span className="cite">{CLAUSES[x.clause].cite}</span>
+                        </span>
+                        <span className="row-amt loss">{fmt(x.amount)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="tnode-sub">
+                    These come off the procedure, never off the room tariff. No cheaper bed and no
+                    other hospital moves them.
+                  </div>
+                </div>
+                <Link />
+              </>
+            )}
+
+            <div className="tnode end">
+              <div className="tnode-k">You pay</div>
+              <div className="tnode-v loss">{fmt(r.patientPays)}</div>
+              <div className="tnode-sub">
+                {fmt(f.low.patientPays)} – {fmt(f.high.patientPays)} once the clinical bill is known.
+                The insurer pays {fmt(r.insurerPays)} of {fmt(r.billTotal)}.
+              </div>
+              <Split insurer={r.insurerPays} total={r.billTotal} patient={r.patientPays} />
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 }
 

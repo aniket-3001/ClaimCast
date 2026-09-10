@@ -1,36 +1,45 @@
 /**
  * ClaimCast.
  *
- * The palette is the deck's, lifted from src/deckkit.py so the prototype and
- * the slides cannot drift apart: GE HealthCare blue #005EB8 as the single
- * accent, #1B1B1B ink, #55585A body, #C8102E for money the family loses and
- * #00774F for money the insurer pays. Nothing else is coloured.
+ * Colour and type come from src/deckkit.py, so the prototype and the slides
+ * cannot drift: GE HealthCare blue #005EB8 as the single accent, #1B1B1B
+ * ink, #C8102E for money the family loses, #00774F for money the insurer
+ * pays. The ground is a warm off-white rather than paper white, which is
+ * what the deck sits on and what stops a projector glaring.
  *
- * The deck's typefaces too — Georgia for display, the system sans for body,
- * which on Windows is Segoe UI, the deck's body face exactly. Quantities are
- * always monospace and always tabular, so rupees line up without a table.
+ * The faces are the deck's too — Georgia for display, Segoe UI for body
+ * (reached through the system-sans stack). Nothing else is available offline
+ * and a live demo cannot depend on a font server, so the hierarchy is built
+ * from a deliberate scale instead of from a third family:
  *
- * Laid out for a laptop first: a 1080px measure, hairlines instead of boxes,
- * and vertical rhythm tight enough that the tree reads without hunting for
- * the number at the bottom of it.
+ *     31 / 27 / 23 / 20  Georgia, the things being said
+ *     18 / 15.5 / 13.5   Segoe UI, the things being explained
+ *     10.5 caps, +0.1em  blue labels, the things being named
+ *     40 / 18 mono       money, always tabular
+ *
+ * Every step is a clear jump. Anything that would land between two steps
+ * gets rounded to one of them rather than splitting the difference.
+ *
+ * Laid out for a laptop: a 1080px measure and hairlines instead of boxes.
  */
 
 :root {
   --control-h: 34px;
   --wrap: 1080px;
 
-  --bg: #f6f7f9;
-  --surface: #ffffff;
+  /* Warm off-white ground, white only where something is raised off it. */
+  --bg: #f7f5f1;
+  --surface: #fffefc;
   --ink: #1b1b1b;
   --ink-2: #55585a;
-  --ink-3: #6f7378;
-  --hair: #dce0e4;
-  --hair-2: #edeff1;
+  --ink-3: #74736f;
+  --hair: #ddd9d2;
+  --hair-2: #edeae4;
 
   /* The one accent, and the two money colours. */
   --accent: #005eb8;
   --accent-pale: #a9cbea;
-  --accent-wash: #eef4fb;
+  --accent-wash: #edf3fa;
   --loss: #c8102e;
   --paid: #00774f;
   --warn: #9a6300;
@@ -45,16 +54,16 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #131416;
-    --surface: #1c1e21;
-    --ink: #f2f3f5;
-    --ink-2: #b6babf;
-    --ink-3: #8b9096;
-    --hair: #303337;
-    --hair-2: #26282b;
+    --bg: #161513;
+    --surface: #1f1e1c;
+    --ink: #f4f2ef;
+    --ink-2: #b8b5b0;
+    --ink-3: #8d8a85;
+    --hair: #34322f;
+    --hair-2: #282724;
     --accent: #6cb0ff;
     --accent-pale: #2b4a6d;
-    --accent-wash: #17222e;
+    --accent-wash: #1a222c;
     --loss: #ff6b6b;
     --paid: #3fbb87;
     --warn: #e0a53a;
@@ -77,8 +86,8 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 15.5px;
+  line-height: 1.55;
   letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
 }
@@ -86,7 +95,7 @@ body {
 .wrap {
   max-width: var(--wrap);
   margin: 0 auto;
-  padding: 22px 28px 48px;
+  padding: 24px 28px 48px;
 }
 
 /* ── Masthead ───────────────────────────────────────────── */
@@ -96,28 +105,31 @@ body {
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  padding-bottom: 14px;
+  padding-bottom: 16px;
   flex-wrap: wrap;
 }
 
 .brand {
   font-family: var(--serif);
-  font-size: 25px;
-  font-weight: 500;
-  letter-spacing: -0.015em;
+  font-size: 31px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .brand-sub {
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--ink-3);
 }
 
 /* ── Tabs ───────────────────────────────────────────────── */
 
+/* Numbered, because a first-time viewer has no way to know these are a
+   sequence rather than four unrelated views. */
 .tabs {
   display: flex;
   gap: 2px;
-  margin: 0 0 20px;
+  margin: 0 0 22px;
   border-bottom: 1px solid var(--hair);
   overflow-x: auto;
 }
@@ -127,17 +139,26 @@ body {
   border: none;
   background: none;
   min-height: 0;
-  padding: 9px 14px;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 10px 15px;
   margin-bottom: -1px;
   border-bottom: 2px solid transparent;
   border-radius: 0;
   font-family: var(--sans);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15.5px;
+  font-weight: 400;
   color: var(--ink-3);
   white-space: nowrap;
   cursor: pointer;
   transition: color 0.12s ease;
+}
+
+.tab-n {
+  font-family: var(--num);
+  font-size: 11px;
+  opacity: 0.65;
 }
 
 .tab:hover {
@@ -153,7 +174,7 @@ body {
 /* ── Sections ───────────────────────────────────────────── */
 
 .section {
-  margin-top: 28px;
+  margin-top: 32px;
 }
 
 .section-head {
@@ -161,8 +182,8 @@ body {
   align-items: baseline;
   justify-content: space-between;
   gap: 14px;
-  padding-bottom: 8px;
-  margin-bottom: 12px;
+  padding-bottom: 9px;
+  margin-bottom: 14px;
   border-bottom: 1px solid var(--hair);
   flex-wrap: wrap;
 }
@@ -170,43 +191,43 @@ body {
 .section-head h2 {
   margin: 0;
   font-family: var(--serif);
-  font-size: 19px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-size: 23px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
 }
 
 .section-head .aside {
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--ink-3);
 }
 
 .eyebrow {
   font-size: 10.5px;
-  letter-spacing: 0.09em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent);
   font-weight: 600;
 }
 
 .note {
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.55;
   color: var(--ink-3);
   max-width: 68ch;
 }
 
 .empty {
-  padding: 26px 0;
-  font-size: 13.5px;
+  padding: 28px 0;
+  font-size: 15.5px;
   color: var(--ink-3);
 }
 
 .lede {
-  font-size: 13.5px;
+  font-size: 15.5px;
   line-height: 1.55;
   color: var(--ink-2);
-  max-width: 68ch;
-  margin: 0 0 14px;
+  max-width: 66ch;
+  margin: 0 0 16px;
 }
 
 /* ── The givens ─────────────────────────────────────────── */
@@ -231,7 +252,7 @@ body {
 .given {
   flex: 1 1 0;
   min-width: 150px;
-  padding: 8px 14px 9px;
+  padding: 9px 14px 10px;
   border-left: 1px solid var(--hair-2);
   display: flex;
   flex-direction: column;
@@ -263,8 +284,8 @@ body {
 }
 
 .given > label {
-  font-size: 10px;
-  letter-spacing: 0.075em;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 600;
   color: var(--accent);
@@ -282,10 +303,10 @@ body {
   padding: 0 14px 0 0;
   border: none;
   border-radius: 0;
-  background: none;
+  background-color: var(--surface);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 14.5px;
+  font-size: 15.5px;
   line-height: var(--control-h);
   letter-spacing: -0.005em;
   text-overflow: ellipsis;
@@ -293,6 +314,7 @@ body {
 
 .given > input[type="number"] {
   font-family: var(--num);
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
   padding-right: 0;
 }
@@ -319,6 +341,20 @@ body {
   border-radius: 3px;
 }
 
+/*
+ * The open dropdown is drawn by the operating system, not by this page, and
+ * it does not inherit anything. Left alone it takes its colours from the
+ * system theme while the closed control takes them from here — which is how
+ * you end up with a list you cannot read. So every option is given both
+ * colours explicitly.
+ */
+option {
+  background-color: var(--surface);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+}
+
 /* ── Plain form controls ────────────────────────────────── */
 
 .controls {
@@ -336,8 +372,8 @@ body {
 }
 
 .field > label {
-  font-size: 10px;
-  letter-spacing: 0.075em;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 600;
   color: var(--accent);
@@ -352,14 +388,15 @@ input[type="number"] {
   padding: 0 10px;
   border: 1px solid var(--hair);
   border-radius: 8px;
-  background: var(--surface);
+  background-color: var(--surface);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 15.5px;
 }
 
 input[type="number"] {
   font-family: var(--num);
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -373,13 +410,13 @@ select:focus-visible {
 button {
   appearance: none;
   min-height: var(--control-h);
-  padding: 0 16px;
+  padding: 0 18px;
   border: 1px solid var(--accent);
   border-radius: 8px;
   background: var(--accent);
   color: #fff;
   font-family: var(--sans);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 550;
   cursor: pointer;
   transition: opacity 0.12s ease;
@@ -409,6 +446,75 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+/* ── Where the case stands ──────────────────────────────── */
+
+/*
+ * The answer, before the reasoning. A first-time viewer arriving on the tree
+ * has no idea it ends in a number, and would have to scroll to the bottom to
+ * find out; this puts the figure at the top and lets the tree explain it.
+ * It moves the instant a branch is clicked, which is the whole point.
+ */
+.outcome {
+  display: flex;
+  align-items: baseline;
+  gap: 10px 28px;
+  flex-wrap: wrap;
+  padding: 14px 18px 15px;
+  border: 1px solid var(--hair);
+  border-left: 3px solid var(--loss);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.outcome-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-right: auto;
+}
+
+.outcome-k {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.outcome-v {
+  font-family: var(--num);
+  font-size: 40px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+  color: var(--loss);
+}
+
+.outcome-of {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.outcome-of .k {
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+
+.outcome-of .v {
+  font-family: var(--num);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.outcome-of .v.paid {
+  color: var(--paid);
+}
+
 /* ── The path ───────────────────────────────────────────── */
 
 /*
@@ -423,7 +529,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  margin-top: 18px;
+  margin-top: 20px;
 }
 
 .tlink {
@@ -438,39 +544,40 @@ button:focus-visible {
   border: 1px solid var(--hair);
   border-radius: 12px;
   background: var(--surface);
-  padding: 14px 18px;
+  padding: 15px 18px;
   text-align: center;
 }
 
 .tnode-k {
   font-size: 10.5px;
   text-transform: uppercase;
-  letter-spacing: 0.085em;
+  letter-spacing: 0.1em;
   font-weight: 600;
   color: var(--accent);
 }
 
 .tnode-v {
   font-family: var(--serif);
-  font-size: 23px;
-  letter-spacing: -0.015em;
+  font-size: 27px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
   line-height: 1.15;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .tnode-v.loss {
   font-family: var(--num);
-  font-size: 34px;
+  font-size: 40px;
   font-weight: 500;
-  letter-spacing: -0.035em;
+  letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
   color: var(--loss);
 }
 
 .tnode-sub {
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--ink-2);
-  margin: 5px auto 0;
+  margin: 6px auto 0;
   max-width: 60ch;
 }
 
@@ -493,11 +600,11 @@ button:focus-visible {
 }
 
 .tnode.fixed .rows {
-  margin-top: 8px;
+  margin-top: 9px;
 }
 
 .tnode.fixed .tnode-sub {
-  margin: 8px 0 0;
+  margin: 9px 0 0;
   max-width: none;
 }
 
@@ -505,21 +612,21 @@ button:focus-visible {
 
 /*
  * A scheme is not a deduction and not a branch of the private claim — it is
- * a different way of paying for the same admission, and a family takes one
- * or the other, never both. So it sits on the tree as its own fork, above
- * everything the policy does, and is coloured as a gain rather than a loss.
+ * a different payer for the same admission, and a family takes one or the
+ * other, never both. So it sits above everything the policy does, and is
+ * coloured as a gain rather than a loss.
  */
 .fork {
   border: 1.5px solid var(--paid);
   border-radius: 12px;
   background: var(--surface);
-  padding: 14px 18px;
+  padding: 15px 18px;
 }
 
 .fork-k {
   font-size: 10.5px;
   text-transform: uppercase;
-  letter-spacing: 0.085em;
+  letter-spacing: 0.1em;
   font-weight: 600;
   color: var(--paid);
   text-align: center;
@@ -527,23 +634,25 @@ button:focus-visible {
 
 .fork-v {
   font-family: var(--serif);
-  font-size: 20px;
+  font-size: 23px;
+  font-weight: 400;
   letter-spacing: -0.015em;
+  line-height: 1.2;
   text-align: center;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 .fork-ways {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 
 .way {
   border: 1px solid var(--hair);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 11px 13px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -553,7 +662,7 @@ button:focus-visible {
 .way.on {
   border-color: var(--paid);
   border-width: 1.5px;
-  padding: 9.5px 11.5px;
+  padding: 10.5px 12.5px;
 }
 
 .way.shut {
@@ -562,15 +671,15 @@ button:focus-visible {
 }
 
 .way-label {
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 550;
   line-height: 1.25;
 }
 
 .way-pay {
   font-family: var(--num);
-  font-size: 16.5px;
-  letter-spacing: -0.02em;
+  font-size: 18px;
+  letter-spacing: -0.025em;
   font-variant-numeric: tabular-nums;
   margin-top: 3px;
 }
@@ -580,9 +689,9 @@ button:focus-visible {
 }
 
 .way-note {
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--ink-3);
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 /* ── The gate ───────────────────────────────────────────── */
@@ -590,13 +699,13 @@ button:focus-visible {
 .tgate {
   align-self: center;
   width: 100%;
-  max-width: 560px;
+  max-width: 580px;
   text-align: center;
   position: relative;
   border: 1px solid var(--hair);
   border-radius: 12px;
   background: var(--surface);
-  padding: 13px 18px;
+  padding: 14px 18px;
 }
 
 .tgate::before {
@@ -620,21 +729,24 @@ button:focus-visible {
 
 .tgate-q {
   font-family: var(--serif);
-  font-size: 17px;
-  letter-spacing: -0.01em;
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
 }
 
 .tgate-test {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .tgate-verdict {
   font-family: var(--serif);
-  font-size: 23px;
-  letter-spacing: -0.015em;
-  margin-top: 6px;
+  font-size: 27px;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  margin-top: 7px;
   line-height: 1;
 }
 
@@ -647,22 +759,22 @@ button:focus-visible {
 }
 
 .tgate-detail {
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--ink-2);
-  margin-top: 4px;
+  margin-top: 5px;
 }
 
 /* Where on the care journey this sits. Emitted only when it changes, so the
    rail reads Admission → Investigation → Procedure rather than repeating. */
 .phase {
   align-self: center;
-  margin: 2px 0;
-  padding: 3px 12px;
+  margin: 3px 0;
+  padding: 3px 13px;
   border: 1px solid var(--hair);
   border-radius: 999px;
   background: var(--bg);
-  font-size: 10px;
-  letter-spacing: 0.09em;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 600;
   color: var(--ink-3);
@@ -677,24 +789,24 @@ button:focus-visible {
   align-self: center;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   border: 1px solid var(--hair);
   border-radius: 999px;
   background: var(--surface);
-  padding: 5px 18px 5px 6px;
+  padding: 6px 20px 6px 6px;
 }
 
 .stage-n {
   flex: none;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: var(--accent);
   color: #fff;
   display: grid;
   place-items: center;
   font-family: var(--num);
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 .stage-t {
@@ -706,12 +818,13 @@ button:focus-visible {
 
 .stage-h {
   font-family: var(--serif);
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 400;
   letter-spacing: -0.01em;
 }
 
 .stage-m {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--ink-3);
 }
 
@@ -742,7 +855,7 @@ button:focus-visible {
   flex-direction: column;
   gap: 2px;
   text-align: left;
-  padding: 11px 13px;
+  padding: 12px 14px;
   border: 1px solid var(--hair);
   border-radius: 10px;
   background: var(--surface);
@@ -774,7 +887,7 @@ button:focus-visible {
 .branch.on {
   border-color: var(--accent);
   border-width: 1.5px;
-  padding: 10.5px 12.5px;
+  padding: 11.5px 13.5px;
 }
 
 .branch.on::before {
@@ -790,28 +903,28 @@ button:focus-visible {
 }
 
 .branch-label {
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 550;
   line-height: 1.25;
 }
 
 .branch-note {
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--ink-3);
-  line-height: 1.32;
+  line-height: 1.35;
 }
 
 .branch-pay {
   font-family: var(--num);
-  font-size: 16.5px;
-  letter-spacing: -0.02em;
+  font-size: 18px;
+  letter-spacing: -0.025em;
   font-variant-numeric: tabular-nums;
-  margin-top: 4px;
+  margin-top: 5px;
 }
 
 .branch-upfront {
   font-family: var(--num);
-  font-size: 12px;
+  font-size: 12.5px;
   font-variant-numeric: tabular-nums;
   color: var(--ink-2);
   margin-top: 3px;
@@ -819,7 +932,7 @@ button:focus-visible {
 
 .branch-delta {
   font-family: var(--num);
-  font-size: 11px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
   color: var(--ink-3);
 }
@@ -836,7 +949,7 @@ button:focus-visible {
   align-self: center;
   max-width: 60ch;
   text-align: center;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-3);
 }
 
@@ -863,7 +976,7 @@ button:focus-visible {
 .split {
   display: flex;
   height: 7px;
-  margin-top: 14px;
+  margin-top: 15px;
   border-radius: 4px;
   overflow: hidden;
   background: var(--hair-2);
@@ -891,9 +1004,9 @@ button:focus-visible {
   align-items: baseline;
   justify-content: space-between;
   gap: 14px;
-  padding: 9px 0;
+  padding: 10px 0;
   border-bottom: 1px solid var(--hair-2);
-  font-size: 13.5px;
+  font-size: 15px;
 }
 
 .row:last-child {
@@ -926,12 +1039,12 @@ button:focus-visible {
   border-top: 1px solid var(--hair);
   border-bottom: none;
   font-weight: 600;
-  padding-top: 11px;
+  padding-top: 12px;
 }
 
 .row-why {
   width: 100%;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-2);
   line-height: 1.45;
   margin-top: 2px;
@@ -939,7 +1052,7 @@ button:focus-visible {
 
 .cite {
   font-family: var(--num);
-  font-size: 11px;
+  font-size: 11.5px;
   color: var(--accent);
   opacity: 0.85;
 }
@@ -958,9 +1071,9 @@ button:focus-visible {
 }
 
 .chip {
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.02em;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 5px;
   border: 1px solid var(--hair);
   color: var(--ink-3);
@@ -996,23 +1109,23 @@ button:focus-visible {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 th {
   text-align: left;
   font-weight: 600;
-  font-size: 10px;
-  letter-spacing: 0.075em;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent);
-  padding: 8px 14px 8px 0;
+  padding: 9px 14px 9px 0;
   border-bottom: 1px solid var(--hair);
   white-space: nowrap;
 }
 
 td {
-  padding: 9px 14px 9px 0;
+  padding: 10px 14px 10px 0;
   border-bottom: 1px solid var(--hair-2);
   vertical-align: top;
 }
@@ -1046,7 +1159,7 @@ tr.pick:hover td {
 }
 
 .sub {
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
   line-height: 1.4;
 }
@@ -1056,14 +1169,14 @@ tr.pick:hover td {
 .facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 14px 22px;
-  margin-top: 14px;
+  gap: 16px 24px;
+  margin-top: 16px;
 }
 
 .fact .k {
   display: block;
-  font-size: 10px;
-  letter-spacing: 0.075em;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 600;
   color: var(--accent);
@@ -1072,7 +1185,7 @@ tr.pick:hover td {
 
 .fact .v {
   font-family: var(--num);
-  font-size: 15px;
+  font-size: 18px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1083,13 +1196,13 @@ tr.pick:hover td {
 /* ── Callout ────────────────────────────────────────────── */
 
 .callout {
-  padding: 12px 16px;
+  padding: 13px 17px;
   margin-top: 16px;
   background: var(--surface);
   border: 1px solid var(--hair);
-  border-left: 2px solid var(--warn);
+  border-left: 3px solid var(--warn);
   border-radius: 10px;
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.55;
   color: var(--ink-2);
 }
@@ -1104,7 +1217,7 @@ tr.pick:hover td {
 
 .callout h3 {
   margin: 0 0 4px;
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--ink);
 }
@@ -1124,10 +1237,10 @@ tr.pick:hover td {
   background: none;
   border: none;
   color: var(--ink-3);
-  min-height: 28px;
-  padding: 4px 12px;
+  min-height: 30px;
+  padding: 4px 14px;
   border-radius: 7px;
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 450;
 }
 
@@ -1143,10 +1256,10 @@ tr.pick:hover td {
 }
 
 footer.foot {
-  margin-top: 44px;
-  padding-top: 13px;
+  margin-top: 48px;
+  padding-top: 14px;
   border-top: 1px solid var(--hair);
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-3);
   display: flex;
   justify-content: space-between;

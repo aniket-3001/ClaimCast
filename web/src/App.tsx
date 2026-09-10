@@ -63,8 +63,11 @@ export default function App() {
         </div>
       </header>
 
+      {/* Numbered, because nothing else tells a first-time viewer that these
+          are a sequence — who you are, what you can still choose, the
+          arithmetic behind it — rather than four unrelated views. */}
       <nav className="tabs" role="tablist">
-        {TABS.map((t) => (
+        {TABS.map((t, i) => (
           <button
             key={t.id}
             role="tab"
@@ -75,6 +78,9 @@ export default function App() {
               window.scrollTo(0, 0);
             }}
           >
+            <span className="tab-n" aria-hidden="true">
+              {i + 1}
+            </span>
             {t.label}
           </button>
         ))}
