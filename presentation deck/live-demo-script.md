@@ -70,17 +70,15 @@ talking, and pause after every big number.**
 
 > Age 72.
 
-*(Click "The path." It lands you at the top — point at the fork that has
-appeared directly under the admission, above everything the policy does.)*
+*(Click "The path." It lands you at the top — a green card has appeared
+directly under the admission, above everything the policy does. Read its
+headline out loud, don't paraphrase it — the app already wrote your best
+line.)*
 
-> Ayushman Bharat Vay Vandana. Launched fourteen months ago. No income
-> test. No paperwork. Age alone.
-
-*(Point at the scheme's line — bold, in green, ₹0.)*
-
-> Same surgery you just watched cost ₹1,01,900. *(pause)* Zero.
+> "Ayushman Bharat Vay Vandana would leave ₹0 to find, not ₹1,01,900."
 >
-> He qualified the entire time. He just never had a reason to ask.
+> Launched fourteen months ago. No income test. No paperwork. Age alone.
+> *(pause)* He qualified the entire time. He just never had a reason to ask.
 
 ---
 
