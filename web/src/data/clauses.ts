@@ -86,6 +86,36 @@ export const CLAUSES: Record<string, Clause> = {
     source: "IRDAI Master Circular on Health Insurance Business, 29 May 2024",
     text: "After sixty months of continuous cover, a claim may not be contested on grounds of non-disclosure or misrepresentation, except for established fraud.",
   },
+  PRIVATE_INDEMNITY: {
+    id: "PRIVATE_INDEMNITY",
+    cite: "Policy schedule \u2014 the claim on this page",
+    source: "Product wording",
+    text: "The private policy indemnifies the actual, itemised cost of treatment, subject to every limit, sub-limit and deduction on this page.",
+  },
+  PMJAY: {
+    id: "PMJAY",
+    cite: "PM-JAY \u2014 Health Benefit Package rates",
+    source: "National Health Authority, Ayushman Bharat PM-JAY",
+    text: "At an empanelled hospital, a listed procedure is paid at a fixed package rate, cashless, with no balance billing to the patient. Eligibility is means-tested against the SECC beneficiary database, not something this or any app can determine \u2014 a household either already holds a card or does not.",
+  },
+  VAY_VANDANA: {
+    id: "VAY_VANDANA",
+    cite: "PM-JAY \u2014 Vay Vandana Card for senior citizens",
+    source: "National Health Authority, launched 29 October 2024",
+    text: "Every citizen aged 70 and above qualifies for a \u20b95 lakh annual cover under PM-JAY on age alone \u2014 no income test, and independent of any card the rest of the household already holds. Introduced in 2024, so a family already on another policy may not know it applies to them.",
+  },
+  CGHS_SCHEME: {
+    id: "CGHS_SCHEME",
+    cite: "CGHS \u2014 package rates for serving and retired central government employees",
+    source: "Central Government Health Scheme",
+    text: "At a CGHS-empanelled centre, a listed procedure is paid at the fixed CGHS package rate, cashless, for a serving or retired central government employee and their dependants.",
+  },
+  SINGLE_CLAIM_PATH: {
+    id: "SINGLE_CLAIM_PATH",
+    cite: "Principle of indemnity \u2014 no double recovery",
+    source: "General insurance law",
+    text: "The same admission cannot be paid twice over. A family picks one path to claim under \u2014 the private policy or a government scheme \u2014 rather than combining them the way a shopping cart combines two discount coupons.",
+  },
 };
 
 export const clause = (id: string): Clause => CLAUSES[id];

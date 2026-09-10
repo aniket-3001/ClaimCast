@@ -104,6 +104,9 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                     siUsed: a.siUsed ?? 0,
                     implantId: "",
                     admittedInpatient: true,
+                    age: 45,
+                    hasPmjayCard: false,
+                    govtEmployeeOrPensioner: false,
                   })
                 }
               >

@@ -12,6 +12,8 @@ import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
+import { GovtSchemes } from "./components/GovtSchemes";
+import { Intake } from "./components/Intake";
 import { Database } from "./components/Database";
 import { ADMISSIONS, stayDays } from "./data/admissions";
 import { HOSPITALS } from "./data/hospitals";
@@ -31,6 +33,9 @@ const cases: CaseInput[] = ADMISSIONS.map((a) => ({
   siUsed: a.siUsed ?? 0,
   implantId: "",
   admittedInpatient: true,
+  age: 45,
+  hasPmjayCard: false,
+  govtEmployeeOrPensioner: false,
 }));
 // Every hospital against every policy, cheapest room, so no combination the
 // controls can reach goes unrendered.
@@ -47,6 +52,9 @@ for (const h of HOSPITALS)
       siUsed: 0,
       implantId: "",
       admittedInpatient: n % 2 === 0,
+      age: 20 + ((n * 11) % 80),
+      hasPmjayCard: n % 3 === 0,
+      govtEmployeeOrPensioner: n % 3 === 1,
     });
 
 let rendered = 0;
@@ -56,7 +64,11 @@ for (const c of cases) {
   renderToString(<Journey e={e} onPick={noop} />);
   renderToString(<BillView e={e} />);
   renderToString(<Alternatives e={e} onPick={noop} />);
+  renderToString(<GovtSchemes e={e} onPick={noop} />);
   rendered++;
 }
+renderToString(
+  <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="" onPolicyholder={noop} onContinue={noop} />,
+);
 renderToString(<Database onOpen={noop} />);
 console.log(`ok   ${rendered} cases rendered clean, plus the database tab`);

@@ -882,6 +882,22 @@ tr.pick:hover td {
   border-left-color: var(--loss);
 }
 
+.callout.good {
+  border-left-color: var(--paid);
+}
+
+.govt-nudge {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.govt-nudge:hover {
+  background: var(--hair-2);
+}
+
 .callout h3 {
   margin: 0 0 6px;
   font-size: 14px;

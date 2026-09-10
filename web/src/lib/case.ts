@@ -27,6 +27,12 @@ export interface CaseInput {
    * meaningful where the procedure is not on the day-care list.
    */
   admittedInpatient: boolean;
+  /** Drives Ayushman Bharat Vay Vandana eligibility — 70+, no means test. */
+  age: number;
+  /** Self-reported: an existing PM-JAY / Ayushman Bharat card in the household. */
+  hasPmjayCard: boolean;
+  /** Self-reported: a serving or retired central government employee, CGHS-eligible. */
+  govtEmployeeOrPensioner: boolean;
 }
 
 export interface Evaluated {
@@ -548,3 +554,112 @@ const LABEL: Record<string, string> = {
   IMPLANT_SUBLIMIT: "Implant above its sub-limit",
   PRE_POST_WINDOW: "Outside the pre and post-hospitalisation window",
 };
+
+/* ── Government schemes, as alternatives to the policy — never on top of it ── */
+
+export type SchemeId = "private" | "pmjay" | "vayvandana" | "cghs";
+
+export interface Scheme {
+  id: SchemeId;
+  label: string;
+  /** Why this row exists at all, and what it would pay. */
+  detail: string;
+  /** Null where the scheme does not reach this hospital or procedure at all. */
+  patientPays: Paise | null;
+  packageRate: Paise | null;
+  eligible: boolean;
+  /** Why it's greyed out, when it is. */
+  reason: string | null;
+  clause: string;
+  current: boolean;
+}
+
+/**
+ * A government package is a flat, cashless rate for the whole admission — no
+ * room-rent cap, no proportionate deduction, no co-pay, because none of that
+ * machinery exists in these schemes. It either reaches the hospital and the
+ * procedure, or it does not.
+ *
+ * Eligibility here is deliberately narrow. PM-JAY's ordinary route is
+ * means-tested against a beneficiary database no app can see, so it is
+ * asked as a plain fact — does the household already hold a card — rather
+ * than guessed at. Vay Vandana is the one exception: age 70 and up qualifies
+ * on its own, no other test, which is exactly why a family can be eligible
+ * and not know it.
+ */
+export function schemeOptions(e: Evaluated): Scheme[] {
+  const { hospital: h, procedure: p, input } = e;
+
+  const pmjayReach = h.pmjayEmpanelled && p.pmjayRate !== null;
+  const cghsReach = h.cghsRateBand !== null && p.cghsRate !== null;
+
+  const schemes: Scheme[] = [
+    {
+      id: "private",
+      label: e.policy.product,
+      detail: "The claim worked out on the rest of this page.",
+      patientPays: e.result.patientPays,
+      packageRate: null,
+      eligible: true,
+      reason: null,
+      clause: "PRIVATE_INDEMNITY",
+      current: true,
+    },
+    {
+      id: "pmjay",
+      label: "PM-JAY (Ayushman Bharat)",
+      detail: pmjayReach
+        ? `Package rate for this procedure: ${fmt(p.pmjayRate!)}, cashless, no balance billing.`
+        : `Not available: ${!h.pmjayEmpanelled ? "hospital is not PM-JAY empanelled" : "no package rate for this procedure"}.`,
+      patientPays: pmjayReach ? 0 : null,
+      packageRate: pmjayReach ? p.pmjayRate : null,
+      eligible: pmjayReach && input.hasPmjayCard,
+      reason: !pmjayReach
+        ? "not offered here"
+        : !input.hasPmjayCard
+          ? "household has no PM-JAY card on record"
+          : null,
+      clause: "PMJAY",
+      current: false,
+    },
+    {
+      id: "vayvandana",
+      label: "Ayushman Bharat Vay Vandana (70+)",
+      detail: pmjayReach
+        ? `Same package rate, ${fmt(p.pmjayRate!)} — but on age alone, not income or an existing card.`
+        : `Not available: ${!h.pmjayEmpanelled ? "hospital is not PM-JAY empanelled" : "no package rate for this procedure"}.`,
+      patientPays: pmjayReach ? 0 : null,
+      packageRate: pmjayReach ? p.pmjayRate : null,
+      eligible: pmjayReach && input.age >= 70,
+      reason: !pmjayReach ? "not offered here" : input.age < 70 ? `patient is ${input.age}, scheme starts at 70` : null,
+      clause: "VAY_VANDANA",
+      current: false,
+    },
+    {
+      id: "cghs",
+      label: "CGHS",
+      detail: cghsReach
+        ? `Package rate for this procedure: ${fmt(p.cghsRate!)}, cashless at empanelled centres.`
+        : `Not available: ${h.cghsRateBand === null ? "hospital is not a CGHS centre" : "no package rate for this procedure"}.`,
+      patientPays: cghsReach ? 0 : null,
+      packageRate: cghsReach ? p.cghsRate : null,
+      eligible: cghsReach && input.govtEmployeeOrPensioner,
+      reason: !cghsReach
+        ? "not offered here"
+        : !input.govtEmployeeOrPensioner
+          ? "not a serving or retired central government employee"
+          : null,
+      clause: "CGHS_SCHEME",
+      current: false,
+    },
+  ];
+
+  return schemes;
+}
+
+/** The single most compelling reason to look past the private policy at all. */
+export function bestGovtScheme(e: Evaluated): Scheme | null {
+  const eligible = schemeOptions(e).filter((s) => s.id !== "private" && s.eligible);
+  if (!eligible.length) return null;
+  return eligible.reduce((best, s) => (s.patientPays! < best.patientPays! ? s : best));
+}

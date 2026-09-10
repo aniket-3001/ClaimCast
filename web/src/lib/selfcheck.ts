@@ -12,7 +12,7 @@ import { fmt, rupees as r } from "./money";
 import { ADMISSIONS, admission } from "../data/admissions";
 import { policy } from "../data/policies";
 import { HOSPITALS } from "../data/hospitals";
-import { evaluate, fixedRegardless, repair, type CaseInput } from "./case";
+import { evaluate, fixedRegardless, repair, schemeOptions, bestGovtScheme, type CaseInput } from "./case";
 
 let failures = 0;
 
@@ -59,6 +59,9 @@ console.log("The two decisions added to the tree, on the same reference admissio
     siUsed: 0,
     implantId: "imported",
     admittedInpatient: true,
+    age: 45,
+    hasPmjayCard: false,
+    govtEmployeeOrPensioner: false,
   };
   const base = evaluate(repair(refInput));
   const domestic = evaluate(repair({ ...refInput, implantId: "domestic" }));
@@ -70,6 +73,29 @@ console.log("The two decisions added to the tree, on the same reference admissio
     dayCare.result.patientPays - base.result.patientPays,
     r(78400),
   );
+
+  console.log("Government schemes never surface until they actually apply");
+  const noneEligible = bestGovtScheme(base) === null;
+  if (!noneEligible) {
+    failures++;
+    console.log("FAIL  a 45-year-old with no card was offered a government scheme anyway");
+  } else {
+    console.log("  ok   no scheme nudged at age 45 with no card and no CGHS eligibility");
+  }
+
+  const senior = evaluate(repair({ ...refInput, age: 70 }));
+  const vayVandana = schemeOptions(senior).find((s) => s.id === "vayvandana")!;
+  eq("  Vay Vandana package rate at 70", vayVandana.patientPays ?? -1, 0);
+  if (!vayVandana.eligible) {
+    failures++;
+    console.log("FAIL  age 70 did not unlock Vay Vandana");
+  } else {
+    console.log("  ok   age 70 alone unlocks Vay Vandana, no card or income test needed");
+  }
+
+  const cardHolder = evaluate(repair({ ...refInput, hasPmjayCard: true }));
+  const pmjay = schemeOptions(cardHolder).find((s) => s.id === "pmjay")!;
+  eq("  PM-JAY package rate with a card", pmjay.patientPays ?? -1, 0);
 }
 
 console.log("Invariants across all 16 admissions");
@@ -115,6 +141,9 @@ console.log("\nThe claim the tree makes");
       siUsed: 0,
       implantId: "imported",
       admittedInpatient: true,
+      age: 45,
+      hasPmjayCard: false,
+      govtEmployeeOrPensioner: false,
     }),
   );
   const key = (e: ReturnType<typeof evaluate>) =>
