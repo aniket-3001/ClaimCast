@@ -27,14 +27,16 @@
   --control-h: 34px;
   --wrap: 1080px;
 
-  /* Warm off-white ground, white only where something is raised off it. */
-  --bg: #f7f5f1;
-  --surface: #fffefc;
+  /* Off-white throughout. Nothing on the page is paper white: the ground is
+     the warmer of the two, the raised surfaces the lighter, and the step
+     between them is what separates a card from the page it sits on. */
+  --bg: #f0ece4;
+  --surface: #faf8f3;
   --ink: #1b1b1b;
   --ink-2: #55585a;
-  --ink-3: #74736f;
-  --hair: #ddd9d2;
-  --hair-2: #edeae4;
+  --ink-3: #767471;
+  --hair: #d6d1c8;
+  --hair-2: #e6e2d9;
 
   /* The one accent, and the two money colours. */
   --accent: #005eb8;
