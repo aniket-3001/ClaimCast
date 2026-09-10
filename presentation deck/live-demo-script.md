@@ -15,6 +15,9 @@ talking, and pause after every big number.**
   stage is dead air — never do it live.
 - Have `policy-card.png` and `policyholder-id-card.png` printed or on a
   second screen — you hold one up, once, for three seconds. That's it.
+- `policy-schedule.pdf` and `sample-hospital-bill.pdf` are deliberately
+  **not** part of the script — bring them as backup handouts in case a judge
+  asks to look closer afterward, but nothing below calls for holding them up.
 - Know these two moves cold, until your hand moves before you think:
   **click the domestic implant** → **click "Start," type "72" into age,
   click "The path."** Nothing else needs rehearsal.
