@@ -1,7 +1,7 @@
 import type { BillLine, Hospital, Policy, Procedure, RoomClass, Route } from "./types";
 import { adjudicate, type Adjudication } from "./engine";
 import { buildBill, ROOM_LABEL, tariff } from "./bill";
-import { rupees, type Paise } from "./money";
+import { fmt, rupees, type Paise } from "./money";
 import { hospital, HOSPITALS } from "../data/hospitals";
 import { procedure } from "../data/procedures";
 import { policy } from "../data/policies";
@@ -18,6 +18,15 @@ export interface CaseInput {
   days: number;
   icuDays: number;
   siUsed: Paise;
+  /** Which of the procedure's `implantOptions` was used, where a choice exists. */
+  implantId: string;
+  /**
+   * Whether the stay is classified as a valid 24-hour in-patient admission,
+   * independent of `days` — `days` is how long the care actually took;
+   * this is the separate, disputable question of how it was billed. Only
+   * meaningful where the procedure is not on the day-care list.
+   */
+  admittedInpatient: boolean;
 }
 
 export interface Evaluated {
@@ -35,22 +44,15 @@ export interface Evaluated {
  * Whether this stay is a claim at all.
  *
  * Checked before any arithmetic, because the answer makes the arithmetic
- * irrelevant. A procedure on the day-care list has no minimum stay; anything
- * else needs a full 24 hours in a bed.
+ * irrelevant. A procedure on the day-care list has no minimum stay and
+ * nothing below this can change that; off the list, the claim always stands,
+ * but whether it stands as a full in-patient admission or gets downgraded to
+ * day-care billing is a real choice, decided on the tree rather than here.
  */
-function admissibility(p: Procedure, pol: Policy, days: number) {
-  if (p.dayCare) {
-    if (!pol.dayCareCovered) {
-      return {
-        reason: "This policy does not cover day-care procedures, and the stay is under 24 hours.",
-        clause: "DAY_CARE",
-      };
-    }
-    return null;
-  }
-  if (days < 1) {
+function admissibility(p: Procedure, pol: Policy) {
+  if (p.dayCare && !pol.dayCareCovered) {
     return {
-      reason: "Under the 24-hour minimum, and the procedure is not on the day-care list.",
+      reason: "This policy does not cover day-care procedures, and the procedure has no minimum stay to fall back on.",
       clause: "DAY_CARE",
     };
   }
@@ -66,6 +68,7 @@ function admissibility(p: Procedure, pol: Policy, days: number) {
  */
 export function repair(c: CaseInput): CaseInput {
   const h = hospital(c.hospitalId);
+  const p = procedure(c.procedureId);
   const pol = policy(c.policyId);
   const next = { ...c };
   if (!h.rooms.some((r) => r.cls === next.roomClass)) {
@@ -75,6 +78,13 @@ export function repair(c: CaseInput): CaseInput {
   // Cashless is not a preference. It exists only where the hospital and the
   // insurer already have an agreement.
   if (!h.network.includes(pol.insurer)) next.route = "reimbursement";
+  // The device on offer changes with the procedure. Fall back to the first
+  // option rather than carry over a choice that belongs to a different one.
+  if (p.implantOptions?.length) {
+    if (!p.implantOptions.some((o) => o.id === next.implantId)) next.implantId = p.implantOptions[0].id;
+  } else {
+    next.implantId = "";
+  }
   return next;
 }
 
@@ -82,22 +92,37 @@ export function evaluate(input: CaseInput): Evaluated {
   const h = hospital(input.hospitalId);
   const p = procedure(input.procedureId);
   const pol = policy(input.policyId);
+  const implantOpt = p.implantOptions?.find((o) => o.id === input.implantId);
+  // The clinical bill reflects what was actually done, not the classification
+  // dispute below — a stay billed as day-care still occupied a bed and drew
+  // nursing for part of a day, so the room-linked lines are never zeroed here.
+  // `admittedInpatient` alone decides whether they survive adjudication.
+  const billedDays = p.dayCare ? input.days : Math.max(input.days, 1);
   const lines = buildBill({
     procedure: p,
     hospital: h,
     roomClass: input.roomClass,
-    days: input.days,
+    days: billedDays,
     icuDays: input.icuDays,
     includeOutsideWindow: true,
+    implantAmount: implantOpt?.amount,
+    implantLabel: implantOpt?.label,
   });
-  const repudiation = admissibility(p, pol, input.days);
+  const repudiation = admissibility(p, pol);
+  const dayCareDowngrade = !p.dayCare && !input.admittedInpatient;
   return {
     input,
     hospital: h,
     procedure: p,
     policy: pol,
     lines,
-    result: adjudicate({ lines, policy: pol, siUsed: input.siUsed, repudiated: repudiation }),
+    result: adjudicate({
+      lines,
+      policy: pol,
+      siUsed: input.siUsed,
+      repudiated: repudiation,
+      dayCareDowngrade,
+    }),
     repudiation,
   };
 }
@@ -123,12 +148,14 @@ export interface Forecast {
 export function forecast(e: Evaluated): Forecast {
   const { privateLow: lo, privateHigh: hi } = e.procedure;
   const mid = (lo + hi) / 2;
+  const dayCareDowngrade = !e.procedure.dayCare && !e.input.admittedInpatient;
   const scale = (k: number): Adjudication =>
     adjudicate({
       lines: e.lines.map((l) => (l.kind === "room" ? l : { ...l, amount: Math.round(l.amount * k) })),
       policy: e.policy,
       siUsed: e.input.siUsed,
       repudiated: e.repudiation,
+      dayCareDowngrade,
     });
 
   const roomExcess = e.result.deductions
@@ -231,6 +258,12 @@ export interface Branch {
   /** Why this branch is shut, where it is shut. */
   blocked: string | null;
   next: CaseInput;
+  /**
+   * Cash the family must find on the day, before any of it comes back —
+   * distinct from `patientPays`, which is what is never returned. Set only
+   * where a branch changes timing rather than the final split.
+   */
+  upfront?: Paise;
 }
 
 export interface Stage {
@@ -265,9 +298,8 @@ export function journey(e: Evaluated): Stage[] {
   const shown = [current, ...all.filter((o) => !o.current).slice(0, BRANCH_CAP - 1)].sort(
     (a, b) => a.patientPays - b.patientPays,
   );
-  const where: Stage = {
+  const where: Omit<Stage, "step"> = {
     id: "hospital",
-    step: 1,
     phase: "Admission",
     question: "Where",
     mechanic: "Room tariff against the sub-limit",
@@ -285,39 +317,9 @@ export function journey(e: Evaluated): Stage[] {
     })),
   };
 
-  const inNetwork = e.hospital.network.includes(e.policy.insurer);
-  const how: Stage = {
-    id: "route",
-    step: 3,
-    phase: "Investigation",
-    question: "How you claim",
-    mechanic: "What the family has to find on the day",
-    clause: null,
-    settled: inNetwork
-      ? null
-      : `${e.hospital.name} has no agreement with ${e.policy.insurer}. Only one route is open.`,
-    branches: (["cashless", "reimbursement"] as Route[]).map((r) => ({
-      key: r,
-      label: r === "cashless" ? "Cashless" : "Reimbursement",
-      note:
-        r === "cashless"
-          ? inNetwork
-            ? `Pre-authorisation, about ${e.hospital.preAuthHours} hours`
-            : "No agreement with this insurer"
-          : `Pay the bill, wait about ${e.hospital.settlementDays} days`,
-      // The route changes nothing about what is owed, only when it is owed.
-      patientPays: here,
-      delta: 0,
-      chosen: e.input.route === r,
-      blocked: r === "cashless" && !inNetwork ? "Not available here" : null,
-      next: repair({ ...e.input, route: r }),
-    })),
-  };
-
   const rooms = roomOptions(e);
-  const which: Stage = {
+  const which: Omit<Stage, "step"> = {
     id: "room",
-    step: 2,
     phase: "Admission",
     question: "Which bed",
     mechanic: "Proportionate deduction on room-linked charges",
@@ -340,7 +342,140 @@ export function journey(e: Evaluated): Stage[] {
     })),
   };
 
-  return [where, which, how];
+  const inNetwork = e.hospital.network.includes(e.policy.insurer);
+  const how: Omit<Stage, "step"> = {
+    id: "route",
+    phase: "Investigation",
+    question: "How you claim",
+    mechanic: "What the family has to find on the day, and when it comes back",
+    clause: null,
+    settled: inNetwork
+      ? null
+      : `${e.hospital.name} has no agreement with ${e.policy.insurer}. Only one route is open.`,
+    branches: (["cashless", "reimbursement"] as Route[]).map((r) => ({
+      key: r,
+      label: r === "cashless" ? "Cashless" : "Reimbursement",
+      note:
+        r === "cashless"
+          ? inNetwork
+            ? `Pre-authorisation, about ${e.hospital.preAuthHours} hours. The insurer settles the rest directly.`
+            : "No agreement with this insurer"
+          : `Pay the full bill at discharge, and wait about ${e.hospital.settlementDays} days to get ${fmt(e.result.insurerPays)} of it back.`,
+      // The route changes nothing about what is owed in the end, only what
+      // the family has to find on the day and when the rest comes back.
+      patientPays: here,
+      delta: 0,
+      chosen: e.input.route === r,
+      blocked: r === "cashless" && !inNetwork ? "Not available here" : null,
+      next: repair({ ...e.input, route: r }),
+      upfront: r === "cashless" ? e.result.patientPays : e.result.billTotal,
+    })),
+  };
+
+  const stages: Omit<Stage, "step">[] = [where, which, how];
+
+  if (e.procedure.implantOptions && e.procedure.implantOptions.length > 1) {
+    stages.push(implantStage(e));
+  }
+  if (!e.procedure.dayCare) {
+    stages.push(stayStage(e));
+  }
+
+  return stages.map((s, i) => ({ ...s, step: i + 1 }));
+}
+
+/** The same admission with every device on offer, in place of the one billed. */
+export function implantOptions(e: Evaluated): Option[] {
+  const here = e.result.patientPays;
+  const options = e.procedure.implantOptions ?? [];
+  return options
+    .map((o) => {
+      const next = repair({ ...e.input, implantId: o.id });
+      const alt = o.id === e.input.implantId ? e : evaluate(next);
+      return {
+        next,
+        key: o.id,
+        label: o.label,
+        detail: `${inr(o.amount)} listed`,
+        patientPays: alt.result.patientPays,
+        billTotal: alt.result.billTotal,
+        delta: alt.result.patientPays - here,
+        current: o.id === e.input.implantId,
+        available: true,
+      };
+    })
+    .sort((a, b) => a.patientPays - b.patientPays);
+}
+
+function implantStage(e: Evaluated): Omit<Stage, "step"> {
+  const options = implantOptions(e);
+  return {
+    id: "implant",
+    phase: "Procedure",
+    question: "Which implant",
+    mechanic: "Sub-limit applies regardless of the balance sum insured",
+    clause: "IMPLANT_SUBLIMIT",
+    // Below the sub-limit, a cheaper device only lowers what the insurer
+    // pays — the patient's share is untouched either way, and the branches
+    // need to say so, or an unchanging number reads as a stuck screen.
+    settled: options.every((o) => o.delta === 0)
+      ? "Every option here is within the sub-limit. The choice changes what the insurer pays, not what the family owes."
+      : null,
+    branches: options.map((o) => ({
+      key: o.key,
+      label: o.label,
+      note: o.detail,
+      patientPays: o.patientPays,
+      delta: o.delta,
+      chosen: o.current,
+      blocked: null,
+      next: o.next,
+    })),
+  };
+}
+
+/**
+ * Whether the same admission survives the 24-hour definition, or gets billed
+ * as day-care instead. Both branches carry the same clinical bill — the same
+ * days, the same lines — so the figure under each is what the classification
+ * alone is worth, not a shorter stay.
+ */
+function stayStage(e: Evaluated): Omit<Stage, "step"> {
+  const inpatient = e.input.admittedInpatient;
+  const asInpatient = repair({ ...e.input, admittedInpatient: true });
+  const asDayCare = repair({ ...e.input, admittedInpatient: false });
+  const inpatientAlt = inpatient ? e : evaluate(asInpatient);
+  const dayCareAlt = inpatient ? evaluate(asDayCare) : e;
+  return {
+    id: "stay",
+    phase: "Recovery",
+    question: "How the stay is classified",
+    mechanic: "Room, nursing and ICU charges need a valid 24-hour admission behind them",
+    clause: "DAY_CARE_DOWNGRADE",
+    settled: null,
+    branches: [
+      {
+        key: "inpatient",
+        label: "24 hours or more in a bed",
+        note: "Meets the definition of hospitalisation",
+        patientPays: inpatientAlt.result.patientPays,
+        delta: inpatientAlt.result.patientPays - e.result.patientPays,
+        chosen: inpatient,
+        blocked: null,
+        next: asInpatient,
+      },
+      {
+        key: "daycare",
+        label: "Discharged before 24 hours",
+        note: "Same treatment, billed as day-care instead",
+        patientPays: dayCareAlt.result.patientPays,
+        delta: dayCareAlt.result.patientPays - e.result.patientPays,
+        chosen: !inpatient,
+        blocked: null,
+        next: asDayCare,
+      },
+    ],
+  };
 }
 
 /** The gate every claim passes before any of the arithmetic matters. */
@@ -350,20 +485,34 @@ export interface Gate {
   passed: boolean;
   clause: string;
   detail: string;
+  /**
+   * Whether this is worth a node on the tree at all. Off the day-care list,
+   * every stay is a valid claim regardless of length — the 24-hour question
+   * is a real decision, but it belongs to the Recovery stage, not to a
+   * checkpoint that would otherwise always read "Yes" and say nothing.
+   */
+  relevant: boolean;
 }
 
 export function gate(e: Evaluated): Gate {
   const p = e.procedure;
+  if (!p.dayCare) {
+    return {
+      question: "Is this a claim at all?",
+      test: "Not on the day-care list, so any stay is a valid claim",
+      passed: true,
+      clause: "DAY_CARE",
+      detail: "There is no minimum stay to clear before a deduction can even be argued. Whether it is billed as a full 24-hour admission is decided further down.",
+      relevant: false,
+    };
+  }
   return {
     question: "Is this a claim at all?",
-    test: p.dayCare ? "On the day-care list" : "At least 24 hours in a bed",
+    test: "On the day-care list",
     passed: e.repudiation === null,
     clause: e.repudiation?.clause ?? "DAY_CARE",
-    detail:
-      e.repudiation?.reason ??
-      (p.dayCare
-        ? "A listed day-care procedure. No minimum stay applies."
-        : `${e.input.days} ${e.input.days === 1 ? "night" : "nights"}. The definition is met.`),
+    detail: e.repudiation?.reason ?? "A listed day-care procedure. No minimum stay applies.",
+    relevant: true,
   };
 }
 

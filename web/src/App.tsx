@@ -25,6 +25,8 @@ const START: CaseInput = {
   days: 5,
   icuDays: 0,
   siUsed: rupees(0),
+  implantId: "imported",
+  admittedInpatient: true,
 };
 
 export default function App() {

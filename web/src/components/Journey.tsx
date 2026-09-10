@@ -167,6 +167,9 @@ function BranchCard({
     >
       <span className="branch-label">{b.label}</span>
       <span className="branch-note">{b.blocked ?? b.note}</span>
+      {b.upfront !== undefined && !b.blocked && (
+        <span className="branch-upfront">Find on the day: {fmt(b.upfront)}</span>
+      )}
       {money && !b.blocked && (
         <>
           <span className="branch-pay">{fmt(b.patientPays)}</span>

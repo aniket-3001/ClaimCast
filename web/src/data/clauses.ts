@@ -68,6 +68,12 @@ export const CLAUSES: Record<string, Clause> = {
     source: "IRDAI standard definitions",
     text: "A claim requires a continuous in-patient stay of at least 24 hours, unless the procedure appears on the policy's day-care list, in which case no minimum applies.",
   },
+  DAY_CARE_DOWNGRADE: {
+    id: "DAY_CARE_DOWNGRADE",
+    cite: "Definition of hospitalisation \u2014 24 hours",
+    source: "IRDAI standard definitions",
+    text: "Where the continuous stay falls short of 24 hours and the procedure is not on the day-care list, room, nursing, ICU and every other room-linked charge are not a valid in-patient claim and are refused in full. Charges priced independently of the room \u2014 diagnostics, pharmacy, the implant, List I \u2014 are unaffected.",
+  },
   PED_WAITING: {
     id: "PED_WAITING",
     cite: "Policy schedule \u2014 pre-existing disease waiting period",

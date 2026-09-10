@@ -21,6 +21,10 @@ export const PROCEDURES: Procedure[] = [
     dayCare: false,
     medianStayDays: 5,
     usesImplant: true,
+    implantOptions: [
+      { id: "imported", label: "Titanium cage, imported", amount: r(105000) },
+      { id: "domestic", label: "Titanium cage, domestic make", amount: r(62000) },
+    ],
     pmjayRate: r(90000),
     cghsRate: r(110000),
     privateLow: r(260000),
@@ -71,6 +75,10 @@ export const PROCEDURES: Procedure[] = [
     dayCare: false,
     medianStayDays: 3,
     usesImplant: true,
+    implantOptions: [
+      { id: "imported", label: "Drug-eluting stent, imported", amount: r(145000) },
+      { id: "domestic", label: "Drug-eluting stent, domestic make", amount: r(68000) },
+    ],
     pmjayRate: r(90000),
     cghsRate: r(108000),
     privateLow: r(210000),
@@ -96,6 +104,10 @@ export const PROCEDURES: Procedure[] = [
     dayCare: false,
     medianStayDays: 6,
     usesImplant: true,
+    implantOptions: [
+      { id: "imported", label: "Bilateral prosthesis, imported", amount: r(220000) },
+      { id: "domestic", label: "Bilateral prosthesis, domestic make", amount: r(120000) },
+    ],
     pmjayRate: r(110000),
     cghsRate: r(145000),
     privateLow: r(320000),
@@ -271,6 +283,10 @@ export const PROCEDURES: Procedure[] = [
     dayCare: true,
     medianStayDays: 1,
     usesImplant: true,
+    implantOptions: [
+      { id: "imported", label: "Foldable intraocular lens, imported", amount: r(18000) },
+      { id: "domestic", label: "Foldable intraocular lens, domestic make", amount: r(8500) },
+    ],
     pmjayRate: r(7500),
     cghsRate: r(12000),
     privateLow: r(28000),

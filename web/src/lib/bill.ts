@@ -31,6 +31,9 @@ export function buildBill(args: {
   icuDays?: number;
   /** Pre-hospitalisation spend the policy window will not reach. */
   includeOutsideWindow?: boolean;
+  /** Overrides `procedure.costs.implant`, for procedures with a choice of device. */
+  implantAmount?: Paise | null;
+  implantLabel?: string;
 }): BillLine[] {
   const { procedure: p, hospital: h, roomClass, days } = args;
   const c = p.costs;
@@ -113,8 +116,14 @@ export function buildBill(args: {
     });
   }
 
-  if (c.implant) {
-    lines.push({ id: "implant", label: "Implant", kind: "implant", amount: c.implant });
+  const implantAmount = args.implantAmount !== undefined ? args.implantAmount : c.implant;
+  if (implantAmount) {
+    lines.push({
+      id: "implant",
+      label: args.implantLabel ?? "Implant",
+      kind: "implant",
+      amount: implantAmount,
+    });
   }
 
   if (c.otherIndependent > 0) {

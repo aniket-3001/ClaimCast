@@ -12,7 +12,7 @@ import { fmt, rupees as r } from "./money";
 import { ADMISSIONS, admission } from "../data/admissions";
 import { policy } from "../data/policies";
 import { HOSPITALS } from "../data/hospitals";
-import { evaluate, fixedRegardless, repair } from "./case";
+import { evaluate, fixedRegardless, repair, type CaseInput } from "./case";
 
 let failures = 0;
 
@@ -45,6 +45,32 @@ eq("  patient pays", semi.patientPays, r(48500));
 
 console.log("The figure on the deck");
 eq("  saved by moving one room class", priv.patientPays - semi.patientPays, r(78400));
+
+console.log("The two decisions added to the tree, on the same reference admission");
+{
+  const refInput: CaseInput = {
+    hospitalId: "h-meridian",
+    procedureId: "p-spine-fusion",
+    policyId: "pol-classic",
+    roomClass: "private",
+    route: "cashless",
+    days: 5,
+    icuDays: 0,
+    siUsed: 0,
+    implantId: "imported",
+    admittedInpatient: true,
+  };
+  const base = evaluate(repair(refInput));
+  const domestic = evaluate(repair({ ...refInput, implantId: "domestic" }));
+  const dayCare = evaluate(repair({ ...refInput, admittedInpatient: false }));
+
+  eq("  saved by the domestic implant", base.result.patientPays - domestic.result.patientPays, r(25000));
+  eq(
+    "  lost if billed as day-care instead of inpatient",
+    dayCare.result.patientPays - base.result.patientPays,
+    r(78400),
+  );
+}
 
 console.log("Invariants across all 16 admissions");
 for (const a of ADMISSIONS) {
@@ -87,6 +113,8 @@ console.log("\nThe claim the tree makes");
       days: 5,
       icuDays: 0,
       siUsed: 0,
+      implantId: "imported",
+      admittedInpatient: true,
     }),
   );
   const key = (e: ReturnType<typeof evaluate>) =>

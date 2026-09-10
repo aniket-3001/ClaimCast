@@ -59,8 +59,18 @@ export function adjudicate(args: {
   /** Sum insured already consumed this policy year. */
   siUsed?: Paise;
   repudiated?: { reason: string; clause: string } | null;
+  /**
+   * The stay did not clear the 24-hour inpatient definition. The hospital
+   * still billed the room, nursing and ICU charges — the patient was there,
+   * however briefly — but none of them were ever a valid inpatient claim, so
+   * they are refused in full rather than merely capped. Everything priced
+   * independently of the bed (diagnostics, pharmacy, implant, List I) is
+   * unaffected: the dispute is about the admission, not the treatment.
+   */
+  dayCareDowngrade?: boolean;
 }): Adjudication {
   const { lines, policy } = args;
+  const downgrade = args.dayCareDowngrade ?? false;
   const siUsed = args.siUsed ?? 0;
   const billTotal = lines.reduce((t, l) => t + l.amount, 0);
   const deductions: Deduction[] = [];
@@ -97,9 +107,25 @@ export function adjudicate(args: {
   const room = lines.find((l) => l.kind === "room");
   const charged = room?.perDay ?? 0;
 
+  if (downgrade) {
+    notes.push(
+      "Under 24 hours, and not on the day-care list: room, nursing and every room-linked charge are refused in full. Diagnostics, pharmacy, the implant and List I are unaffected.",
+    );
+  }
+
   // The room drives everything below it. Work the ratio out once.
   let roomRatio = 1;
-  if (room && roomCap !== null && charged > roomCap) {
+  if (downgrade) {
+    if (room) {
+      deductions.push({
+        lineId: room.id,
+        line: room.label,
+        amount: room.amount,
+        reason: "The stay did not reach 24 hours, so this was never a valid inpatient claim.",
+        clause: "DAY_CARE_DOWNGRADE",
+      });
+    }
+  } else if (room && roomCap !== null && charged > roomCap) {
     const eligible = roomCap * (room.days ?? 1);
     deductions.push({
       lineId: room.id,
@@ -118,6 +144,16 @@ export function adjudicate(args: {
         break;
 
       case "associated": {
+        if (downgrade) {
+          deductions.push({
+            lineId: l.id,
+            line: l.label,
+            amount: l.amount,
+            reason: "Priced by room category, and there was no valid inpatient stay to price it against.",
+            clause: "DAY_CARE_DOWNGRADE",
+          });
+          break;
+        }
         if (roomRatio === 1) break;
         const { drop } = ratioSplit(l.amount, roomRatio);
         deductions.push({
@@ -131,6 +167,16 @@ export function adjudicate(args: {
       }
 
       case "icu": {
+        if (downgrade) {
+          deductions.push({
+            lineId: l.id,
+            line: l.label,
+            amount: l.amount,
+            reason: "Intensive care is exempt from proportionate reduction, but still requires a valid inpatient claim.",
+            clause: "DAY_CARE_DOWNGRADE",
+          });
+          break;
+        }
         if (icuCap !== null && (l.perDay ?? 0) > icuCap) {
           deductions.push({
             lineId: l.id,

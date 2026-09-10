@@ -29,6 +29,8 @@ const cases: CaseInput[] = ADMISSIONS.map((a) => ({
   days: stayDays(a),
   icuDays: a.lines.find((l) => l.kind === "icu")?.days ?? 0,
   siUsed: a.siUsed ?? 0,
+  implantId: "",
+  admittedInpatient: true,
 }));
 // Every hospital against every policy, cheapest room, so no combination the
 // controls can reach goes unrendered.
@@ -43,6 +45,8 @@ for (const h of HOSPITALS)
       days: 3,
       icuDays: 1,
       siUsed: 0,
+      implantId: "",
+      admittedInpatient: n % 2 === 0,
     });
 
 let rendered = 0;

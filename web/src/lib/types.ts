@@ -96,6 +96,13 @@ export interface CostModel {
   outsideWindow: Paise;
 }
 
+/** One implant or consumable a procedure can be billed with. */
+export interface ImplantOption {
+  id: string;
+  label: string;
+  amount: Paise;
+}
+
 export interface Procedure {
   id: string;
   name: string;
@@ -107,6 +114,14 @@ export interface Procedure {
   dayCare: boolean;
   medianStayDays: number;
   usesImplant: boolean;
+  /**
+   * Alternatives to the device priced in `costs.implant`, where a choice
+   * genuinely exists — an imported device against a domestic-make one at the
+   * same clinical spec. Set only where `usesImplant` is true and a real
+   * substitute is on the market; `costs.implant` always equals one entry
+   * here, so the default case is unaffected by this list existing.
+   */
+  implantOptions?: ImplantOption[];
   /** Public reference rates, for the forecast band. */
   pmjayRate: Paise | null;
   cghsRate: Paise | null;

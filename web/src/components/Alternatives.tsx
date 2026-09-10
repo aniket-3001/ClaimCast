@@ -1,5 +1,12 @@
 import { fmt, signed } from "../lib/money";
-import { hospitalOptions, roomOptions, type CaseInput, type Evaluated, type Option } from "../lib/case";
+import {
+  hospitalOptions,
+  implantOptions,
+  roomOptions,
+  type CaseInput,
+  type Evaluated,
+  type Option,
+} from "../lib/case";
 
 /**
  * The same admission, counted again under every choice still available.
@@ -11,6 +18,7 @@ import { hospitalOptions, roomOptions, type CaseInput, type Evaluated, type Opti
 export function Alternatives({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput) => void }) {
   const rooms = roomOptions(e);
   const hospitals = hospitalOptions(e);
+  const implants = e.procedure.implantOptions ? implantOptions(e) : [];
 
   return (
     <>
@@ -33,6 +41,18 @@ export function Alternatives({ e, onPick }: { e: Evaluated; onPick: (next: CaseI
         </div>
         <Table options={hospitals} onPick={(o) => onPick(o.next)} />
       </section>
+
+      {implants.length > 0 && (
+        <section className="section">
+          <div className="section-head">
+            <h2>Every device on offer</h2>
+            <span className="aside">
+              Implant sub-limit {e.policy.implantSubLimit === null ? "none" : fmt(e.policy.implantSubLimit)}
+            </span>
+          </div>
+          <Table options={implants} onPick={(o) => onPick(o.next)} />
+        </section>
+      )}
     </>
   );
 }

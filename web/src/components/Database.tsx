@@ -102,6 +102,8 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                     days,
                     icuDays,
                     siUsed: a.siUsed ?? 0,
+                    implantId: "",
+                    admittedInpatient: true,
                   })
                 }
               >
