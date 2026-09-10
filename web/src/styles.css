@@ -51,26 +51,11 @@
     sans-serif;
   --serif: Georgia, "Iowan Old Style", "New York", Palatino, "Palatino Linotype", serif;
 
+  /* Light, whatever the machine is set to. The deck is light, the printed
+     props are light, and a demo laptop in dark mode should not silently
+     show the judges a different palette from the one on the screen behind
+     us. There is no dark variant on purpose. */
   color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #161513;
-    --surface: #1f1e1c;
-    --ink: #f4f2ef;
-    --ink-2: #b8b5b0;
-    --ink-3: #8d8a85;
-    --hair: #34322f;
-    --hair-2: #282724;
-    --accent: #6cb0ff;
-    --accent-pale: #2b4a6d;
-    --accent-wash: #1a222c;
-    --loss: #ff6b6b;
-    --paid: #3fbb87;
-    --warn: #e0a53a;
-    color-scheme: dark;
-  }
 }
 
 *,
