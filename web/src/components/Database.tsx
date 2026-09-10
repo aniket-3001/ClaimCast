@@ -71,9 +71,8 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
   return (
     <>
       <p className="lede">
-        Sixteen settled admissions. Each is here because of what it breaks: the room exactly at the
-        limit, the intensive-care stay nothing can be scaled against, the claim refused five hours
-        short of 24, the sum insured that ran out mid-year.
+        Sixteen settled admissions, each here for what it breaks. Open any row to carry it into
+        the forecast.
       </p>
       <div className="scroll">
         <table>
@@ -142,7 +141,6 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
           </tbody>
         </table>
       </div>
-      <p className="note">Open any row to carry it into the forecast.</p>
     </>
   );
 }
@@ -151,10 +149,8 @@ function Hospitals() {
   return (
     <>
       <p className="lede">
-        Ten hospitals across the three NHA city bands. Tariffs are per day. The clinical index is what
-        the building charges for the surgical work, nursing, diagnostics and pharmacy against a metro
-        corporate hospital at 1.00; it never touches the implant or the List I items. Settlement is
-        the observed median from discharge to money in the account on the reimbursement route.
+        Tariffs are per day. The clinical index prices everything that is not the room against a
+        metro corporate hospital at 1.00.
       </p>
       <div className="scroll">
         <table>
@@ -209,8 +205,8 @@ function Procedures() {
   return (
     <>
       <p className="lede">
-        Fourteen procedures with public reference rates alongside the private-sector spread. Codes and
-        rates follow the shape of the NHA and CGHS registries; the values are illustrative.
+        Public reference rates beside the private spread. Codes follow the NHA and CGHS registries;
+        values are illustrative.
       </p>
       <div className="scroll">
         <table>
@@ -259,8 +255,7 @@ function Policies() {
   return (
     <>
       <p className="lede">
-        Six policy structures. Insurer and product names are invented; every field is one that appears
-        on a real schedule.
+        Names are invented. Every field is one that appears on a real schedule.
       </p>
       <div className="scroll">
         <table>
@@ -319,8 +314,7 @@ function Lists() {
   return (
     <>
       <p className="lede">
-        IRDAI keeps four lists. Only the first is billed to the patient; the other three name charges
-        a hospital may not raise separately at all.
+        IRDAI keeps four lists. Only the first reaches the patient&rsquo;s bill.
       </p>
       <ul className="rows">
         {LIST_FRAMEWORK.map((l) => (
@@ -363,8 +357,7 @@ function Lists() {
           </table>
         </div>
         <p className="note">
-          None of this is affected by the room class, the sum insured or the claim route. It is the one
-          part of the bill no policy decision can move.
+          The one part of the bill no policy decision can move.
         </p>
       </section>
     </>
@@ -375,8 +368,7 @@ function Clauses() {
   return (
     <>
       <p className="lede">
-        Every deduction the engine makes names one of these. A number with no clause behind it does not
-        get to reduce a payout.
+        Every deduction names one of these. A number with no clause behind it cannot reduce a payout.
       </p>
       <ul className="rows">
         {Object.values(CLAUSES).map((c) => (

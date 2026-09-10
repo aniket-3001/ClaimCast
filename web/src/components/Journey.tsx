@@ -5,6 +5,7 @@ import {
   forecast,
   gate,
   journey,
+  schemeOptions,
   MATERIALITY,
   type Branch,
   type CaseInput,
@@ -16,11 +17,11 @@ import { CLAUSES } from "../data/clauses";
 /**
  * The admission as a path, not a form.
  *
- * Read top to bottom it is the order the decisions are actually faced, along
- * the care journey the deck sets out: whether this counts as hospitalisation
- * at all, then where and which bed at admission, then how the claim is made.
- * Every branch carries what the family would pay on that path — a full re-adjudication, not an adjustment — so choosing is a matter of
- * reading two numbers rather than trusting a recommendation.
+ * Read top to bottom it is the order the decisions are actually faced: how
+ * the admission gets paid for at all, whether it counts as hospitalisation,
+ * then where and which bed, then how the claim is made. Every branch carries
+ * what the family would pay on that path — a full re-adjudication, not an
+ * adjustment — so choosing is a matter of reading two numbers.
  */
 export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput) => void }) {
   const g = gate(e);
@@ -41,31 +42,26 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
         </div>
       </div>
 
+      <GovtFork e={e} />
+
       <Link />
 
-      {g.relevant && (
-        <>
-          <div className={`tgate ${g.passed ? "pass" : "fail"}`}>
-            <div className="tgate-q">{g.question}</div>
-            <div className="tgate-test">
-              {g.test} <span className="cite">{CLAUSES[g.clause].cite}</span>
-            </div>
-            <div className="tgate-verdict">{g.passed ? "Yes" : "No"}</div>
-            <div className="tgate-detail">{g.detail}</div>
-          </div>
+      <div className={`tgate ${g.passed ? "pass" : "fail"}`}>
+        <div className="tgate-q">{g.question}</div>
+        <div className="tgate-test">
+          {g.test} <span className="cite">{CLAUSES[g.clause].cite}</span>
+        </div>
+        <div className="tgate-verdict">{g.passed ? "Yes" : "No"}</div>
+        <div className="tgate-detail">{g.detail}</div>
+      </div>
 
-          <Link />
-        </>
-      )}
+      <Link />
 
       {!g.passed ? (
         <div className="tnode end refused">
           <div className="tnode-k">Nothing is payable</div>
           <div className="tnode-v loss">{fmt(r.billTotal)}</div>
-          <div className="tnode-sub">
-            The claim fails before any deduction is reached, so no choice further down the path
-            changes it. The whole bill is the family&rsquo;s.
-          </div>
+          <div className="tnode-sub">The claim fails before any deduction. The whole bill is the family&rsquo;s.</div>
         </div>
       ) : (
         <>
@@ -79,6 +75,7 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
 
           {fixedTotal > 0 && (
             <>
+              <div className="phase">Procedure</div>
               <div className="tnode fixed">
                 <div className="tnode-k">Refused whichever path you take</div>
                 <ul className="rows">
@@ -93,8 +90,8 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
                   ))}
                 </ul>
                 <div className="tnode-sub">
-                  These come off the procedure and the policy schedule, never off the room tariff.
-                  No cheaper bed and no other hospital moves them.
+                  These come off the procedure, never off the room tariff. No cheaper bed and no
+                  other hospital moves them.
                 </div>
               </div>
               <Link />
@@ -105,14 +102,67 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
             <div className="tnode-k">You pay</div>
             <div className="tnode-v loss">{fmt(r.patientPays)}</div>
             <div className="tnode-sub">
-              {fmt(f.low.patientPays)} – {fmt(f.high.patientPays)} once the clinical bill is known,
-              on a bill of {fmt(r.billTotal)}. The insurer pays {fmt(r.insurerPays)}.
+              {fmt(f.low.patientPays)} – {fmt(f.high.patientPays)} once the clinical bill is known.
+              The insurer pays {fmt(r.insurerPays)} of {fmt(r.billTotal)}.
             </div>
             <Split insurer={r.insurerPays} total={r.billTotal} patient={r.patientPays} />
           </div>
         </>
       )}
     </div>
+  );
+}
+
+/**
+ * The first fork, and the one nobody thinks to take.
+ *
+ * A government scheme is not a deduction and not a branch of the private
+ * claim: it is a different payer for the same admission, and a family takes
+ * one or the other, never both. So it sits above everything the policy does,
+ * and it appears only when someone is actually eligible — an empty fork on
+ * every case would be a tab in disguise.
+ */
+function GovtFork({ e }: { e: Evaluated }) {
+  const ways = schemeOptions(e).filter((s) => s.id === "private" || s.eligible);
+  if (ways.length < 2) return null;
+
+  const best = ways
+    .filter((s) => s.id !== "private")
+    .reduce((b, s) => (s.patientPays! < b.patientPays! ? s : b));
+  const saved = e.result.patientPays - best.patientPays!;
+
+  return (
+    <>
+      <Link />
+      <div className="fork">
+        <div className="fork-k">Who pays for this admission</div>
+        <div className="fork-v">
+          {saved > 0 ? (
+            <>
+              {best.label} would leave {fmt(best.patientPays!)} to find, not{" "}
+              {fmt(e.result.patientPays)}
+            </>
+          ) : (
+            <>The private policy is still the better of the paths open here</>
+          )}
+        </div>
+        <div className="fork-ways">
+          {ways.map((s) => (
+            <div key={s.id} className={`way ${s.id === best.id && saved > 0 ? "on" : ""}`}>
+              <span className="way-label">{s.label}</span>
+              {s.patientPays !== null && <span className="way-pay">{fmt(s.patientPays)}</span>}
+              <span className="way-note">
+                {s.detail} <span className="cite">{CLAUSES[s.clause].cite}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="tnode-sub" style={{ textAlign: "center" }}>
+          One path per admission &mdash; <span className="cite">{CLAUSES.SINGLE_CLAIM_PATH.cite}</span>. The
+          rest of this tree follows the private claim.
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -129,7 +179,7 @@ function StageBlock({ stage, onPick }: { stage: Stage; onPick: (next: CaseInput)
           <span className="stage-h">{stage.question}</span>
           <span className="stage-m">
             {stage.mechanic}
-            {stage.clause && <span className="cite"> {CLAUSES[stage.clause].cite}</span>}
+            {stage.clause && <span className="cite">{CLAUSES[stage.clause].cite}</span>}
           </span>
         </span>
       </div>
@@ -170,9 +220,6 @@ function BranchCard({
     >
       <span className="branch-label">{b.label}</span>
       <span className="branch-note">{b.blocked ?? b.note}</span>
-      {b.upfront !== undefined && !b.blocked && (
-        <span className="branch-upfront">Find on the day: {fmt(b.upfront)}</span>
-      )}
       {money && !b.blocked && (
         <>
           <span className="branch-pay">{fmt(b.patientPays)}</span>

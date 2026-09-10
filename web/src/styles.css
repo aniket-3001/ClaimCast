@@ -1,61 +1,70 @@
 /**
  * ClaimCast.
  *
- * The type, palette and layout primitives are carried over from OpenFloor:
- * light ground, editorial serif for headings, monospace for anything that is a
- * quantity, hairlines instead of boxes, one accent. The register suits this
- * better than a dashboard would — the page is a statement of account, and a
- * statement of account should look like one.
+ * The palette is the deck's, lifted from src/deckkit.py so the prototype and
+ * the slides cannot drift apart: GE HealthCare blue #005EB8 as the single
+ * accent, #1B1B1B ink, #55585A body, #C8102E for money the family loses and
+ * #00774F for money the insurer pays. Nothing else is coloured.
  *
- * The one addition is a second accent. Money the patient loses is the subject
- * of the page, so it gets the warm colour, and money the insurer pays gets the
- * cool one. Nothing else is coloured.
+ * The deck's typefaces too — Georgia for display, the system sans for body,
+ * which on Windows is Segoe UI, the deck's body face exactly. Quantities are
+ * always monospace and always tabular, so rupees line up without a table.
+ *
+ * Laid out for a laptop first: a 1080px measure, hairlines instead of boxes,
+ * and vertical rhythm tight enough that the tree reads without hunting for
+ * the number at the bottom of it.
  */
 
 :root {
-  --control-h: 40px;
+  --control-h: 34px;
+  --wrap: 1080px;
 
-  --bg: #fbfbfd;
+  --bg: #f6f7f9;
   --surface: #ffffff;
-  --ink: #1d1d1f;
-  --ink-2: #46464a;
-  --ink-3: #86868b;
-  --hair: #e3e3e6;
-  --hair-2: #f0f0f2;
+  --ink: #1b1b1b;
+  --ink-2: #55585a;
+  --ink-3: #6f7378;
+  --hair: #dce0e4;
+  --hair-2: #edeff1;
 
-  --accent: #1d1d1f;
-  --loss: #b8442e;
-  --paid: #1d7a4a;
+  /* The one accent, and the two money colours. */
+  --accent: #005eb8;
+  --accent-pale: #a9cbea;
+  --accent-wash: #eef4fb;
+  --loss: #c8102e;
+  --paid: #00774f;
   --warn: #9a6300;
-  --link: #005eb8;
 
   --num: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
-  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial,
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "SF Pro Text", Roboto, Helvetica, Arial,
     sans-serif;
-  --serif: "New York", "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+  --serif: Georgia, "Iowan Old Style", "New York", Palatino, "Palatino Linotype", serif;
 
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #000000;
-    --surface: #1c1c1e;
-    --ink: #f5f5f7;
-    --ink-2: #aeaeb2;
-    --ink-3: #8e8e93;
-    --hair: #2c2c2e;
-    --hair-2: #232325;
-    --accent: #f5f5f7;
-    --loss: #ff6b52;
-    --paid: #43c47c;
+    --bg: #131416;
+    --surface: #1c1e21;
+    --ink: #f2f3f5;
+    --ink-2: #b6babf;
+    --ink-3: #8b9096;
+    --hair: #303337;
+    --hair-2: #26282b;
+    --accent: #6cb0ff;
+    --accent-pale: #2b4a6d;
+    --accent-wash: #17222e;
+    --loss: #ff6b6b;
+    --paid: #3fbb87;
     --warn: #e0a53a;
-    --link: #6cb0ff;
     color-scheme: dark;
   }
 }
 
-* {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -68,16 +77,16 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--sans);
-  font-size: 14.5px;
+  font-size: 15px;
   line-height: 1.5;
-  letter-spacing: -0.006em;
+  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
 }
 
 .wrap {
-  max-width: 1020px;
+  max-width: var(--wrap);
   margin: 0 auto;
-  padding: 34px 24px 96px;
+  padding: 22px 28px 48px;
 }
 
 /* ── Masthead ───────────────────────────────────────────── */
@@ -86,21 +95,20 @@ body {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--hair);
+  gap: 16px;
+  padding-bottom: 14px;
   flex-wrap: wrap;
 }
 
 .brand {
   font-family: var(--serif);
   font-size: 25px;
-  letter-spacing: -0.015em;
   font-weight: 500;
+  letter-spacing: -0.015em;
 }
 
 .brand-sub {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--ink-3);
 }
 
@@ -108,24 +116,28 @@ body {
 
 .tabs {
   display: flex;
-  gap: 22px;
-  margin: 0 0 28px;
+  gap: 2px;
+  margin: 0 0 20px;
   border-bottom: 1px solid var(--hair);
   overflow-x: auto;
 }
 
 .tab {
   appearance: none;
+  border: none;
   background: none;
-  border: 0;
-  border-bottom: 2px solid transparent;
+  min-height: 0;
+  padding: 9px 14px;
   margin-bottom: -1px;
-  padding: 11px 0;
-  font: inherit;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  font-family: var(--sans);
   font-size: 14px;
+  font-weight: 500;
   color: var(--ink-3);
-  cursor: pointer;
   white-space: nowrap;
+  cursor: pointer;
+  transition: color 0.12s ease;
 }
 
 .tab:hover {
@@ -133,71 +145,187 @@ body {
 }
 
 .tab[aria-selected="true"] {
-  color: var(--ink);
-  font-weight: 550;
-  border-bottom-color: var(--ink);
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
 }
 
 /* ── Sections ───────────────────────────────────────────── */
 
 .section {
-  margin-top: 40px;
+  margin-top: 28px;
 }
 
 .section-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 10px;
-  margin-bottom: 6px;
+  gap: 14px;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
   border-bottom: 1px solid var(--hair);
   flex-wrap: wrap;
 }
 
 .section-head h2 {
   margin: 0;
-  font-size: 15px;
-  font-weight: 600;
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 500;
   letter-spacing: -0.01em;
 }
 
 .section-head .aside {
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--ink-3);
 }
 
 .eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.06em;
+  font-size: 10.5px;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--ink-3);
-  margin-bottom: 8px;
+  color: var(--accent);
+  font-weight: 600;
 }
 
 .note {
   font-size: 12.5px;
-  color: var(--ink-3);
-  margin-top: 10px;
   line-height: 1.55;
+  color: var(--ink-3);
+  max-width: 68ch;
 }
 
 .empty {
+  padding: 26px 0;
+  font-size: 13.5px;
   color: var(--ink-3);
-  font-size: 14px;
-  padding: 20px 0;
 }
 
-/* ── Controls ───────────────────────────────────────────── */
+.lede {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  max-width: 68ch;
+  margin: 0 0 14px;
+}
+
+/* ── The givens ─────────────────────────────────────────── */
+
+/*
+ * Not a form — a statement of what is already true, which happens to be
+ * editable. So the fields carry no boxes of their own: a small blue label
+ * over a plain value, divided by hairlines, in one strip. Every control is
+ * the same height whatever its type, which is what stops a select sitting a
+ * few pixels off the text inputs beside it.
+ */
+.givens {
+  display: flex;
+  flex-wrap: wrap;
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  background: var(--surface);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.given {
+  flex: 1 1 0;
+  min-width: 150px;
+  padding: 8px 14px 9px;
+  border-left: 1px solid var(--hair-2);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  justify-content: center;
+}
+
+.given:first-child {
+  border-left: none;
+}
+
+.given.wide {
+  flex: 2.2 1 0;
+  min-width: 200px;
+}
+
+.given.narrow {
+  flex: 0.65 1 0;
+  min-width: 96px;
+}
+
+/* Takes up the slack at the end of a short strip, so three fields do not
+   stretch to fill a laptop's width and lose their relationship to each
+   other. Empty on purpose. */
+.given.fill {
+  flex: 1.6 1 0;
+  min-width: 0;
+  border-left: none;
+}
+
+.given > label {
+  font-size: 10px;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* The value itself, whatever kind of control it happens to be. */
+.given > select,
+.given > input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  min-width: 0;
+  height: var(--control-h);
+  padding: 0 14px 0 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14.5px;
+  line-height: var(--control-h);
+  letter-spacing: -0.005em;
+  text-overflow: ellipsis;
+}
+
+.given > input[type="number"] {
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+  padding-right: 0;
+}
+
+.given > input::placeholder {
+  color: var(--ink-3);
+  opacity: 0.6;
+}
+
+/* A chevron, because a borderless select gives no other sign that it opens. */
+.given > select {
+  background-image: linear-gradient(45deg, transparent 50%, var(--ink-3) 50%),
+    linear-gradient(135deg, var(--ink-3) 50%, transparent 50%);
+  background-position: right 5px center, right 0 center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.given > select:focus-visible,
+.given > input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* ── Plain form controls ────────────────────────────────── */
 
 .controls {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px 18px;
-  padding: 20px;
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  border-radius: 12px;
+  margin-bottom: 20px;
 }
 
 .field {
@@ -208,84 +336,100 @@ body {
 }
 
 .field > label {
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: 10px;
+  letter-spacing: 0.075em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  font-weight: 600;
+  color: var(--accent);
 }
 
 select,
+input[type="text"],
 input[type="number"] {
-  font: inherit;
-  font-size: 13.5px;
-  min-height: var(--control-h);
   width: 100%;
-  padding: 8px 10px;
-  color: var(--ink);
-  background: var(--bg);
+  min-width: 0;
+  height: var(--control-h);
+  padding: 0 10px;
   border: 1px solid var(--hair);
   border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
 }
 
 input[type="number"] {
   font-family: var(--num);
+  font-variant-numeric: tabular-nums;
 }
 
-select:focus,
-input:focus {
-  outline: none;
-  border-color: var(--ink-3);
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
 }
 
 button {
-  font: inherit;
-  font-size: 13px;
-  min-height: 34px;
-  padding: 7px 14px;
-  color: var(--surface);
-  background: var(--accent);
-  border: 0;
+  appearance: none;
+  min-height: var(--control-h);
+  padding: 0 16px;
+  border: 1px solid var(--accent);
   border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 550;
   cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+
+button:hover:not(:disabled) {
+  opacity: 0.88;
 }
 
 button.quiet {
-  background: none;
+  background: var(--surface);
+  border-color: var(--hair);
   color: var(--ink);
-  border: 1px solid var(--hair);
 }
 
-button.quiet:hover {
-  border-color: var(--ink-3);
+button.quiet:hover:not(:disabled) {
+  background: var(--hair-2);
+  opacity: 1;
 }
 
 button:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
+  cursor: default;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ── The path ───────────────────────────────────────────── */
 
 /*
- * A flowchart drawn in CSS rather than SVG, so it reflows on a phone and the
- * branch cards stay real buttons. Connectors are pseudo-elements: a stem down
- * from each node, a horizontal bus spanning the centres of the outermost
- * branches, and a stub up from each branch to meet it. The path actually taken
- * is drawn heavier, everything else stays hairline.
+ * A flowchart drawn in CSS rather than SVG, so it reflows on a narrow screen
+ * and the branch cards stay real buttons. Connectors are pseudo-elements: a
+ * stem down from a node, a bus spanning the centres of the outermost
+ * branches, and a stub up from each branch to meet it. The path actually
+ * taken is drawn in the accent; everything else stays hairline.
  */
-
 .tree {
-  --gap: 12px;
+  --gap: 11px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  margin-top: 30px;
+  margin-top: 18px;
 }
 
 .tlink {
   align-self: center;
   width: 1px;
-  height: 22px;
+  height: 16px;
   background: var(--hair);
   flex: none;
 }
@@ -294,28 +438,29 @@ button:disabled {
   border: 1px solid var(--hair);
   border-radius: 12px;
   background: var(--surface);
-  padding: 18px 20px;
+  padding: 14px 18px;
   text-align: center;
 }
 
 .tnode-k {
-  font-size: 11.5px;
+  font-size: 10.5px;
   text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--ink-3);
+  letter-spacing: 0.085em;
+  font-weight: 600;
+  color: var(--accent);
 }
 
 .tnode-v {
   font-family: var(--serif);
-  font-size: 25px;
-  letter-spacing: -0.02em;
+  font-size: 23px;
+  letter-spacing: -0.015em;
   line-height: 1.15;
-  margin-top: 5px;
+  margin-top: 3px;
 }
 
 .tnode-v.loss {
   font-family: var(--num);
-  font-size: 36px;
+  font-size: 34px;
   font-weight: 500;
   letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
@@ -323,10 +468,10 @@ button:disabled {
 }
 
 .tnode-sub {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--ink-2);
-  margin: 7px auto 0;
-  max-width: 64ch;
+  margin: 5px auto 0;
+  max-width: 60ch;
 }
 
 .tnode.start {
@@ -342,48 +487,130 @@ button:disabled {
   border-color: var(--loss);
 }
 
-.tnode.end .split {
-  margin-top: 18px;
-}
-
 .tnode.fixed {
   text-align: left;
   background: var(--hair-2);
 }
 
 .tnode.fixed .rows {
-  margin: 12px 0 0;
+  margin-top: 8px;
 }
 
 .tnode.fixed .tnode-sub {
-  margin: 12px 0 0;
+  margin: 8px 0 0;
+  max-width: none;
 }
 
-/* The one true decision node: does this count as hospitalisation at all. */
+/* ── The government fork ────────────────────────────────── */
+
+/*
+ * A scheme is not a deduction and not a branch of the private claim — it is
+ * a different way of paying for the same admission, and a family takes one
+ * or the other, never both. So it sits on the tree as its own fork, above
+ * everything the policy does, and is coloured as a gain rather than a loss.
+ */
+.fork {
+  border: 1.5px solid var(--paid);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 14px 18px;
+}
+
+.fork-k {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.085em;
+  font-weight: 600;
+  color: var(--paid);
+  text-align: center;
+}
+
+.fork-v {
+  font-family: var(--serif);
+  font-size: 20px;
+  letter-spacing: -0.015em;
+  text-align: center;
+  margin-top: 3px;
+}
+
+.fork-ways {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.way {
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.way.on {
+  border-color: var(--paid);
+  border-width: 1.5px;
+  padding: 9.5px 11.5px;
+}
+
+.way.shut {
+  border-style: dashed;
+  opacity: 0.55;
+}
+
+.way-label {
+  font-size: 13.5px;
+  font-weight: 550;
+  line-height: 1.25;
+}
+
+.way-pay {
+  font-family: var(--num);
+  font-size: 16.5px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  margin-top: 3px;
+}
+
+.way.on .way-pay {
+  color: var(--paid);
+}
+
+.way-note {
+  font-size: 11px;
+  color: var(--ink-3);
+  line-height: 1.35;
+}
+
+/* ── The gate ───────────────────────────────────────────── */
+
 .tgate {
-  position: relative;
   align-self: center;
   width: 100%;
   max-width: 560px;
   text-align: center;
+  position: relative;
   border: 1px solid var(--hair);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--surface);
-  padding: 20px 22px 18px;
+  padding: 13px 18px;
 }
 
 .tgate::before {
   content: "";
   position: absolute;
-  top: -7px;
+  top: -6px;
   left: 50%;
-  width: 13px;
-  height: 13px;
-  margin-left: -7px;
+  margin-left: -5px;
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
   background: var(--surface);
   border-left: 1px solid var(--hair);
   border-top: 1px solid var(--hair);
-  transform: rotate(45deg);
 }
 
 .tgate.fail,
@@ -393,21 +620,21 @@ button:disabled {
 
 .tgate-q {
   font-family: var(--serif);
-  font-size: 19px;
+  font-size: 17px;
   letter-spacing: -0.01em;
 }
 
 .tgate-test {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--ink-3);
-  margin-top: 3px;
+  margin-top: 2px;
 }
 
 .tgate-verdict {
   font-family: var(--serif);
-  font-size: 30px;
-  letter-spacing: -0.02em;
-  margin-top: 10px;
+  font-size: 23px;
+  letter-spacing: -0.015em;
+  margin-top: 6px;
   line-height: 1;
 }
 
@@ -420,23 +647,24 @@ button:disabled {
 }
 
 .tgate-detail {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--ink-2);
-  margin-top: 6px;
+  margin-top: 4px;
 }
 
 /* Where on the care journey this sits. Emitted only when it changes, so the
    rail reads Admission → Investigation → Procedure rather than repeating. */
 .phase {
   align-self: center;
-  margin: 4px 0;
+  margin: 2px 0;
   padding: 3px 12px;
   border: 1px solid var(--hair);
   border-radius: 999px;
   background: var(--bg);
-  font-size: 10.5px;
+  font-size: 10px;
   letter-spacing: 0.09em;
   text-transform: uppercase;
+  font-weight: 600;
   color: var(--ink-3);
 }
 
@@ -449,24 +677,24 @@ button:disabled {
   align-self: center;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
   border: 1px solid var(--hair);
   border-radius: 999px;
   background: var(--surface);
-  padding: 8px 20px 8px 9px;
+  padding: 5px 18px 5px 6px;
 }
 
 .stage-n {
   flex: none;
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--ink);
-  color: var(--bg);
+  background: var(--accent);
+  color: #fff;
   display: grid;
   place-items: center;
   font-family: var(--num);
-  font-size: 12px;
+  font-size: 11.5px;
 }
 
 .stage-t {
@@ -478,12 +706,12 @@ button:disabled {
 
 .stage-h {
   font-family: var(--serif);
-  font-size: 17px;
+  font-size: 16px;
   letter-spacing: -0.01em;
 }
 
 .stage-m {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--ink-3);
 }
 
@@ -492,76 +720,65 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(var(--n), minmax(0, 1fr));
   gap: var(--gap);
-  padding: 18px 0;
+  padding: 14px 0;
 }
 
 /* Spans the centre of the first branch to the centre of the last, exactly. */
-.branches::before,
-.branches::after {
+.branches::before {
   content: "";
   position: absolute;
+  top: 0;
   left: calc((100% - (var(--n) - 1) * var(--gap)) / (var(--n) * 2));
   right: calc((100% - (var(--n) - 1) * var(--gap)) / (var(--n) * 2));
   height: 1px;
   background: var(--hair);
 }
 
-.branches::before {
-  top: 0;
-}
-
-.branches::after {
-  bottom: 0;
-}
-
 .branch {
   position: relative;
   appearance: none;
-  font: inherit;
-  color: var(--ink);
-  text-align: left;
-  cursor: pointer;
-  background: var(--surface);
-  border: 1px solid var(--hair);
-  border-radius: 11px;
-  padding: 13px 14px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  transition: border-color 0.12s ease;
-}
-
-.branch::before,
-.branch::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  width: 1px;
-  height: 18px;
-  background: var(--hair);
+  text-align: left;
+  padding: 11px 13px;
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 400;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
 }
 
 .branch::before {
-  top: -18px;
-}
-
-.branch::after {
-  top: 100%;
+  content: "";
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 1px;
+  height: 14px;
+  background: var(--hair);
 }
 
 .branch:hover:not(:disabled) {
-  border-color: var(--ink-2);
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  opacity: 1;
 }
 
 .branch.on {
-  border: 1.5px solid var(--ink);
-  padding: 12.5px 13.5px;
-  cursor: default;
+  border-color: var(--accent);
+  border-width: 1.5px;
+  padding: 10.5px 12.5px;
 }
 
-.branch.on::before,
-.branch.on::after {
-  background: var(--ink);
+.branch.on::before {
+  background: var(--accent);
   width: 2px;
   margin-left: -0.5px;
 }
@@ -573,36 +790,36 @@ button:disabled {
 }
 
 .branch-label {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 550;
   line-height: 1.25;
 }
 
 .branch-note {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--ink-3);
   line-height: 1.32;
 }
 
 .branch-pay {
   font-family: var(--num);
-  font-size: 17px;
+  font-size: 16.5px;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
-  margin-top: 7px;
+  margin-top: 4px;
 }
 
 .branch-upfront {
   font-family: var(--num);
-  font-size: 13px;
+  font-size: 12px;
   font-variant-numeric: tabular-nums;
-  color: var(--ink-2, var(--ink-3));
-  margin-top: 6px;
+  color: var(--ink-2);
+  margin-top: 3px;
 }
 
 .branch-delta {
   font-family: var(--num);
-  font-size: 11.5px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
   color: var(--ink-3);
 }
@@ -617,9 +834,9 @@ button:disabled {
 
 .stage-settled {
   align-self: center;
-  max-width: 62ch;
+  max-width: 60ch;
   text-align: center;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--ink-3);
 }
 
@@ -631,9 +848,7 @@ button:disabled {
   }
 
   .branches::before,
-  .branches::after,
-  .branch::before,
-  .branch::after {
+  .branch::before {
     display: none;
   }
 }
@@ -647,8 +862,8 @@ button:disabled {
 /* Two shares of one bill, drawn to scale. */
 .split {
   display: flex;
-  height: 8px;
-  margin-top: 22px;
+  height: 7px;
+  margin-top: 14px;
   border-radius: 4px;
   overflow: hidden;
   background: var(--hair-2);
@@ -676,9 +891,9 @@ button:disabled {
   align-items: baseline;
   justify-content: space-between;
   gap: 14px;
-  padding: 12px 0;
+  padding: 9px 0;
   border-bottom: 1px solid var(--hair-2);
-  font-size: 14px;
+  font-size: 13.5px;
 }
 
 .row:last-child {
@@ -711,30 +926,30 @@ button:disabled {
   border-top: 1px solid var(--hair);
   border-bottom: none;
   font-weight: 600;
-  padding-top: 14px;
+  padding-top: 11px;
 }
 
 .row-why {
   width: 100%;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--ink-2);
-  line-height: 1.5;
-  margin-top: 3px;
+  line-height: 1.45;
+  margin-top: 2px;
 }
 
 .cite {
   font-family: var(--num);
-  font-size: 11.5px;
-  color: var(--ink-3);
+  font-size: 11px;
+  color: var(--accent);
+  opacity: 0.85;
 }
 
-/* A citation that follows a sentence needs to visibly break from it, or a
-   run of tiny monospace text reads as a continuation of the same sentence
-   rather than a separate reference. */
+/* A citation that follows a sentence has to break from it, or a run of tiny
+   monospace reads as a continuation of the sentence rather than a source. */
 .stage-m .cite,
 .tgate-test .cite {
   display: block;
-  margin-top: 3px;
+  margin-top: 1px;
 }
 
 .stage-m .cite::before,
@@ -769,8 +984,8 @@ button:disabled {
 }
 
 .chip.here {
-  color: var(--ink);
-  border-color: var(--ink-3);
+  color: var(--accent);
+  border-color: var(--accent-pale);
 }
 
 /* Wide content scrolls inside itself. The page never scrolls sideways. */
@@ -781,23 +996,23 @@ button:disabled {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 
 th {
   text-align: left;
-  font-weight: 550;
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  font-size: 10px;
+  letter-spacing: 0.075em;
   text-transform: uppercase;
-  color: var(--ink-3);
-  padding: 10px 14px 10px 0;
+  color: var(--accent);
+  padding: 8px 14px 8px 0;
   border-bottom: 1px solid var(--hair);
   white-space: nowrap;
 }
 
 td {
-  padding: 11px 14px 11px 0;
+  padding: 9px 14px 9px 0;
   border-bottom: 1px solid var(--hair-2);
   vertical-align: top;
 }
@@ -811,12 +1026,12 @@ th.num {
 }
 
 th.num {
-  text-align: right;
+  font-family: var(--sans);
 }
 
 /* Only the last column sits flush with the table's right edge. Every other
    numeric column needs its own right padding, or it collides with the one
-   next to it. */
+   beside it. */
 td.num:last-child,
 th.num:last-child {
   padding-right: 0;
@@ -827,31 +1042,32 @@ tr.pick {
 }
 
 tr.pick:hover td {
-  background: var(--hair-2);
+  background: var(--accent-wash);
 }
 
 .sub {
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--ink-3);
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 /* ── Facts ──────────────────────────────────────────────── */
 
 .facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 18px 24px;
-  margin-top: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px 22px;
+  margin-top: 14px;
 }
 
 .fact .k {
   display: block;
-  font-size: 11px;
-  letter-spacing: 0.04em;
+  font-size: 10px;
+  letter-spacing: 0.075em;
   text-transform: uppercase;
-  color: var(--ink-3);
-  margin-bottom: 4px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 2px;
 }
 
 .fact .v {
@@ -867,14 +1083,14 @@ tr.pick:hover td {
 /* ── Callout ────────────────────────────────────────────── */
 
 .callout {
-  padding: 16px 18px;
-  margin-top: 20px;
+  padding: 12px 16px;
+  margin-top: 16px;
   background: var(--surface);
   border: 1px solid var(--hair);
   border-left: 2px solid var(--warn);
   border-radius: 10px;
-  font-size: 13.5px;
-  line-height: 1.6;
+  font-size: 13px;
+  line-height: 1.55;
   color: var(--ink-2);
 }
 
@@ -886,38 +1102,18 @@ tr.pick:hover td {
   border-left-color: var(--paid);
 }
 
-.govt-nudge {
-  display: block;
-  width: 100%;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-}
-
-.govt-nudge:hover {
-  background: var(--hair-2);
-}
-
 .callout h3 {
-  margin: 0 0 6px;
-  font-size: 14px;
+  margin: 0 0 4px;
+  font-size: 13.5px;
   font-weight: 600;
   color: var(--ink);
-}
-
-.lede {
-  font-size: 14.5px;
-  line-height: 1.6;
-  color: var(--ink-2);
-  max-width: 62ch;
-  margin: 0 0 18px;
 }
 
 /* ── Segmented control ──────────────────────────────────── */
 
 .seg {
   display: inline-flex;
-  gap: 4px;
+  gap: 3px;
   padding: 3px;
   background: var(--hair-2);
   border-radius: 9px;
@@ -926,24 +1122,31 @@ tr.pick:hover td {
 
 .seg button {
   background: none;
+  border: none;
   color: var(--ink-3);
-  min-height: 30px;
-  padding: 5px 12px;
+  min-height: 28px;
+  padding: 4px 12px;
   border-radius: 7px;
   font-size: 13px;
+  font-weight: 450;
+}
+
+.seg button:hover:not([aria-pressed="true"]) {
+  color: var(--ink);
+  opacity: 1;
 }
 
 .seg button[aria-pressed="true"] {
   background: var(--surface);
-  color: var(--ink);
-  font-weight: 550;
+  color: var(--accent);
+  font-weight: 600;
 }
 
 footer.foot {
-  margin-top: 72px;
-  padding-top: 18px;
+  margin-top: 44px;
+  padding-top: 13px;
   border-top: 1px solid var(--hair);
-  font-size: 12.5px;
+  font-size: 11.5px;
   color: var(--ink-3);
   display: flex;
   justify-content: space-between;
@@ -961,4 +1164,10 @@ footer.foot {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }

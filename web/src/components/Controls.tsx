@@ -6,9 +6,14 @@ import { POLICIES } from "../data/policies";
 /**
  * The givens.
  *
- * What is on this panel is not chosen — you have the policy you have and you
- * need the operation you need. The things that *are* chosen (where, how the
- * claim is made, which bed) belong on the tree, and appear nowhere here.
+ * What is on this strip is not chosen — you have the policy you have and you
+ * need the operation you need. The things that *are* chosen (where, which
+ * bed, how the claim is made) belong on the tree, and appear nowhere here.
+ *
+ * So it is drawn as one line of facts rather than a form: no boxes, no
+ * submit, just the case as it stands, divided by hairlines. It sits above
+ * every tab that reasons about this admission, which is why it has to read
+ * as a header rather than as something waiting to be filled in.
  */
 export function Controls({
   value,
@@ -20,8 +25,8 @@ export function Controls({
   const set = (patch: Partial<CaseInput>) => onChange({ ...value, ...patch });
 
   return (
-    <div className="controls">
-      <div className="field">
+    <div className="givens">
+      <div className="given wide">
         <label htmlFor="c-proc">Procedure</label>
         <select
           id="c-proc"
@@ -39,9 +44,13 @@ export function Controls({
         </select>
       </div>
 
-      <div className="field">
+      <div className="given wide">
         <label htmlFor="c-pol">Policy</label>
-        <select id="c-pol" value={value.policyId} onChange={(ev) => set({ policyId: ev.target.value })}>
+        <select
+          id="c-pol"
+          value={value.policyId}
+          onChange={(ev) => set({ policyId: ev.target.value })}
+        >
           {POLICIES.map((x) => (
             <option key={x.id} value={x.id}>
               {x.product} — {x.insurer}
@@ -50,8 +59,8 @@ export function Controls({
         </select>
       </div>
 
-      <div className="field">
-        <label htmlFor="c-days">Nights in hospital</label>
+      <div className="given narrow">
+        <label htmlFor="c-days">Nights</label>
         <input
           id="c-days"
           type="number"
@@ -62,8 +71,8 @@ export function Controls({
         />
       </div>
 
-      <div className="field">
-        <label htmlFor="c-icu">Of which in intensive care</label>
+      <div className="given narrow">
+        <label htmlFor="c-icu">In ICU</label>
         <input
           id="c-icu"
           type="number"
@@ -74,8 +83,8 @@ export function Controls({
         />
       </div>
 
-      <div className="field">
-        <label htmlFor="c-si">Sum insured already used</label>
+      <div className="given">
+        <label htmlFor="c-si">Sum insured used</label>
         <input
           id="c-si"
           type="number"

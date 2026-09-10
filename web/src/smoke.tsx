@@ -12,7 +12,6 @@ import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
-import { GovtSchemes } from "./components/GovtSchemes";
 import { Intake } from "./components/Intake";
 import { Database } from "./components/Database";
 import { ADMISSIONS, stayDays } from "./data/admissions";
@@ -64,7 +63,6 @@ for (const c of cases) {
   renderToString(<Journey e={e} onPick={noop} />);
   renderToString(<BillView e={e} />);
   renderToString(<Alternatives e={e} onPick={noop} />);
-  renderToString(<GovtSchemes e={e} onPick={noop} />);
   rendered++;
 }
 renderToString(

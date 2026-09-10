@@ -7,10 +7,11 @@ import { POLICIES } from "../data/policies";
 /**
  * The front door, not the engine.
  *
- * Nothing typed here is adjudicated — a name is not a clause. The one thing
- * that does feed the rest of the app is which policy is picked, because
- * that's the same choice Controls exposes elsewhere; this is just where a
- * family would naturally make it first, alongside the document that says so.
+ * Nothing typed here is adjudicated — a name is not a clause. Two things do
+ * feed the rest of the app: which policy is held, and the three facts about
+ * the patient that decide whether a government scheme is open to them. Both
+ * are asked here because this is where a family would say them first, and
+ * because they are facts rather than decisions.
  */
 export function Intake({
   input,
@@ -31,42 +32,38 @@ export function Intake({
 }) {
   const policy = POLICIES.find((p) => p.id === input.policyId)!;
   const [stage, setStage] = useState<"upload" | "extracting" | "confirmed">("upload");
-
-  const upload = () => {
-    setStage("extracting");
-    window.setTimeout(() => setStage("confirmed"), 900);
-  };
+  const set = (patch: Partial<CaseInput>) => onChange({ ...input, ...patch });
 
   return (
     <>
-      <div className="controls">
-        <div className="field">
+      <div className="givens">
+        <div className="given">
           <label htmlFor="i-name">Your name</label>
           <input
             id="i-name"
             type="text"
-            placeholder="Whoever is asking"
+            placeholder="Optional"
             value={name}
             onChange={(ev) => onName(ev.target.value)}
           />
         </div>
-        <div className="field">
-          <label htmlFor="i-policyholder">Policyholder&rsquo;s name</label>
+        <div className="given">
+          <label htmlFor="i-policyholder">Policyholder</label>
           <input
             id="i-policyholder"
             type="text"
-            placeholder="Whoever the policy is in"
+            placeholder="Optional"
             value={policyholder}
             onChange={(ev) => onPolicyholder(ev.target.value)}
           />
         </div>
-        <div className="field">
-          <label htmlFor="i-policy">Which policy do you hold</label>
+        <div className="given wide">
+          <label htmlFor="i-policy">Policy held</label>
           <select
             id="i-policy"
             value={input.policyId}
             onChange={(ev) => {
-              onChange({ ...input, policyId: ev.target.value });
+              set({ policyId: ev.target.value });
               setStage("upload");
             }}
           >
@@ -79,19 +76,66 @@ export function Intake({
         </div>
       </div>
 
+      {/* The three facts that decide whether a government scheme is open. They
+          are asked once, here, and answered on the tree — never as a tab of
+          their own, because a scheme is a way of paying, not a topic. */}
+      <div className="givens">
+        <div className="given narrow">
+          <label htmlFor="i-age">Patient&rsquo;s age</label>
+          <input
+            id="i-age"
+            type="number"
+            min={0}
+            max={120}
+            value={input.age}
+            onChange={(ev) => set({ age: clamp(ev.target.value, 0, 120) })}
+          />
+        </div>
+        <div className="given">
+          <label htmlFor="i-pmjay">PM-JAY card in the household</label>
+          <select
+            id="i-pmjay"
+            value={input.hasPmjayCard ? "yes" : "no"}
+            onChange={(ev) => set({ hasPmjayCard: ev.target.value === "yes" })}
+          >
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
+        <div className="given">
+          <label htmlFor="i-cghs">Central govt service or pension</label>
+          <select
+            id="i-cghs"
+            value={input.govtEmployeeOrPensioner ? "yes" : "no"}
+            onChange={(ev) => set({ govtEmployeeOrPensioner: ev.target.value === "yes" })}
+          >
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
+        <div className="given fill" aria-hidden="true" />
+      </div>
+
       <section className="section">
         <div className="section-head">
-          <h2>The document you have of it</h2>
+          <h2>Your policy schedule</h2>
           <span className="aside">Simulated for this demo</span>
         </div>
 
         {stage === "upload" && (
-          <div className="tnode start" style={{ cursor: "pointer" }} onClick={upload}>
-            <div className="tnode-k">Upload your policy schedule</div>
+          <div
+            className="tnode start"
+            style={{ cursor: "pointer" }}
+            onClick={() => {
+              setStage("extracting");
+              window.setTimeout(() => setStage("confirmed"), 900);
+            }}
+          >
+            <div className="tnode-k">Upload</div>
             <div className="tnode-v" style={{ fontSize: 20 }}>
               {policy.product}.pdf
             </div>
-            <div className="tnode-sub">Click to attach — any file works here, this step is staged for the demo.</div>
+            <div className="tnode-sub">Click to attach.</div>
           </div>
         )}
 
@@ -99,7 +143,7 @@ export function Intake({
           <div className="tnode start">
             <div className="tnode-k">Reading {policy.product}.pdf</div>
             <div className="tnode-v" style={{ fontSize: 20 }}>
-              Extracting the schedule…
+              Extracting the schedule&hellip;
             </div>
           </div>
         )}
@@ -107,11 +151,8 @@ export function Intake({
         {stage === "confirmed" && <ExtractedFields policy={policy} onConfirm={onContinue} />}
       </section>
 
-      <p className="note" style={{ marginTop: 18 }}>
-        In production, an LLM reads the uploaded PDF and cites the clause behind every field —
-        it only extracts, and every field is still confirmed by you, exactly like the fields below,
-        before it can change a rupee. That extraction step is next to build; what you're about to
-        see run is the real, deterministic engine.
+      <p className="note" style={{ marginTop: 16 }}>
+        The reader only extracts. Every field is confirmed by you before it can move a rupee.
       </p>
     </>
   );
@@ -127,15 +168,29 @@ const FIELDS: ExtractedField[] = [
   { label: "Sum insured", value: (p) => fmt(p.sumInsured), page: "Page 2 — Schedule of Benefits" },
   {
     label: "Room rent limit",
-    value: (p) => (p.roomCapPerDay ? `${fmt(p.roomCapPerDay)} / day` : p.roomCapPctOfSI ? `${pct(p.roomCapPctOfSI)} of sum insured` : "No limit"),
+    value: (p) =>
+      p.roomCapPerDay
+        ? `${fmt(p.roomCapPerDay)} / day`
+        : p.roomCapPctOfSI
+          ? `${pct(p.roomCapPctOfSI)} of sum insured`
+          : "No limit",
     page: "Page 3 — Clause 4.1",
   },
   {
     label: "ICU limit",
-    value: (p) => (p.icuCapPerDay ? `${fmt(p.icuCapPerDay)} / day` : p.icuCapPctOfSI ? `${pct(p.icuCapPctOfSI)} of sum insured` : "No limit"),
+    value: (p) =>
+      p.icuCapPerDay
+        ? `${fmt(p.icuCapPerDay)} / day`
+        : p.icuCapPctOfSI
+          ? `${pct(p.icuCapPctOfSI)} of sum insured`
+          : "No limit",
     page: "Page 3 — Clause 4.2",
   },
-  { label: "Co-payment", value: (p) => (p.copayPct ? pct(p.copayPct) : "None"), page: "Page 4 — Clause 6.1" },
+  {
+    label: "Co-payment",
+    value: (p) => (p.copayPct ? pct(p.copayPct) : "None"),
+    page: "Page 4 — Clause 6.1",
+  },
   {
     label: "Implant sub-limit",
     value: (p) => (p.implantSubLimit ? fmt(p.implantSubLimit) : "No sub-limit"),
@@ -146,13 +201,17 @@ const FIELDS: ExtractedField[] = [
     value: (p) => `${p.preHospDays} / ${p.postHospDays} days`,
     page: "Page 5 — Clause 7.1",
   },
-  { label: "Day-care procedures covered", value: (p) => (p.dayCareCovered ? "Yes" : "No"), page: "Page 2 — Clause 3.3" },
+  {
+    label: "Day-care procedures covered",
+    value: (p) => (p.dayCareCovered ? "Yes" : "No"),
+    page: "Page 2 — Clause 3.3",
+  },
 ];
 
 function ExtractedFields({ policy, onConfirm }: { policy: Policy; onConfirm: () => void }) {
   return (
     <div className="tnode fixed">
-      <div className="tnode-k">Extracted from the document — confirm each field</div>
+      <div className="tnode-k">Confirm each field</div>
       <ul className="rows">
         {FIELDS.map((f) => {
           const v = f.value(policy);
@@ -168,12 +227,12 @@ function ExtractedFields({ policy, onConfirm }: { policy: Policy; onConfirm: () 
           );
         })}
       </ul>
-      <div className="tnode-sub">
-        A misread field fails safe here — flagged for you, never silently applied.
-      </div>
       <button type="button" style={{ marginTop: 14 }} onClick={onConfirm}>
-        Confirm and continue to the claim
+        Confirm and continue
       </button>
     </div>
   );
 }
+
+const clamp = (raw: string, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, Math.round(Number(raw) || 0)));
