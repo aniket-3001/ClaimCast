@@ -39,8 +39,8 @@ early, so nobody mistakes them for real documents.
 > Before any of the arithmetic, this is where a real family would begin —
 > not a room, not a hospital, just: who are you, and what have you got.
 
-*(Type "Abhishek Jha" into "Your name" and "Policyholder's name" — the same
-name on the printed props, so the physical documents and the screen agree.)*
+*(Type "Abhishek Jha" into "Your name" and "Policyholder" — the same name
+on the printed props, so the physical documents and the screen agree.)*
 
 > I'll enter a name here — watch the header. *(point top-right, "For
 > Abhishek Jha")* That's not cosmetic dressing. Everything downstream is now built
@@ -53,7 +53,7 @@ name on the printed props, so the physical documents and the screen agree.)*
 > just tell the app which policy it is. *(select the policy dropdown — leave
 > it on Health Shield Classic)*
 
-*(Click the "Upload your policy schedule" box.)*
+*(Click the upload box under "Your policy schedule.")*
 
 > Now the document. *(click, wait ~1 second for "Extracting the
 > schedule…")* This step is staged for the demo — but every number it comes
@@ -144,34 +144,37 @@ name on the printed props, so the physical documents and the screen agree.)*
 
 ---
 
-### [CLICK "Government options" tab] — THE DISCOVERY MOMENT (2:45–3:30)
+### [BACK TO "Start", THEN "The path"] — THE DISCOVERY MOMENT (2:45–3:30)
 
-*(Click the tab. The three fields — age, PM-JAY card, CGHS — are all at
-their defaults: 45, No, No. Point at the four cards, all muted except the
-private policy.)*
+*(Click "Start." Point at the second strip of fields — age 45, PM-JAY card
+No, central government service No.)*
 
-> One more thing this admission is not the only path through. Ten seconds
-> ago you saw ₹1,26,900 out of pocket on the private policy. But that's one
-> option, not the only one — PM-JAY, CGHS, and something almost nobody's
-> heard of.
+> One more thing. This admission is not the only path through. Ten seconds
+> ago you saw ₹1,26,900 out of pocket on the private policy. That is one
+> way of paying for this operation, not the only one.
 
-*(Click into "Patient's age," clear it, type 72.)*
+*(Click into "Patient's age," clear it, type 72. Then click "The path.")*
 
-> Say this patient is 72. *(pause for the callout to appear)* Watch.
+> Say this patient is 72. Same hospital, same operation, same policy —
+> watch what appears at the top of the tree.
 
-*(Point at the green callout: "Eligible for Vay Vandana, on age alone.")*
+*(Point at the green fork that has appeared under the admission.)*
 
 > Ayushman Bharat Vay Vandana. Launched October 2024 — over a year old, and
-> most families still don't know it exists. Seventy or above, no income
+> most families still do not know it exists. Seventy or above, no income
 > test, no card required, ₹5 lakh a year, completely independent of the
-> private policy. *(point at the Vay Vandana card, now bold with ₹0)* Same
-> admission. Zero out of pocket. And it's sitting right there.
+> private policy. *(point at the Vay Vandana card, bold, ₹0)* Same
+> admission. Zero out of pocket. And it was sitting right there.
 
-*(Point at the note below the cards.)*
+*(Point at the line under the cards.)*
 
-> These don't stack — pick one path, like a single discount code, not two
-> combined. That's the honest constraint, and the app states it outright
-> rather than let a family assume they can double-claim.
+> One path per admission — these do not stack, like a single discount code
+> rather than two combined. That is the honest constraint, and the app
+> states it outright rather than let a family assume they can double-claim.
+
+> Notice where it is. Not a tab called "government schemes" that you have
+> to think to open — it is the first fork on the tree, and it only appears
+> when someone is actually eligible.
 
 ---
 
@@ -210,7 +213,7 @@ private policy.)*
   If you cut everything else for time, keep this one — it's the moment that
   makes a technical judge sit up.
 - **Don't reset the age back to 45 afterward** unless you have slack —
-  leaving the callout up going into the close is fine.
+  leaving the fork up going into the close is fine.
 - **If a judge asks to see it live on their laptop**, the setup dependency
   above applies — the dev server has to already be running.
 - **If you're short on time**, cut in this order: Database tab (3:30–3:45)
