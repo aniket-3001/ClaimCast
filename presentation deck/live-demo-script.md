@@ -94,7 +94,28 @@ line.)*
 
 ---
 
-### The close (2:15–3:00)
+### [OPTIONAL, +35s] Prove it, don't just say it (2:15–2:50)
+
+Only the tree and Start get clicked into above — "The working" and
+"Database" are asserted, never shown. If you have the room, this is where
+you back up "why believe it" with the two tabs nobody sees otherwise. If
+you don't, skip straight to the close below; the pitch survives without it.
+
+*(Click "The working." Scroll to the itemised bill.)*
+
+> I said arithmetic — here it is. *(point at a deduction row)* Every line,
+> every rupee refused, cited to the clause that refused it. Nothing on the
+> last screen was invented. It's read straight off this.
+
+*(Click "Database.")*
+
+> And it isn't built around one lucky example. Ten hospitals. Six real
+> policy structures. Sixteen admissions we test the engine against every
+> time the code changes. A system, not a trick.
+
+---
+
+### The close (2:15–3:00, or 2:50–3:35 with the optional beat above)
 
 > Every insurance app today does the same thing: it reads your policy back
 > to you in plain English. That's retrieval. It's not useless — it's just
@@ -114,10 +135,13 @@ line.)*
 
 Cut in this order — never past this list, never the two live moves:
 
-1. Drop the printed ID/policy card hold-up — mention them, don't show them.
-2. Shorten "why believe it" to one sentence: *"Every number is cited to a
+1. The optional "Prove it, don't just say it" beat isn't in the 3:00
+   budget to begin with — only add it if you have slack, and it's the
+   first thing to drop back out if you don't.
+2. Drop the printed ID/policy card hold-up — mention them, don't show them.
+3. Shorten "why believe it" to one sentence: *"Every number is cited to a
    clause — no model touches the money."*
-3. If truly desperate, cut the hook's second sentence and go straight to
+4. If truly desperate, cut the hook's second sentence and go straight to
    "We moved that letter to before the admission."
 
 Never cut: the implant click, the age-72 reveal, or the final three lines of
