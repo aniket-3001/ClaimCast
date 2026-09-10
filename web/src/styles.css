@@ -1,11 +1,12 @@
 /**
  * ClaimCast.
  *
- * Colour and type come from src/deckkit.py, so the prototype and the slides
- * cannot drift: GE HealthCare blue #005EB8 as the single accent, #1B1B1B
- * ink, #C8102E for money the family loses, #00774F for money the insurer
- * pays. The ground is a warm off-white rather than paper white, which is
- * what the deck sits on and what stops a projector glaring.
+ * Type comes from src/deckkit.py, and so does the structure of the palette:
+ * one accent, one colour for money the family loses, one for money the
+ * insurer pays. The app runs dark, so each of the deck's three is lifted to
+ * the version of itself that is legible on a near-black ground — the hue is
+ * the deck's, the lightness is not. The deck's own values (#005EB8, #C8102E,
+ * #00774F) stay on the slides, where they belong.
  *
  * The faces are the deck's too — Georgia for display, Segoe UI for body
  * (reached through the system-sans stack). Nothing else is available offline
@@ -27,35 +28,36 @@
   --control-h: 34px;
   --wrap: 1080px;
 
-  /* Off-white throughout. Nothing on the page is paper white: the ground is
-     the warmer of the two, the raised surfaces the lighter, and the step
-     between them is what separates a card from the page it sits on. */
-  --bg: #f0ece4;
-  --surface: #faf8f3;
-  --ink: #1b1b1b;
-  --ink-2: #55585a;
-  --ink-3: #767471;
-  --hair: #d6d1c8;
-  --hair-2: #e6e2d9;
+  /* Dark throughout. The ground is a warm near-black rather than pure black,
+     and the raised surfaces one step up from it; the step between the two is
+     what separates a card from the page it sits on. */
+  --bg: #161513;
+  --surface: #1f1e1c;
+  --ink: #f4f2ef;
+  --ink-2: #b8b5b0;
+  --ink-3: #8d8a85;
+  --hair: #34322f;
+  --hair-2: #282724;
 
-  /* The one accent, and the two money colours. */
-  --accent: #005eb8;
-  --accent-pale: #a9cbea;
-  --accent-wash: #edf3fa;
-  --loss: #c8102e;
-  --paid: #00774f;
-  --warn: #9a6300;
+  /* The one accent, and the two money colours. The deck's #005EB8 is too dark
+     to read on this ground, so each is lifted to its legible cousin and the
+     hue is kept. Text on a filled accent goes dark, not white. */
+  --accent: #6cb0ff;
+  --accent-pale: #2b4a6d;
+  --accent-wash: #1a222c;
+  --on-accent: #10161d;
+  --loss: #ff6b6b;
+  --paid: #3fbb87;
+  --warn: #e0a53a;
 
   --num: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "SF Pro Text", Roboto, Helvetica, Arial,
     sans-serif;
   --serif: Georgia, "Iowan Old Style", "New York", Palatino, "Palatino Linotype", serif;
 
-  /* Light, whatever the machine is set to. The deck is light, the printed
-     props are light, and a demo laptop in dark mode should not silently
-     show the judges a different palette from the one on the screen behind
-     us. There is no dark variant on purpose. */
-  color-scheme: light;
+  /* Dark whatever the machine is set to, so the demo looks the same on any
+     laptop it is plugged into. There is no light variant on purpose. */
+  color-scheme: dark;
 }
 
 *,
@@ -401,7 +403,7 @@ button {
   border: 1px solid var(--accent);
   border-radius: 8px;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-family: var(--sans);
   font-size: 15px;
   font-weight: 550;
@@ -789,7 +791,7 @@ button:focus-visible {
   height: 26px;
   border-radius: 50%;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   display: grid;
   place-items: center;
   font-family: var(--num);
