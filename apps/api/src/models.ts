@@ -197,7 +197,23 @@ export function chosen(): Chosen | null {
   // to confirm, and the difference in price between the two is under two rupees
   // per upload -- which is not a reason to use the weaker reader on a page of
   // sub-limits. GEMINI_MODEL switches to Flash where volume ever matters.
-  const geminiModel = process.env.GEMINI_MODEL ?? "gemini-2.5-pro";
+  //
+  // The default was gemini-2.5-pro until a key issued in September 2026 returned
+  // 404 on it: "no longer available to new users. Please update your code to use
+  // models/gemini-3.1-pro-preview". Older keys still resolve 2.5, so this is a
+  // per-key cutoff rather than a retirement, and the default has to be a name a
+  // key issued today can actually reach -- a default that 404s on every upload is
+  // not a default. The replacement Google itself names is the one used here.
+  //
+  // Note that this path is unproven end to end. Every model this key can list --
+  // 3.1-pro-preview, 3.5-flash, the later flashes -- answers 429 RESOURCE_EXHAUSTED
+  // with "Your prepayment credits are depleted", because the Gemini API bills
+  // through AI Studio prepay and is not covered by Google Cloud trial credit. The
+  // deployment therefore runs on Groq, which is why GROQ_API_KEY is the key in
+  // Secret Manager and GEMINI_API_KEY is not set there. Buying AI Studio credit is
+  // all that stands between this and a working Gemini path; nothing in the code is
+  // waiting on anything.
+  const geminiModel = process.env.GEMINI_MODEL ?? "gemini-3.1-pro-preview";
   const anthropicModel = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
   const groqModel = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
 
