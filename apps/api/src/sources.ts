@@ -116,6 +116,42 @@ export const SOURCES: SourceSeed[] = [
       "a test environment with its rate-list links disabled. The rates are real; the chain of " +
       "custody runs through a mirror, and that is what this caveat records.",
   },
+  // The two sources behind the cost model rather than behind a priced row. The
+  // forecast is not a rate, so nothing in TariffRate points at these; they are here
+  // because a figure shown to someone has to be traceable to a document whether it
+  // was looked up or estimated, and the Database tab is where that is read.
+  {
+    id: "nsso-75-health",
+    name: "NSS 75th Round, Household Social Consumption: Health (Key Indicators)",
+    publisher: "National Statistical Office, Ministry of Statistics and Programme Implementation",
+    url: "https://www.mospi.gov.in/sites/default/files/publication_reports/KI_Health_75th_Final.pdf",
+    checksum: "37da83c65ebf2b426d7a7d9eb31c204dd64a47991273b626466466690a631baf",
+    fetchedAt: new Date("2026-09-18T13:29:35Z"),
+    caveat: "A household survey, not a price list, and eight years old. Every figure is an " +
+      "average over a stratum -- a state, a sector, an ailment category -- and the report " +
+      "publishes no quantile of the patient-level distribution, so a band fitted to these " +
+      "cells describes the spread of average cost across strata and not the spread across " +
+      "patients. The public-hospital column is out-of-pocket spending at a government " +
+      "hospital, which is neither the CGHS rate nor the PM-JAY package price. Figures are " +
+      "July 2017 - June 2018 rupees and exclude hospitalisation for childbirth, transport " +
+      "to hospital, and food.",
+  },
+
+  {
+    id: "mospi-cpi-health",
+    name: "CPI Health sub-group index (base 2012=100)",
+    publisher: "Ministry of Statistics and Programme Implementation",
+    url: "https://www.mospi.gov.in/uploads/latestReleases/latest_release_1768213461321_53cd35fd-1bbc-4b43-b92d-8fb67474ee74_Press_Release_of_CPI_for_December_2025.pdf",
+    checksum: "e00e487b37b100055014a59929d3ecff13e461c13d009b022e0402c23d05c61e",
+    fetchedAt: new Date("2026-09-18T13:29:36Z"),
+    caveat: "Two monthly press releases, not a time series. The deflator is the ratio of the " +
+      "all-India combined Health sub-group index between January 2018 and December 2025, " +
+      "both read off base 2012=100. December 2025 is where it stops because the January " +
+      "2026 release rebased the series to 2024=100, and splicing the two needs a linking " +
+      "factor rather than a division. Every rupee the cost model states is therefore a " +
+      "December 2025 rupee, and is that much behind the present.",
+  },
+
   {
     id: "arogya-sanjeevani",
     name: "Arogya Sanjeevani standard product wording",
