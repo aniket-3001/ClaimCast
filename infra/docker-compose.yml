@@ -1,0 +1,23 @@
+# Local development stack. Ports are offset from the defaults so this cannot
+# collide with a Postgres someone already has running on their machine.
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: claimcast-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-claimcast}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-claimcast}
+      POSTGRES_DB: ${POSTGRES_DB:-claimcast}
+    ports:
+      - "${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - claimcast-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-claimcast} -d ${POSTGRES_DB:-claimcast}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  claimcast-pgdata:

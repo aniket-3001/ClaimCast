@@ -9,6 +9,12 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace @claimcast/web",
+    "api": "npm run dev --workspace @claimcast/api",
+    "db:up": "docker compose -f infra/docker-compose.yml up -d",
+    "db:down": "docker compose -f infra/docker-compose.yml down",
+    "db:migrate": "prisma migrate dev --schema apps/api/prisma/schema.prisma",
+    "db:seed": "npm run seed --workspace @claimcast/api",
+    "db:studio": "prisma studio --schema apps/api/prisma/schema.prisma",
     "build": "npm run build --workspace @claimcast/web",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "check": "npm run check --workspaces --if-present"

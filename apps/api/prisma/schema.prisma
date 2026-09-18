@@ -1,0 +1,380 @@
+// ClaimCast reference data.
+//
+// The shape follows packages/engine/src/types.ts closely, because the engine is
+// the consumer and a schema that drifts from it just means mapping code. One
+// thing types.ts has no reason to carry is added here: every row that carries a
+// price points at the Source it came from. A rate we cannot attribute is a rate
+// we cannot put in front of a judge, and making the relation required is how
+// that stays true under deadline pressure.
+//
+// Money is paise, as integers, everywhere. Postgres Int tops out around
+// 2.1 billion, which is 21.4 crore rupees — comfortably above any sum insured
+// or bill this system will see, and keeping it Int rather than BigInt is what
+// lets the engine read these values as plain JS numbers without conversion.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── Provenance ────────────────────────────────────────────────────────────
+
+/// Where a figure came from. One row per published document, so a rate can
+/// always be traced back to the exact file and the day it was fetched.
+model Source {
+  id        String   @id
+  name      String
+  publisher String
+  url       String
+  /// Of the downloaded file, so we can tell if the publisher revised it.
+  checksum  String?
+  fetchedAt DateTime
+  /// Set where the source is not yet verified, so unverified figures are
+  /// queryable rather than a thing someone has to remember.
+  caveat    String?
+
+  hospitals    Hospital[]
+  tariffRates  TariffRate[]
+  nonPayables  NonPayableItem[]
+  policies     Policy[]
+  clauses      Clause[]
+
+  @@map("sources")
+}
+
+// ── Reference data ────────────────────────────────────────────────────────
+
+enum CityTier {
+  X
+  Y
+  Z
+}
+
+enum RoomClass {
+  general
+  semi_private
+  private
+  deluxe
+  suite
+  icu
+}
+
+enum TariffScheme {
+  PMJAY
+  CGHS
+}
+
+enum IrdaiList {
+  I
+  II
+  III
+  IV
+}
+
+enum Route {
+  cashless
+  reimbursement
+}
+
+model Hospital {
+  id   String   @id
+  name String
+  city String
+  /// NHA city classification. Drives the CGHS rate band.
+  tier CityTier
+  beds Int
+
+  pmjayEmpanelled Boolean
+  cghsRateBand    CityTier?
+
+  /// Synthetic. No public source publishes what a named private hospital
+  /// charges per bed-day, so this and the room tariffs below are modelled,
+  /// not observed, and must stay labelled that way wherever they surface.
+  costIndex      Float
+  settlementDays Int
+  /// Median cashless pre-authorisation turnaround, in hours.
+  preAuthHours   Int?
+  flags          String[]
+
+  rooms   HospitalTariff[]
+  network HospitalNetwork[]
+
+  sourceId String
+  source   Source @relation(fields: [sourceId], references: [id])
+
+  admissions Admission[]
+
+  @@index([city])
+  @@map("hospitals")
+}
+
+/// Which insurers hold a cashless network agreement with this hospital.
+model HospitalNetwork {
+  hospitalId String
+  insurer    String
+  hospital   Hospital @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@id([hospitalId, insurer])
+  @@map("hospital_network")
+}
+
+model HospitalTariff {
+  hospitalId String
+  cls        RoomClass
+  /// Paise per day.
+  perDay     Int
+  hospital   Hospital  @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
+
+  @@id([hospitalId, cls])
+  @@map("hospital_tariffs")
+}
+
+model Procedure {
+  id        String  @id
+  name      String
+  /// PM-JAY Health Benefit Package code, where one exists.
+  hbpCode   String?
+  specialty String
+  /// True where the procedure sits on the policy's day-care list, so the
+  /// 24-hour in-patient rule does not apply.
+  dayCare        Boolean
+  medianStayDays Int
+  usesImplant    Boolean
+
+  /// Observed private-sector spread, before any room-class effect.
+  privateLow  Int
+  privateHigh Int
+
+  // Enough to rebuild a bill line by line. Flattened from CostModel, because
+  // a JSON blob here would not be queryable and these are the columns the ML
+  // service in Phase 4 needs to predict against.
+  surgical          Int
+  nursingPerDay     Int
+  icuPerDay         Int?
+  diagnostics       Int
+  pharmacyPerDay    Int
+  implant           Int?
+  otherIndependent  Int
+  nonPayableFixed   Int
+  nonPayablePerDay  Int
+  outsideWindow     Int
+
+  implantOptions ImplantOption[]
+  tariffRates    TariffRate[]
+  admissions     Admission[]
+
+  @@index([specialty])
+  @@map("procedures")
+}
+
+/// One device the procedure can be billed with, where a real choice exists
+/// between an imported part and a domestic one at the same clinical spec.
+model ImplantOption {
+  id          String
+  procedureId String
+  label       String
+  amount      Int
+  procedure   Procedure @relation(fields: [procedureId], references: [id], onDelete: Cascade)
+
+  @@id([procedureId, id])
+  @@map("implant_options")
+}
+
+/// A published government rate for a procedure. PM-JAY package rates are
+/// national; CGHS rates vary by city tier and by whether the hospital is
+/// NABH accredited, which is why this is a table and not two columns.
+model TariffRate {
+  id          String       @id @default(cuid())
+  procedureId String
+  scheme      TariffScheme
+  cityTier    CityTier?
+  nabh        Boolean?
+  /// Paise.
+  amount      Int
+  effectiveFrom DateTime
+
+  procedure Procedure @relation(fields: [procedureId], references: [id], onDelete: Cascade)
+  sourceId  String
+  source    Source    @relation(fields: [sourceId], references: [id])
+
+  @@unique([procedureId, scheme, cityTier, nabh, effectiveFrom])
+  @@map("tariff_rates")
+}
+
+model Policy {
+  id         String @id
+  insurer    String
+  product    String
+  sumInsured Int
+
+  /// Either an absolute figure or a percentage of sum insured. Where a policy
+  /// states both, the tighter binds — that arithmetic lives in the engine.
+  roomCapPerDay  Int?
+  roomCapPctOfSI Float?
+  icuCapPerDay   Int?
+  icuCapPctOfSI  Float?
+
+  /// Some products buy the clause out. When false, no scaling ever happens.
+  proportionateDeduction Boolean
+  copayPct               Float
+  implantSubLimit        Int?
+  preHospDays            Int
+  postHospDays           Int
+  dayCareCovered         Boolean
+
+  /// Months elapsed on this policy. Drives waiting periods and the moratorium.
+  monthsInForce    Int
+  pedWaitingMonths Int
+  moratoriumMonths Int
+  notes            String?
+
+  sourceId String
+  source   Source @relation(fields: [sourceId], references: [id])
+
+  admissions Admission[]
+  documents  PolicyDocument[]
+
+  @@map("policies")
+}
+
+/// A clause that can be cited as the cause of a deduction.
+model Clause {
+  id   String @id
+  cite String
+  text String
+  /// The engine's own one-line attribution, e.g. "IRDAI circular, 11 June 2020".
+  /// Kept verbatim beside the Source relation rather than derived from it, so a
+  /// round trip through the database returns the identical Clause object.
+  sourceText String
+  /// Deep link to the clause in the published document, where one exists.
+  url        String?
+
+  sourceId String
+  source   Source @relation(fields: [sourceId], references: [id])
+
+  @@map("clauses")
+}
+
+/// IRDAI Lists I-IV. List I is the one that matters most: items never payable
+/// under any policy, in any room.
+model NonPayableItem {
+  id    String    @id @default(cuid())
+  list  IrdaiList
+  /// The heading the published list files this item under.
+  group String
+  label String
+  /// Illustrative amount on a five-day metro admission, in paise. Modelled
+  /// from the item's nature, not published by IRDAI, which lists the items
+  /// without prices.
+  typical Int?
+
+  sourceId String
+  source   Source @relation(fields: [sourceId], references: [id])
+
+  @@unique([list, label])
+  @@map("non_payable_items")
+}
+
+/// What each of the four lists does. IRDAI publishes four; only List I costs
+/// the patient directly, and the other three are here because explaining why
+/// they do not is part of the answer.
+model IrdaiListInfo {
+  id     IrdaiList @id
+  title  String
+  effect String
+
+  @@map("irdai_lists")
+}
+
+/// A settled admission, kept as a reference case. Every one is synthetic and
+/// chosen for what it breaks — a room exactly at the sub-limit, a claim refused
+/// five hours short of twenty-four, a sum insured that ran out in March.
+model Admission {
+  id  String @id
+  /// Synthetic patient reference. No real person.
+  ref String
+
+  date        DateTime
+  hospitalId  String
+  procedureId String
+  policyId    String
+  roomClass   RoomClass
+  route       Route
+
+  /// Bill lines as stored, each already classified by LineKind. Kept as JSON
+  /// because these are a frozen historical record rather than something the
+  /// application edits, and normalising them would buy nothing.
+  lines Json
+
+  /// What made this record worth keeping in the reference set.
+  edgeCase String?
+  /// Sum insured already consumed this policy year, before this admission.
+  siUsed   Int?
+  /// Set where the claim was refused outright rather than reduced.
+  repudiatedReason String?
+  repudiatedClause String?
+
+  hospital  Hospital  @relation(fields: [hospitalId], references: [id])
+  procedure Procedure @relation(fields: [procedureId], references: [id])
+  policy    Policy    @relation(fields: [policyId], references: [id])
+
+  @@map("admissions")
+}
+
+// ── Application state ─────────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  cases     Case[]
+  documents PolicyDocument[]
+
+  @@map("users")
+}
+
+/// A forecast someone ran and kept. The input is stored rather than the
+/// output, so reopening a saved case re-adjudicates it with the current
+/// engine instead of showing a figure that may no longer be defensible.
+model Case {
+  id        String   @id @default(cuid())
+  userId    String?
+  input     Json
+  label     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("cases")
+}
+
+/// An uploaded policy schedule and what was extracted from it.
+///
+/// These are real people's financial documents. The file itself lives in
+/// object storage, never in this table; `confirmedAt` records the moment the
+/// user accepted the extraction, and nothing may reach the engine before it.
+model PolicyDocument {
+  id        String   @id @default(cuid())
+  userId    String?
+  policyId  String?
+  filename  String
+  storageKey String
+  /// Extracted fields, each with the verbatim span it came from.
+  extraction Json?
+  confirmedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  policy Policy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("policy_documents")
+}

@@ -41,6 +41,8 @@ every deduction cited to the clause that produced it.
 | `reference/` | The official PCC 2026 template and the Hospitality problem statement. |
 | `packages/engine/` | **The deterministic core.** Adjudication, bill assembly and the counterfactual solver. No I/O, no framework, no network. |
 | `apps/web/` | **The client.** The admission rendered as a path, not a form. |
+| `apps/api/` | **The server.** Postgres via Prisma, and the same engine, authoritative for anything persisted. |
+| `infra/` | Docker Compose for the local database. |
 
 **`ClaimCast.md` is the document to read.** It is written for someone who has never opened an
 Indian health-insurance policy: it defines every term before using it, works the proportionate
@@ -85,11 +87,18 @@ per click would destroy the interaction.
 
 ```powershell
 npm install
-npm run dev      # http://localhost:5174
+npm run db:up        # Postgres 16 on localhost:5434
+npm run db:migrate
+npm run db:seed
+npm run dev          # http://localhost:5174
 ```
 
 Still synthetic data at this stage: no real hospital, insurer, patient or bill appears
-anywhere in it.
+anywhere in it. Every priced row in the database points at the source it came from, and
+every one of those sources currently carries a caveat saying so — `sources.caveat` is a
+queryable column rather than a note in a file, because a figure whose provenance is weak
+has to be labelled wherever it surfaces. Phase 3 drops the caveats one published document
+at a time, as each is downloaded and checksummed.
 
 Four tabs over one shared admission. **Start** is the front door: who is asking, which policy they hold, the three facts that decide whether a government scheme is open to them, and the policy schedule read back field by field for confirmation. **The path** is the decision tree: the admission at the top, the government fork under it where one applies, then the 24-hour gate and the choices in the order they are faced along the care journey — where, which bed, which implant, how the claim is made — and under those the deductions no choice moves and the figure the family ends up paying. Every branch is a full re-adjudication, so the rupee figure under it is what would actually be paid on that path, not an adjustment applied to this one. **The working** is the same admission as arithmetic: the bill line by line with each deduction citing its clause, then every room class and every hospital in full. **Database** is what the system already knows — the ten hospitals, fourteen procedures, six policy structures, sixteen settled admissions, IRDAI Lists I-IV and the clause registry the engine draws on.
 
@@ -100,7 +109,11 @@ npm run typecheck
 npm run check    # engine reproduces the deck's figures; every tab renders on every case
 ```
 
-Both run across every workspace.
+Both run across every workspace. `npm run check` includes the database gate, which
+re-reads every reference record out of Postgres, deep-compares it against the fixtures it
+was seeded from, and re-adjudicates the reference admission from database rows alone — so
+it needs `npm run db:up` first and fails loudly rather than quietly skipping if the
+database is not there.
 
 `npm run check` is the guard on the deck. It asserts the rupee figures on slide 3 against the engine, so if the two ever disagree the build fails rather than the slide going out wrong.
 
