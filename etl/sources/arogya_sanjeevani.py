@@ -68,11 +68,21 @@ POLICY = {
     "dayCareCovered": True,
     "monthsInForce": 0,
     "pedWaitingMonths": 48,
-    "moratoriumMonths": 96,
+    # NOT from this circular. The Master Circular of 29 May 2024 supersedes the
+    # 2020 one and resets the moratorium to "60 months of continuous coverage",
+    # in its own words, so the eight years printed on page 107 below is no
+    # longer the live figure. The clause is still transcribed, because the app
+    # shows what the document said and this file's job is to be faithful to it;
+    # the Policy row carries the figure in force.
+    "moratoriumMonths": 60,
     "notes": (
         "Terms prescribed by IRDAI, not set by the insurer. Every figure here is "
-        "quoted from the Master Circular except the pre-existing waiting period, "
-        "which the product inherits from standard exclusion Excl01."
+        "quoted from the Master Circular of 22 July 2020 except two. The "
+        "pre-existing waiting period is inherited from standard exclusion Excl01, "
+        "which that section does not restate. The moratorium is 60 months, set by "
+        "the Master Circular of 29 May 2024, which supersedes the 2020 circular; "
+        "the standard products are expressly carried forward, so the product "
+        "stands while the document it was quoted from does not."
     ),
 }
 
@@ -203,7 +213,16 @@ def main() -> int:
             "publisher": "Insurance Regulatory and Development Authority of India",
             "url": download.url,
             "checksum": sha,
-            "caveat": None,
+            "caveat": (
+                "Superseded document, product still in force. The Master Circular of "
+                "29 May 2024 lists this circular in its Annexure-6 and supersedes it, "
+                "but carries the standard products forward expressly, so Arogya "
+                "Sanjeevani remains the mandated standard individual health product "
+                "and these are still its prescribed terms. One figure has moved since: "
+                "the moratorium is now 60 months, not eight years, and the Policy row "
+                "carries the current figure while the clause below quotes what this "
+                "document says."
+            ),
             "document": (
                 "IRDAI/HLT/REG/CIR/193/07/2020, 22 July 2020, Master Circular on "
                 "Standardization of Health Insurance Products."

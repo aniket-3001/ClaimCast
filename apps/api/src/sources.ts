@@ -106,24 +106,33 @@ export const SOURCES: SourceSeed[] = [
     checksum: "cdde737a8f562db8ce4749d9a4d34841cf382e813f48546a752cba45902cf2ee",
     fetchedAt: new Date("2026-09-18T11:22:16Z"),
     caveat:
-      "No caveat on the figures: the Master Circular of 22 July 2020 has been downloaded " +
-      "and checksummed, and every term of the Arogya Sanjeevani row -- room cap, ICU cap, " +
-      "co-pay, proportionate deduction, pre- and post-hospitalisation -- is quoted from it " +
-      "and verified against the page it cites. The one exception is the pre-existing " +
-      "waiting period of forty-eight months, which the section does not restate and which " +
-      "the product inherits from standard exclusion Excl01. Every other policy in this " +
-      "database remains an invented product carrying realistic terms.",
+      "Superseded document, product still in force. Every term of the Arogya Sanjeevani " +
+      "row -- room cap, ICU cap, co-pay, proportionate deduction, pre- and post-" +
+      "hospitalisation -- is quoted from the Master Circular of 22 July 2020, downloaded, " +
+      "checksummed and verified against the page it cites. That circular is listed in " +
+      "Annexure-6 of the Master Circular of 29 May 2024 and superseded by it, which " +
+      "carries the standard products forward expressly: Arogya Sanjeevani is still the " +
+      "mandated standard product and these are still its prescribed terms. Two figures " +
+      "come from elsewhere. The moratorium is 60 months, set by the 2024 circular, not " +
+      "the eight years this one prints. The pre-existing waiting period is inherited from " +
+      "standard exclusion Excl01 and is the one term here not yet re-verified against the " +
+      "2024 framework. Every other policy in this database is an invented product.",
   },
   {
     id: "irdai-master-circular-2024",
     name: "Master Circular on Health Insurance Business, 29 May 2024",
     publisher: "Insurance Regulatory and Development Authority of India",
-    url: "https://irdai.gov.in/",
-    checksum: null,
-    fetchedAt: ASSEMBLED,
+    url: "https://irdai.gov.in/document-detail?documentId=4942918",
+    checksum: "fdc70264ce307e0c0ead2de442881c907a03a638477c03a7aaf473d3cc139134",
+    fetchedAt: new Date("2026-09-18T13:05:00Z"),
     caveat:
-      "Cited from the research dossier. The circular consolidates the non-payable lists " +
-      "and the moratorium rule; the document has not yet been downloaded and checksummed.",
+      "Downloaded and checksummed, and it says less than we had assumed. The circular " +
+      "carries no non-payable lists at all -- it is process, turnaround times and filing " +
+      "forms -- so the lists in this database come from the Modification Guidelines of " +
+      "27 September 2019, which this circular does not repeal. What it does settle is the " +
+      "moratorium: 60 months of continuous coverage, in its own words, replacing the eight " +
+      "years the 2020 circular set. Its Annexure-6 supersedes forty-six circulars, one of " +
+      "which is the 2020 Master Circular on Standardization.",
   },
   {
     id: "irdai-standard-definitions",

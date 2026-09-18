@@ -24,6 +24,7 @@ import {
   LIST_I,
   POLICIES,
   PROCEDURES,
+  SUBSUMED_MODELLED,
 } from "@claimcast/engine/fixtures";
 import { CLAUSE_SOURCE, SOURCES } from "../src/sources.js";
 import { CGHS_MAP } from "./cghs-map.js";
@@ -300,9 +301,16 @@ async function main() {
       ),
     });
     await tx.nonPayableItem.createMany({
-      data: LIST_I.map((i) => ({
-        id: "modelled:I:" + i.item,
-        list: "I" as const,
+      data: [
+        ...LIST_I.map((i) => ({ ...i, list: "I" as const })),
+        // Filed where the 2019 guidelines file them, not where the app used to.
+        // These four are subsumed into the room rate, the procedure fee or the
+        // cost of treatment, so a separate line for them is the insurer's to
+        // refuse rather than the family's to pay.
+        ...SUBSUMED_MODELLED,
+      ].map((i) => ({
+        id: "modelled:" + i.list + ":" + i.item,
+        list: i.list,
         published: false,
         serial: null,
         label: i.item,

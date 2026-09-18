@@ -36,6 +36,30 @@
       "url": "https://irdai.gov.in/documents/37343/365525/Modification+Guidelines+on+Standardization+in+Health+Insurance.pdf/c11bdea3-aef4-b638-6501-296ccc372ef2?version=1.1&t=1665917813498&download=true"
     }
   },
+  "irdai-master-circular-2024": {
+    "master-circular-2024": {
+      "bytes": 962806,
+      "contentType": "application/pdf",
+      "fetchedAt": "2026-09-18T12:27:35Z",
+      "file": "raw/irdai-master-circular-2024/master-circular-2024.pdf",
+      "finalUrl": "https://irdai.gov.in/documents/37343/991022/%E0%A4%B8%E0%A5%8D%E0%A4%B5%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%A5%E0%A5%8D%E0%A4%AF+%E0%A4%AC%E0%A5%80%E0%A4%AE%E0%A4%BE+%E0%A4%B5%E0%A5%8D%E0%A4%AF%E0%A4%B5%E0%A4%B8%E0%A4%BE%E0%A4%AF+%E0%A4%AA%E0%A4%B0+%E0%A4%AE%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%9F%E0%A4%B0+%E0%A4%AA%E0%A4%B0%E0%A4%BF%E0%A4%AA%E0%A4%A4%E0%A5%8D%E0%A4%B0-%E0%A4%85%E0%A4%82%E0%A4%97%E0%A5%8D%E0%A4%B0%E0%A5%87%E0%A4%9C%E0%A5%80+_+Master+Circular+on+Health+Insurance+Business+-English.pdf/08a32828-dc1d-116f-0549-6db86d448651?version=1.0&t=1719833433399&download=true",
+      "note": "IRDAI/HLT/CIR/PRO/84/5/2024, 29 May 2024, Master Circular on Health Insurance Business, English text. Fetched alongside its annexure to read one thing in the document's own words: what Annexure-6 is a list of. Annexure-6 names the 2020 Master Circular on Standardization, which is where the Arogya Sanjeevani terms in this database are quoted from, so whether that list means 'repealed' or 'consolidated' decides how those clauses must be labelled.",
+      "sha256": "fdc70264ce307e0c0ead2de442881c907a03a638477c03a7aaf473d3cc139134",
+      "trustStore": "certifi",
+      "url": "https://irdai.gov.in/documents/37343/991022/%E0%A4%B8%E0%A5%8D%E0%A4%B5%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%A5%E0%A5%8D%E0%A4%AF+%E0%A4%AC%E0%A5%80%E0%A4%AE%E0%A4%BE+%E0%A4%B5%E0%A5%8D%E0%A4%AF%E0%A4%B5%E0%A4%B8%E0%A4%BE%E0%A4%AF+%E0%A4%AA%E0%A4%B0+%E0%A4%AE%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%9F%E0%A4%B0+%E0%A4%AA%E0%A4%B0%E0%A4%BF%E0%A4%AA%E0%A4%A4%E0%A5%8D%E0%A4%B0-%E0%A4%85%E0%A4%82%E0%A4%97%E0%A5%8D%E0%A4%B0%E0%A5%87%E0%A4%9C%E0%A5%80+_+Master+Circular+on+Health+Insurance+Business+-English.pdf/08a32828-dc1d-116f-0549-6db86d448651?version=1.0&t=1719833433399&download=true"
+    },
+    "master-circular-2024-annexure": {
+      "bytes": 1116975,
+      "contentType": "application/pdf",
+      "fetchedAt": "2026-09-18T12:26:16Z",
+      "file": "raw/irdai-master-circular-2024/master-circular-2024-annexure.pdf",
+      "finalUrl": "https://irdai.gov.in/documents/37343/991022/%E0%A4%B8%E0%A5%8D%E0%A4%B5%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%A5%E0%A5%8D%E0%A4%AF+%E0%A4%AC%E0%A5%80%E0%A4%AE%E0%A4%BE+%E0%A4%B5%E0%A5%8D%E0%A4%AF%E0%A4%B5%E0%A4%B8%E0%A4%BE%E0%A4%AF+%E0%A4%AA%E0%A4%B0+%E0%A4%AE%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%9F%E0%A4%B0+%E0%A4%AA%E0%A4%B0%E0%A4%BF%E0%A4%AA%E0%A4%A4%E0%A5%8D%E0%A4%B0+29052024+%E0%A4%95%E0%A4%BE+%E0%A4%85%E0%A4%A8%E0%A5%81%E0%A4%AC%E0%A4%82%E0%A4%A7+_+Annexure+to+Master+circualr+on+Health+Insurance+Business+29052024.pdf/e65501d8-2731-6f5c-aaed-658f961289e1?version=2.0&t=1717051485494&download=true",
+      "note": "Annexure to IRDAI/HLT/CIR/PRO/84/5/2024, 29 May 2024, the Master Circular on Health Insurance Business. The circular itself is process and turnaround times; this annexure is where the schedules live, including the current standing of the non-payable lists. Fetched to settle one question: ClaimCast's priced basket of items the family pays is attributed to this circular, but three of those items sit in Lists II and IV of the 2019 guidelines, which say the hospital may not bill them separately at all. Whichever way this document answers, the answer is load-bearing for a figure on screen.",
+      "sha256": "ad03b8c043227fb1e858c701084ecaf92059b1ec01f80c707101e3ade670e163",
+      "trustStore": "certifi",
+      "url": "https://irdai.gov.in/documents/37343/991022/%E0%A4%B8%E0%A5%8D%E0%A4%B5%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%A5%E0%A5%8D%E0%A4%AF+%E0%A4%AC%E0%A5%80%E0%A4%AE%E0%A4%BE+%E0%A4%B5%E0%A5%8D%E0%A4%AF%E0%A4%B5%E0%A4%B8%E0%A4%BE%E0%A4%AF+%E0%A4%AA%E0%A4%B0+%E0%A4%AE%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%9F%E0%A4%B0+%E0%A4%AA%E0%A4%B0%E0%A4%BF%E0%A4%AA%E0%A4%A4%E0%A5%8D%E0%A4%B0+29052024+%E0%A4%95%E0%A4%BE+%E0%A4%85%E0%A4%A8%E0%A5%81%E0%A4%AC%E0%A4%82%E0%A4%A7+_+Annexure+to+Master+circualr+on+Health+Insurance+Business+29052024.pdf/e65501d8-2731-6f5c-aaed-658f961289e1?version=2.0&t=1717051485494&download=true"
+    }
+  },
   "nha-hbp-2-2": {
     "hbp-2.2-user-guidelines": {
       "bytes": 7345416,

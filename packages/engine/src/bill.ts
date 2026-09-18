@@ -154,7 +154,7 @@ export function buildBill(args: {
       label: "Non-medical items (IRDAI List I)",
       kind: "non_payable",
       amount: nonPayable,
-      note: "Registration, documentation, toiletries, attendant meals, television.",
+      note: "Toiletries, attendant meals, television, telephone, laundry, carry bags.",
     });
   }
 

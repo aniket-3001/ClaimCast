@@ -85,6 +85,44 @@ DOWNLOADS: list[Download] = [
         ),
     ),
     Download(
+        key="master-circular-2024",
+        source_id="irdai-master-circular-2024",
+        url=(
+            "https://irdai.gov.in/documents/37343/991022/%E0%A4%B8%E0%A5%8D%E0%A4%B5%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%A5%E0%A5%8D%E0%A4%AF+%E0%A4%AC%E0%A5%80%E0%A4%AE%E0%A4%BE+%E0%A4%B5%E0%A5%8D%E0%A4%AF%E0%A4%B5%E0%A4%B8%E0%A4%BE%E0%A4%AF+%E0%A4%AA%E0%A4%B0+%E0%A4%AE%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%9F%E0%A4%B0+%E0%A4%AA%E0%A4%B0%E0%A4%BF%E0%A4%AA%E0%A4%A4%E0%A5%8D%E0%A4%B0-%E0%A4%85%E0%A4%82%E0%A4%97%E0%A5%8D%E0%A4%B0%E0%A5%87%E0%A4%9C%E0%A5%80+_+Master+Circular+on+Health+Insurance+Business+-English.pdf/08a32828-dc1d-116f-0549-6db86d448651?version=1.0&t=1719833433399&download=true"
+        ),
+        kind="pdf",
+        min_bytes=500_000,
+        note=(
+            "IRDAI/HLT/CIR/PRO/84/5/2024, 29 May 2024, Master Circular on Health "
+            "Insurance Business, English text. Fetched alongside its annexure to "
+            "read one thing in the document's own words: what Annexure-6 is a "
+            "list of. Annexure-6 names the 2020 Master Circular on "
+            "Standardization, which is where the Arogya Sanjeevani terms in this "
+            "database are quoted from, so whether that list means 'repealed' or "
+            "'consolidated' decides how those clauses must be labelled."
+        ),
+    ),
+    Download(
+        key="master-circular-2024-annexure",
+        source_id="irdai-master-circular-2024",
+        url=(
+            "https://irdai.gov.in/documents/37343/991022/%E0%A4%B8%E0%A5%8D%E0%A4%B5%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%A5%E0%A5%8D%E0%A4%AF+%E0%A4%AC%E0%A5%80%E0%A4%AE%E0%A4%BE+%E0%A4%B5%E0%A5%8D%E0%A4%AF%E0%A4%B5%E0%A4%B8%E0%A4%BE%E0%A4%AF+%E0%A4%AA%E0%A4%B0+%E0%A4%AE%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%9F%E0%A4%B0+%E0%A4%AA%E0%A4%B0%E0%A4%BF%E0%A4%AA%E0%A4%A4%E0%A5%8D%E0%A4%B0+29052024+%E0%A4%95%E0%A4%BE+%E0%A4%85%E0%A4%A8%E0%A5%81%E0%A4%AC%E0%A4%82%E0%A4%A7+_+Annexure+to+Master+circualr+on+Health+Insurance+Business+29052024.pdf/e65501d8-2731-6f5c-aaed-658f961289e1?version=2.0&t=1717051485494&download=true"
+        ),
+        kind="pdf",
+        min_bytes=800_000,
+        note=(
+            "Annexure to IRDAI/HLT/CIR/PRO/84/5/2024, 29 May 2024, the Master "
+            "Circular on Health Insurance Business. The circular itself is "
+            "process and turnaround times; this annexure is where the schedules "
+            "live, including the current standing of the non-payable lists. "
+            "Fetched to settle one question: ClaimCast's priced basket of items "
+            "the family pays is attributed to this circular, but three of those "
+            "items sit in Lists II and IV of the 2019 guidelines, which say the "
+            "hospital may not bill them separately at all. Whichever way this "
+            "document answers, the answer is load-bearing for a figure on screen."
+        ),
+    ),
+    Download(
         key="cghs-om-2025-10-03",
         source_id="cghs-rates",
         url=(

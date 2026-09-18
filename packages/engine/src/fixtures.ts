@@ -16,7 +16,7 @@
 import { ADMISSIONS } from "./data/admissions";
 import { CLAUSES } from "./data/clauses";
 import { HOSPITALS } from "./data/hospitals";
-import { LIST_FRAMEWORK, LIST_I } from "./data/lists";
+import { LIST_FRAMEWORK, LIST_I, SUBSUMED_MODELLED } from "./data/lists";
 import { POLICIES } from "./data/policies";
 import { PROCEDURES } from "./data/procedures";
 import type { Registry } from "./registry";
@@ -31,4 +31,13 @@ export const FIXTURES: Registry = {
   admissions: ADMISSIONS,
 };
 
-export { ADMISSIONS, CLAUSES, HOSPITALS, LIST_FRAMEWORK, LIST_I, POLICIES, PROCEDURES };
+export {
+  ADMISSIONS,
+  CLAUSES,
+  HOSPITALS,
+  LIST_FRAMEWORK,
+  LIST_I,
+  POLICIES,
+  PROCEDURES,
+  SUBSUMED_MODELLED,
+};

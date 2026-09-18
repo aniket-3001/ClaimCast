@@ -174,13 +174,20 @@ Two things stay explicitly simulated and are labelled so wherever they surface: 
 and `Hospital.costIndex`, because no public source gives what a named private hospital charges per
 bed-day; and the illustrative rupee amounts on the non-payables list.
 
-> **Open discrepancy.** Three items in that priced basket — admission and registration (₹2,500),
-> documentation and administrative charges (₹700) and visitor pass charges (₹400) — sit in Lists IV,
-> II and II respectively in the 2019 Modification Guidelines, the document actually in this
-> pipeline. Those lists say the hospital may *not* bill the item separately, which is close to the
-> opposite of the patient paying it. The basket is attributed to the 2024 Master Circular, which has
-> not been retrieved and may list them differently. Until that document is pulled and checksummed,
-> ₹3,600 of the patient figure rests on an unverified attribution.
+Four items the app used to show as List I are filed elsewhere by the live document: admission and
+registration in List IV, documentation and administrative charges and the visitor pass in List II,
+ward and theatre booking in List III. Those lists mean the charge is already inside the room rate or
+the procedure fee, so the hospital may not bill it separately — close to the opposite of the patient
+paying it. They are kept, on their correct lists, because a hospital billing one of them is the
+clearest example the app has of a charge the insurer should refuse. No adjudicated figure moved:
+the basket is a display total and was never in the arithmetic.
+
+Which document is live was checked rather than assumed. The Master Circular of 29 May 2024
+supersedes the forty-six circulars in its Annexure-6; the 2019 Modification Guidelines are not among
+them, and that circular carries no lists of its own. The 2020 Master Circular on Standardization
+*is* among them, so the Arogya Sanjeevani terms are quoted from a superseded document — the standard
+products are expressly carried forward, the product stands, and its source row says exactly that.
+One figure moved with the repeal: the moratorium is 60 months, not eight years.
 
 ---
 
