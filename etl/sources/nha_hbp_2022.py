@@ -73,6 +73,14 @@ TIERS = [("nrp", C_NRP), ("z", C_TIER3), ("y", C_TIER2), ("x", C_TIER1)]
 # The specialty behind each package code prefix. Written out by hand because the
 # document's own specialty columns are unreadable often enough to be useless,
 # and a wrong specialty here is ours rather than the NHA's.
+#
+# SC and SO are the pair to be careful with, and they were wrong here to begin
+# with. The two letters suggest the opposite of what the document does: SC holds
+# radical cystectomy and penile-preserving surgery, and SO holds hysterectomy,
+# caesarean section and normal delivery. The document's own column agrees --
+# SC024A is labelled "Surgical Oncology, Urology" and SO002A "Obstetrics &
+# Gynecology, Surgical Oncology" -- and SPECIALTY_EVIDENCE below holds it to
+# that, since the only thing that caught the swap was reading the packages.
 SPECIALTY = {
     "BM": "Burns Management",
     "ER": "Emergency Room Packages",
@@ -88,13 +96,13 @@ SPECIALTY = {
     "OT": "Organ and Tissue Transplant",
     "PM": "Palliative Medicine",
     "SB": "Orthopedics",
-    "SC": "Obstetrics and Gynecology",
+    "SC": "Surgical Oncology",
     "SE": "Ophthalmology",
     "SG": "General Surgery",
     "SL": "ENT",
     "SM": "Oral and Maxillofacial Surgery",
     "SN": "Neurosurgery",
-    "SO": "Surgical Oncology",
+    "SO": "Obstetrics and Gynecology",
     "SP": "Plastic and Reconstructive Surgery",
     "SS": "Pediatric Surgery",
     "ST": "Polytrauma",
@@ -265,6 +273,16 @@ def read_city_tiers(doc: fitz.Document) -> dict[str, list[str]]:
     return tiers
 
 
+# A package whose own row names its specialty, for the prefixes where the letters
+# invite the wrong guess. The phrase must appear on the page the package is on.
+SPECIALTY_EVIDENCE = [
+    ("SC024A", "Surgical Oncology"),
+    ("SO002A", "Obstetrics"),
+    ("SO057A", "Caesarean"),
+    ("SO074A", "Normal vaginal delivery"),
+]
+
+
 def verify(doc: fitz.Document, packages: list[dict]) -> None:
     problems = []
 
@@ -284,6 +302,19 @@ def verify(doc: fitz.Document, packages: list[dict]) -> None:
 
     by_code = {p["code"]: p for p in packages}
     pages = [squash(doc[p].get_text()) for p in range(doc.page_count)]
+    for code, phrase in SPECIALTY_EVIDENCE:
+        got = by_code.get(code)
+        if got is None:
+            problems.append(code + " is no longer in the document")
+            continue
+        page_text = pages[got["page"] - 1] if got["page"] <= len(pages) else ""
+        if squash(phrase).lower() not in page_text.lower():
+            problems.append(
+                code + " is filed under " + SPECIALTY[got["specialtyCode"]] + " but "
+                + repr(phrase) + " does not appear on its page " + str(got["page"])
+                + ", so the specialty map can no longer be checked against the document"
+            )
+
     for check in SPOT_CHECKS:
         got = by_code.get(check["code"])
         if got is None:
