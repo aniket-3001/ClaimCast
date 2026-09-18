@@ -60,6 +60,30 @@
       "url": "https://irdai.gov.in/documents/37343/991022/%E0%A4%B8%E0%A5%8D%E0%A4%B5%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%A5%E0%A5%8D%E0%A4%AF+%E0%A4%AC%E0%A5%80%E0%A4%AE%E0%A4%BE+%E0%A4%B5%E0%A5%8D%E0%A4%AF%E0%A4%B5%E0%A4%B8%E0%A4%BE%E0%A4%AF+%E0%A4%AA%E0%A4%B0+%E0%A4%AE%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%9F%E0%A4%B0+%E0%A4%AA%E0%A4%B0%E0%A4%BF%E0%A4%AA%E0%A4%A4%E0%A5%8D%E0%A4%B0+29052024+%E0%A4%95%E0%A4%BE+%E0%A4%85%E0%A4%A8%E0%A5%81%E0%A4%AC%E0%A4%82%E0%A4%A7+_+Annexure+to+Master+circualr+on+Health+Insurance+Business+29052024.pdf/e65501d8-2731-6f5c-aaed-658f961289e1?version=2.0&t=1717051485494&download=true"
     }
   },
+  "mospi-cpi-health": {
+    "cpi-2018-01": {
+      "bytes": 536916,
+      "contentType": "application/pdf",
+      "fetchedAt": "2026-09-18T13:29:36Z",
+      "file": "raw/mospi-cpi-health/cpi-2018-01.pdf",
+      "finalUrl": "https://www.mospi.gov.in/sites/default/files/press_release/CPI_PR_12feb18m.pdf",
+      "note": "CPI press release of 12 February 2018, carrying the January 2018 index. Annexure I gives sub-group 6.1.02 Health on base 2012=100. January 2018 is the month the NSS 75th round's field period straddles at its midpoint, so this is the deflator's near end.",
+      "sha256": "b35151ed85a83929fb1f80b7fc0404b77e6bac13873307fc18e6619b4a4daac6",
+      "trustStore": "certifi",
+      "url": "https://www.mospi.gov.in/sites/default/files/press_release/CPI_PR_12feb18m.pdf"
+    },
+    "cpi-2025-12": {
+      "bytes": 947686,
+      "contentType": "application/pdf",
+      "fetchedAt": "2026-09-18T13:29:36Z",
+      "file": "raw/mospi-cpi-health/cpi-2025-12.pdf",
+      "finalUrl": "https://www.mospi.gov.in/uploads/latestReleases/latest_release_1768213461321_53cd35fd-1bbc-4b43-b92d-8fb67474ee74_Press_Release_of_CPI_for_December_2025.pdf",
+      "note": "CPI press release of 12 January 2026, carrying the December 2025 index. This is the LAST month published on base 2012=100: the January 2026 release rebases the whole series to 2024=100, and splicing the two needs a linking factor MoSPI publishes separately. Stopping here keeps both ends of the deflator on one base and costs no assumption.",
+      "sha256": "e00e487b37b100055014a59929d3ecff13e461c13d009b022e0402c23d05c61e",
+      "trustStore": "certifi",
+      "url": "https://www.mospi.gov.in/uploads/latestReleases/latest_release_1768213461321_53cd35fd-1bbc-4b43-b92d-8fb67474ee74_Press_Release_of_CPI_for_December_2025.pdf"
+    }
+  },
   "nha-hbp-2-2": {
     "hbp-2.2-user-guidelines": {
       "bytes": 7345416,
@@ -84,6 +108,19 @@
       "sha256": "4f6ca823468c947449647fbea9cfd5876d1d4fee5d46f3fa27179397eeb953e4",
       "trustStore": "certifi",
       "url": "https://cdnbbsr.s3waas.gov.in/s3169779d3852b32ce8b1a1724dbf5217d/uploads/2024/06/20240619792610196.pdf"
+    }
+  },
+  "nsso-75-health": {
+    "ki-health-75th": {
+      "bytes": 4996088,
+      "contentType": "application/pdf",
+      "fetchedAt": "2026-09-18T13:29:35Z",
+      "file": "raw/nsso-75-health/ki-health-75th.pdf",
+      "finalUrl": "https://www.mospi.gov.in/sites/default/files/publication_reports/KI_Health_75th_Final.pdf",
+      "note": "NSS Report KI(75/25.0), Key Indicators of Social Consumption in India: Health, covering July 2017 - June 2018. Served by the issuing ministry itself, which is rare enough in this manifest to be worth recording. This is the only source in ClaimCast that says what Indian households actually paid a private hospital, and it is the calibration target for the cost model. It is a survey of households, not a tariff, and it reports means over strata rather than individual bills.",
+      "sha256": "37da83c65ebf2b426d7a7d9eb31c204dd64a47991273b626466466690a631baf",
+      "trustStore": "certifi",
+      "url": "https://www.mospi.gov.in/sites/default/files/publication_reports/KI_Health_75th_Final.pdf"
     }
   }
 }

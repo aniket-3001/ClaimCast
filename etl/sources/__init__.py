@@ -166,6 +166,56 @@ DOWNLOADS: list[Download] = [
             "that could be reached."
         ),
     ),
+    Download(
+        key="ki-health-75th",
+        source_id="nsso-75-health",
+        url=(
+            "https://www.mospi.gov.in/sites/default/files/publication_reports/"
+            "KI_Health_75th_Final.pdf"
+        ),
+        kind="pdf",
+        min_bytes=3_000_000,
+        note=(
+            "NSS Report KI(75/25.0), Key Indicators of Social Consumption in India: "
+            "Health, covering July 2017 - June 2018. Served by the issuing ministry "
+            "itself, which is rare enough in this manifest to be worth recording. "
+            "This is the only source in ClaimCast that says what Indian households "
+            "actually paid a private hospital, and it is the calibration target for "
+            "the cost model. It is a survey of households, not a tariff, and it "
+            "reports means over strata rather than individual bills."
+        ),
+    ),
+    Download(
+        key="cpi-2018-01",
+        source_id="mospi-cpi-health",
+        url="https://www.mospi.gov.in/sites/default/files/press_release/CPI_PR_12feb18m.pdf",
+        kind="pdf",
+        min_bytes=200_000,
+        note=(
+            "CPI press release of 12 February 2018, carrying the January 2018 index. "
+            "Annexure I gives sub-group 6.1.02 Health on base 2012=100. January 2018 "
+            "is the month the NSS 75th round's field period straddles at its midpoint, "
+            "so this is the deflator's near end."
+        ),
+    ),
+    Download(
+        key="cpi-2025-12",
+        source_id="mospi-cpi-health",
+        url=(
+            "https://www.mospi.gov.in/uploads/latestReleases/"
+            "latest_release_1768213461321_53cd35fd-1bbc-4b43-b92d-8fb67474ee74_"
+            "Press_Release_of_CPI_for_December_2025.pdf"
+        ),
+        kind="pdf",
+        min_bytes=500_000,
+        note=(
+            "CPI press release of 12 January 2026, carrying the December 2025 index. "
+            "This is the LAST month published on base 2012=100: the January 2026 "
+            "release rebases the whole series to 2024=100, and splicing the two needs "
+            "a linking factor MoSPI publishes separately. Stopping here keeps both "
+            "ends of the deflator on one base and costs no assumption."
+        ),
+    ),
 ]
 
 BY_SOURCE: dict[str, list[Download]] = {}

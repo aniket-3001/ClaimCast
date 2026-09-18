@@ -14,7 +14,15 @@ from __future__ import annotations
 
 import sys
 
-from etl.sources import arogya_sanjeevani, cghs_rates, irdai_lists, nha_hbp, nha_hbp_2022
+from etl.sources import (
+    arogya_sanjeevani,
+    cghs_rates,
+    irdai_lists,
+    mospi_cpi_health,
+    nha_hbp,
+    nha_hbp_2022,
+    nsso_75_health,
+)
 
 MODULES = [
     ("CGHS rates", cghs_rates),
@@ -22,6 +30,8 @@ MODULES = [
     ("PM-JAY scheme rules", nha_hbp),
     ("PM-JAY package master 2022", nha_hbp_2022),
     ("Arogya Sanjeevani", arogya_sanjeevani),
+    ("NSS 75th round health expenditure", nsso_75_health),
+    ("CPI health deflator", mospi_cpi_health),
 ]
 
 
