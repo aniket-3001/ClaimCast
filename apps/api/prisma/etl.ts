@@ -71,7 +71,55 @@ function read<T>(name: string): T {
   }
 }
 
+export interface IrdaiListItem {
+  serial: number;
+  label: string;
+}
+
+export interface IrdaiListsFile {
+  source: EtlSource;
+  note: string;
+  framework: { id: string; title: string; effect: string }[];
+  lists: Record<"I" | "II" | "III" | "IV", IrdaiListItem[]>;
+}
+
+export interface AsClause {
+  id: string;
+  cite: string;
+  text: string;
+  page: number;
+}
+
+export interface ArogyaFile {
+  source: EtlSource;
+  policy: {
+    id: string;
+    insurer: string;
+    product: string;
+    sumInsured: number;
+    sumInsuredMin: number;
+    sumInsuredMax: number;
+    roomCapPerDay: number;
+    roomCapPctOfSI: number;
+    icuCapPerDay: number;
+    icuCapPctOfSI: number;
+    proportionateDeduction: boolean;
+    copayPct: number;
+    implantSubLimit: number | null;
+    preHospDays: number;
+    postHospDays: number;
+    dayCareCovered: boolean;
+    monthsInForce: number;
+    pedWaitingMonths: number;
+    moratoriumMonths: number;
+    notes: string;
+  };
+  clauses: AsClause[];
+}
+
 export const cghs = () => read<CghsFile>("cghs-rates.json");
+export const irdaiLists = () => read<IrdaiListsFile>("irdai-lists.json");
+export const arogya = () => read<ArogyaFile>("arogya-sanjeevani.json");
 
 /**
  * The published Tier I semi-private rate, moved to another city tier.

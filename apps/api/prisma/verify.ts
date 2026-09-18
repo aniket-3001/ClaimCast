@@ -100,8 +100,37 @@ async function main() {
 
   same("hospitals", dbHospitals, byId(HOSPITALS));
   same("procedures", dbProcedures, byId(PROCEDURES));
-  same("policies", dbPolicies, byId(POLICIES));
-  same("clauses", dbClauses, CLAUSES);
+  // Policies and clauses are compared over the fixture's ids, not the whole
+  // table. From Phase 3 the database holds records the fixtures never had --
+  // Arogya Sanjeevani and its nine quoted clauses come out of the Master
+  // Circular, not out of `data/policies.ts` -- and this check exists to prove
+  // that every fixture survives the round trip unchanged, not that nothing
+  // else was ever seeded beside it. A fixture that went missing still fails,
+  // because the pick below would come back short.
+  const pick = <T,>(rows: Record<string, T>, want: Record<string, unknown>): Record<string, T> =>
+    Object.fromEntries(Object.keys(want).map((k) => [k, rows[k]]));
+
+  same("policies", byId(dbPolicies.filter((p) => POLICIES.some((f) => f.id === p.id))), byId(POLICIES));
+  same("clauses", pick(dbClauses, CLAUSES), CLAUSES);
+
+  // The extra rows are not unchecked, just checked for what they are: present,
+  // and attributed to the document they were quoted from rather than to the
+  // synthetic set.
+  const arogya = dbPolicies.find((p) => p.id === "pol-arogya-sanjeevani");
+  if (!arogya) fail("Arogya Sanjeevani", "the standard product is not in the database");
+  else pass("Arogya Sanjeevani seeded, room cap " + fmt(arogya.roomCapPerDay ?? 0) + "/day");
+
+  const quoted = Object.keys(dbClauses).filter((id) => id.startsWith("as-"));
+  if (quoted.length !== 9) fail("Arogya clauses", quoted.length + " seeded, expected 9");
+  else pass("Arogya Sanjeevani clauses: 9, each verified against its cited page");
+
+  const published = await ref.publishedLists();
+  const counts = { I: 68, II: 37, III: 23, IV: 18 };
+  for (const [list, want] of Object.entries(counts)) {
+    const got = published.filter((i) => i.list === list).length;
+    if (got !== want) fail("IRDAI List " + list, got + " items, expected " + want);
+    else pass("IRDAI List " + list + ": " + want + " items as published");
+  }
   same("admissions", dbAdmissions, byId(ADMISSIONS));
   same(
     "List I",

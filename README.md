@@ -163,11 +163,24 @@ rejects is retried once against the OS root store, and the manifest records whic
 | **IRDAI** Master Circular, 2020 | The **Arogya Sanjeevani** standard product — the one policy whose room cap, ICU cap, co-pay and proportionate-deduction rule are quotable rather than modelled. |
 | **NHA** HBP 2.2 | **Scheme rules and medical bed-day rates only.** The retrievable file is the User Guidelines, which references "Annexure 2: Packages and Rates" without containing it; no reachable NHA URL serves the package master. **No per-procedure PM-JAY figure in this repository is a published rate** — those are attributed to the synthetic set. |
 
+Published data and our own modelling are held apart rather than merged, in two places. Which CGHS
+code a procedure is priced against is a clinical-coding judgement, so it lives in
+`apps/api/prisma/cghs-map.ts` and never blurs into the published rate beside it. And
+`non_payable_items` carries both IRDAI's annexure verbatim and the priced basket the app adds up,
+separated by a `published` column — the priced rows are attributed to the synthetic set, because
+IRDAI named these items and did not price them.
+
 Two things stay explicitly simulated and are labelled so wherever they surface: per-hospital tariffs
 and `Hospital.costIndex`, because no public source gives what a named private hospital charges per
-bed-day; and the illustrative rupee amounts on the non-payables list. Deciding which CGHS code each
-procedure is priced against is ClaimCast's own clinical-coding judgement and is kept separately, in
-`apps/api/prisma/cghs-map.ts`, so it never blurs into the published rate beside it.
+bed-day; and the illustrative rupee amounts on the non-payables list.
+
+> **Open discrepancy.** Three items in that priced basket — admission and registration (₹2,500),
+> documentation and administrative charges (₹700) and visitor pass charges (₹400) — sit in Lists IV,
+> II and II respectively in the 2019 Modification Guidelines, the document actually in this
+> pipeline. Those lists say the hospital may *not* bill the item separately, which is close to the
+> opposite of the patient paying it. The basket is attributed to the 2024 Master Circular, which has
+> not been retrieved and may list them differently. Until that document is pulled and checksummed,
+> ₹3,600 of the patient figure rests on an unverified attribution.
 
 ---
 

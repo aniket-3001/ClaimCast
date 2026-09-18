@@ -144,12 +144,37 @@ export interface ListItemRow {
   typical: number;
 }
 
+/**
+ * The priced basket, not the published annexure.
+ *
+ * `non_payable_items` holds both: IRDAI's Annexure-I verbatim, and ClaimCast's
+ * modelled basket of what a five-day metro admission leaves the family paying.
+ * Only the modelled rows carry amounts -- IRDAI publishes item names and no
+ * prices -- so this is the side the screen adds up, and `published: false` is
+ * what selects it. Dropping that filter would pull in 146 unpriced rows and
+ * quietly report them as costing nothing.
+ */
 export async function listI(): Promise<ListItemRow[]> {
   const rows = await db.nonPayableItem.findMany({
-    where: { list: "I" },
+    where: { list: "I", published: false },
     orderBy: { id: "asc" },
   });
-  return rows.map((i) => ({ item: i.label, group: i.group, typical: i.typical ?? 0 }));
+  return rows.map((i) => ({ item: i.label, group: i.group ?? "", typical: i.typical ?? 0 }));
+}
+
+export interface PublishedListItemRow {
+  list: string;
+  serial: number;
+  label: string;
+}
+
+/** IRDAI's four lists as printed: every item, no prices, no groupings. */
+export async function publishedLists(): Promise<PublishedListItemRow[]> {
+  const rows = await db.nonPayableItem.findMany({
+    where: { published: true },
+    orderBy: [{ list: "asc" }, { serial: "asc" }],
+  });
+  return rows.map((i) => ({ list: i.list, serial: i.serial ?? 0, label: i.label }));
 }
 
 export async function listFramework() {

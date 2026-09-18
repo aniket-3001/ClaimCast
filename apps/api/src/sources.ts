@@ -102,15 +102,17 @@ export const SOURCES: SourceSeed[] = [
     id: "arogya-sanjeevani",
     name: "Arogya Sanjeevani standard product wording",
     publisher: "Insurance Regulatory and Development Authority of India",
-    url: "https://irdai.gov.in/documents/37343/366029/Master+Circular+on+Standardization+of+Health+Insurance+Products.pdf",
+    url: "https://irdai.gov.in/documents/37343/366029/Master+Circular+on+Standardization+of+Health+Insurance+Products.pdf/40548736-71a8-1b76-e28d-0df899407e1e?version=1.2&t=1665033878433&download=true",
     checksum: "cdde737a8f562db8ce4749d9a4d34841cf382e813f48546a752cba45902cf2ee",
     fetchedAt: new Date("2026-09-18T11:22:16Z"),
     caveat:
-      "The Master Circular of 22 July 2020 has been downloaded and checksummed, and the " +
-      "regulator-prescribed terms parsed out of it. The policies currently seeded are still " +
-      "invented products carrying realistic terms; the standard product itself, whose room " +
-      "cap, ICU cap, co-pay and proportionate-deduction rule are quotable rather than " +
-      "modelled, is built in etl/out/arogya-sanjeevani.json and is not yet seeded.",
+      "No caveat on the figures: the Master Circular of 22 July 2020 has been downloaded " +
+      "and checksummed, and every term of the Arogya Sanjeevani row -- room cap, ICU cap, " +
+      "co-pay, proportionate deduction, pre- and post-hospitalisation -- is quoted from it " +
+      "and verified against the page it cites. The one exception is the pre-existing " +
+      "waiting period of forty-eight months, which the section does not restate and which " +
+      "the product inherits from standard exclusion Excl01. Every other policy in this " +
+      "database remains an invented product carrying realistic terms.",
   },
   {
     id: "irdai-master-circular-2024",

@@ -27,7 +27,7 @@ import {
 } from "@claimcast/engine/fixtures";
 import { CLAUSE_SOURCE, SOURCES } from "../src/sources.js";
 import { CGHS_MAP } from "./cghs-map.js";
-import { atTier, cghs } from "./etl.js";
+import { arogya, atTier, cghs, irdaiLists } from "./etl.js";
 
 const db = new PrismaClient();
 
@@ -38,6 +38,8 @@ const SYNTHETIC = "claimcast-synthetic";
 const CGHS = cghs();
 const CGHS_BY_CODE = new Map(CGHS.rates.map((r) => [r.code, r]));
 const CGHS_EFFECTIVE = new Date(CGHS.source.effectiveFrom + "T00:00:00Z");
+const LISTS = irdaiLists();
+const AROGYA = arogya();
 
 async function main() {
   // Order matters: everything below points at a Source, and the child rows of
@@ -217,15 +219,96 @@ async function main() {
       await tx.clause.upsert({ where: { id: c.id }, create: { id: c.id, ...row }, update: row });
     }
 
-    await tx.nonPayableItem.deleteMany({ where: { list: "I" } });
+    // Arogya Sanjeevani, the one policy here whose terms are quoted rather
+    // than plausible. IRDAI prescribes them and an insurer may not vary them,
+    // so unlike every other row in `policies` this one points at a real
+    // document. The sum insured range the circular sets -- one lakh to five,
+    // in multiples of fifty thousand -- has no column on Policy, so it stays
+    // in `notes` rather than being dropped or invented into a field.
+    {
+      const pol = AROGYA.policy;
+      const row = {
+        insurer: pol.insurer,
+        product: pol.product,
+        sumInsured: pol.sumInsured,
+        roomCapPerDay: pol.roomCapPerDay,
+        roomCapPctOfSI: pol.roomCapPctOfSI,
+        icuCapPerDay: pol.icuCapPerDay,
+        icuCapPctOfSI: pol.icuCapPctOfSI,
+        proportionateDeduction: pol.proportionateDeduction,
+        copayPct: pol.copayPct,
+        implantSubLimit: pol.implantSubLimit,
+        preHospDays: pol.preHospDays,
+        postHospDays: pol.postHospDays,
+        dayCareCovered: pol.dayCareCovered,
+        monthsInForce: pol.monthsInForce,
+        pedWaitingMonths: pol.pedWaitingMonths,
+        moratoriumMonths: pol.moratoriumMonths,
+        notes:
+          pol.notes +
+          " Sum insured is issuable from Rs 1,00,000 to Rs 5,00,000 in multiples" +
+          " of fifty thousand; the figure seeded is the prescribed maximum.",
+        sourceId: AROGYA.source.id,
+      };
+      await tx.policy.upsert({
+        where: { id: pol.id },
+        create: { id: pol.id, ...row },
+        update: row,
+      });
+
+      for (const c of AROGYA.clauses) {
+        // `cite` is what the UI prints beside a deduction. `sourceText` is the
+        // one-line attribution, and for these it names the page, because the
+        // ETL verified each clause against that page at build time.
+        const clause = {
+          cite: c.cite,
+          sourceText: AROGYA.source.document + " Page " + c.page + ".",
+          text: c.text,
+          url: AROGYA.source.url,
+          sourceId: AROGYA.source.id,
+        };
+        await tx.clause.upsert({
+          where: { id: c.id },
+          create: { id: c.id, ...clause },
+          update: clause,
+        });
+      }
+    }
+
+    // Two kinds of row, kept apart by `published` and never blended.
+    //
+    // The published side is IRDAI's Annexure-I transcribed whole: all four
+    // lists, item names and serial numbers, no prices and no groupings,
+    // because IRDAI publishes none. The modelled side is ClaimCast's own
+    // basket of what a five-day metro admission actually leaves the family
+    // paying, and it carries the amounts. It is attributed to the synthetic
+    // source, not to IRDAI, for the same reason the PM-JAY rates are: the
+    // regulator named these items, it did not price them.
+    await tx.nonPayableItem.deleteMany({});
+    await tx.nonPayableItem.createMany({
+      data: (["I", "II", "III", "IV"] as const).flatMap((list) =>
+        LISTS.lists[list].map((i) => ({
+          id: list + ":" + i.serial,
+          list,
+          published: true,
+          serial: i.serial,
+          label: i.label,
+          group: null,
+          typical: null,
+          sourceId: "irdai-lists",
+        })),
+      ),
+    });
     await tx.nonPayableItem.createMany({
       data: LIST_I.map((i) => ({
-        id: "I:" + i.item,
+        id: "modelled:I:" + i.item,
         list: "I" as const,
-        group: i.group,
+        published: false,
+        serial: null,
         label: i.item,
+        group: i.group,
         typical: i.typical,
-        sourceId: "irdai-lists",
+        sourceId: SYNTHETIC,
       })),
     });
 
@@ -256,7 +339,8 @@ async function main() {
     ["tariff rates", await db.tariffRate.count()],
     ["policies", await db.policy.count()],
     ["clauses", await db.clause.count()],
-    ["list I items", await db.nonPayableItem.count()],
+    ["published items", await db.nonPayableItem.count({ where: { published: true } })],
+    ["modelled items", await db.nonPayableItem.count({ where: { published: false } })],
     ["admissions", await db.admission.count()],
   ];
   for (const [label, n] of counts) console.log("  " + label.padEnd(13) + n);

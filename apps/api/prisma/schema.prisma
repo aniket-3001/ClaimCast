@@ -262,20 +262,37 @@ model Clause {
 /// IRDAI Lists I-IV. List I is the one that matters most: items never payable
 /// under any policy, in any room.
 model NonPayableItem {
-  id    String    @id @default(cuid())
-  list  IrdaiList
-  /// The heading the published list files this item under.
-  group String
+  id   String    @id @default(cuid())
+  list IrdaiList
+
+  /// True for a row transcribed from the published annexure, false for a row
+  /// ClaimCast models. The table holds both on purpose and never blends them:
+  /// IRDAI publishes item names and nothing else, so a priced row cannot carry
+  /// the regulator's provenance. `published` is what keeps the two apart, and
+  /// `listI()` reads only the modelled side.
+  published Boolean @default(true)
+
+  /// Position in the published annexure. Set on published rows, null on
+  /// modelled ones, which are a basket rather than a numbered list.
+  serial Int?
+
+  /// The item name. On a published row this is verbatim, capitals and all. On
+  /// a modelled row it is ClaimCast's own sentence-case phrasing.
   label String
+
+  /// ClaimCast's grouping, for the screen that shows the basket. IRDAI files
+  /// its items under no headings at all, so this is null on published rows.
+  group String?
+
   /// Illustrative amount on a five-day metro admission, in paise. Modelled
-  /// from the item's nature, not published by IRDAI, which lists the items
-  /// without prices.
+  /// from the item's nature; IRDAI publishes no prices, so this is null on
+  /// every published row and the source of a priced row is never IRDAI.
   typical Int?
 
   sourceId String
   source   Source @relation(fields: [sourceId], references: [id])
 
-  @@unique([list, label])
+  @@unique([list, published, label])
   @@map("non_payable_items")
 }
 
