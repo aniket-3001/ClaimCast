@@ -29,3 +29,7 @@ venv/
 # Raw public datasets pulled by the ETL. Large, re-downloadable, and their
 # checksums are tracked in the manifest instead.
 etl/raw/
+
+# Encrypted policy uploads. Encrypted or not, someone's schedule does not belong
+# in a repository, and the retention sweep cannot delete what git is holding.
+apps/api/.vault/

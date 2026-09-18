@@ -283,3 +283,81 @@ export const ForecastResponseSchema = z.object({
 
 export type ForecastRequest = z.infer<typeof ForecastRequestSchema>;
 export type ForecastResponse = z.infer<typeof ForecastResponseSchema>;
+
+/* ---------------------------------------------------------------------------
+   Policy extraction.
+
+   A model reads the schedule; the user confirms it; the engine never sees an
+   unconfirmed value. That gate is the architectural promise on slide 5, and it
+   is only worth anything if the user is given something to check *against*.
+   Hence the span: every extracted field carries the verbatim run of text it was
+   read from, and the page it sits on.
+
+   The span is not decoration and it is not taken on trust. The server extracts
+   the document's own text, looks for the span in it, and sets `verified`. A
+   field whose citation cannot be found in the document is the exact shape a
+   fabricated figure takes, and it arrives on screen labelled as such rather
+   than sitting silently beside the ones that are real.
+   --------------------------------------------------------------------------- */
+
+/** The fields a schedule can be read for. Everything else on a Policy is an id or a note. */
+export const EXTRACTED_FIELDS = [
+  "insurer",
+  "product",
+  "sumInsured",
+  "roomCapPerDay",
+  "roomCapPctOfSI",
+  "icuCapPerDay",
+  "icuCapPctOfSI",
+  "proportionateDeduction",
+  "copayPct",
+  "implantSubLimit",
+  "preHospDays",
+  "postHospDays",
+  "dayCareCovered",
+  "monthsInForce",
+  "pedWaitingMonths",
+  "moratoriumMonths",
+] as const;
+
+export type ExtractedField = (typeof EXTRACTED_FIELDS)[number];
+
+export const SpanSchema = z.object({
+  /** Verbatim from the document. Paraphrase defeats the point of quoting. */
+  text: z.string().min(1),
+  page: z.number().int().min(1),
+});
+
+export const ExtractedValueSchema = z.object({
+  /**
+   * Paise for money, a fraction for a percentage, months for a duration, and
+   * null when the document does not say. Null is a real answer: a schedule
+   * states the policy year, not how long the cover has run, so `monthsInForce`
+   * is genuinely not in most of them.
+   */
+  value: z.union([z.number(), z.boolean(), z.string(), z.null()]),
+  span: SpanSchema.nullable(),
+  /** Why the field is absent. Required when there is no value, so a gap is explained. */
+  absent: z.string().nullable(),
+  /** Whether the span was found, character for character, in the document's own text. */
+  verified: z.boolean(),
+});
+
+export const ExtractionSchema = z.object({
+  documentId: z.string(),
+  filename: z.string(),
+  pages: z.number().int().min(1),
+  model: z.string(),
+  extractedAt: z.string(),
+  fields: z.record(z.enum(EXTRACTED_FIELDS), ExtractedValueSchema),
+  /**
+   * Fields the model returned a span for that is not in the document. Empty is
+   * the expected state; anything in it is the reader's business before they
+   * confirm, not a server log line.
+   */
+  unverified: z.array(z.string()),
+});
+
+export type Span = z.infer<typeof SpanSchema>;
+export type ExtractedValue = z.infer<typeof ExtractedValueSchema>;
+export type Extraction = z.infer<typeof ExtractionSchema>;

@@ -1440,3 +1440,39 @@ footer.foot {
   line-height: 1.6;
   color: var(--ink-3);
 }
+
+/* ---------------------------------------------------------------- extraction
+   A row of a read schedule carries its own quote, so it is taller than a
+   priced row and the citation wraps rather than truncating. A quote clipped
+   at the column edge would be unreadable exactly where the reader needs to
+   compare it against their own document. */
+.read-row {
+  align-items: flex-start;
+}
+.read-row .row-l {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  max-width: 78%;
+}
+.read-row .cite {
+  white-space: normal;
+  line-height: 1.45;
+}
+
+/* A citation that was not found in the document. It is coloured rather than
+   hidden: the value may still be right, and the reader is the one who gets to
+   decide that with the PDF in front of them. */
+.cite-bad {
+  color: var(--warn);
+}
+
+.warn-line {
+  margin: 10px 0 0;
+  padding: 9px 11px;
+  border: 1px solid var(--warn);
+  border-radius: 3px;
+  color: var(--warn);
+  font-size: 13px;
+  line-height: 1.5;
+}

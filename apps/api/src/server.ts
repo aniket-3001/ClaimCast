@@ -17,6 +17,7 @@
 import "dotenv/config";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import multipart from "@fastify/multipart";
 import { evaluate, repair, setRegistry, type Registry } from "@claimcast/engine";
 import {
   CaseInputSchema,
@@ -26,6 +27,8 @@ import {
   type ReferenceBundle,
 } from "@claimcast/contracts";
 import * as ref from "./reference.js";
+import * as vault from "./vault.js";
+import { extractPolicy } from "./extract.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -58,6 +61,18 @@ const ORIGINS = (process.env.WEB_ORIGIN ?? "")
 await app.register(cors, {
   origin: ORIGINS.length ? ORIGINS : false,
   methods: ["GET", "POST"],
+});
+
+/**
+ * One file, and not a large one.
+ *
+ * A policy schedule is a handful of pages. The ceiling is here rather than in
+ * the route because a limit enforced after the bytes have been read is not a
+ * limit — this one refuses the stream, so an oversized upload never reaches
+ * memory, the encryptor or the model.
+ */
+await app.register(multipart, {
+  limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 4 },
 });
 
 /**
@@ -241,15 +256,102 @@ app.post("/api/forecast", async (req, reply) => {
   return forecast.data;
 });
 
-/** Phase 5. Kept as a declared route so the shape is agreed before it is built. */
-app.post("/api/policies/extract", async (_req, reply) =>
-  reply.code(503).send({
-    error: "not built yet",
-    detail: "Policy extraction lands in Phase 5. Enter the schedule by hand until then.",
-  }),
-);
+/**
+ * Read a policy schedule.
+ *
+ * The response is a proposal, never a policy. Every field arrives with the span
+ * it was read from and a flag saying whether that span was found in the document
+ * itself; the client shows both and the user confirms field by field. Nothing
+ * here writes to `Policy`, and `confirmedAt` below is the only thing that marks
+ * an extraction as having been looked at by a person.
+ *
+ * The upload is encrypted before anything else touches it and deleted when its
+ * retention period runs out. Nothing about it is logged — not the filename, not
+ * a field, not a span — so a failure here is debugged from the status code and
+ * the caller's own copy of the file.
+ */
+app.post("/api/policies/extract", async (req, reply) => {
+  if (!vault.configured()) {
+    return reply.code(503).send({
+      error: "not configured",
+      detail:
+        "Uploads are encrypted at rest and DOCUMENT_ENCRYPTION_KEY is not set, so this server " +
+        "will not accept one. Enter the schedule by hand until it is.",
+    });
+  }
+
+  const part = await req.file();
+  if (!part) {
+    return reply.code(400).send({ error: "no file", detail: "Send the schedule as a file part." });
+  }
+
+  const bytes = await part.toBuffer();
+  // The declared content type is the uploader's claim; the first five bytes are
+  // the file's own. Both have to say PDF, because the model is about to be told
+  // this is a document and pdf.js is about to parse it.
+  if (part.mimetype !== "application/pdf" || bytes.subarray(0, 5).toString("latin1") !== "%PDF-") {
+    return reply.code(415).send({
+      error: "not a pdf",
+      detail: "Only a PDF policy schedule can be read here.",
+    });
+  }
+
+  // Stored first, and under a name this server chose. A schedule that arrives is
+  // encrypted before it is parsed, not after, so a failure in the middle of an
+  // extraction cannot leave a plaintext copy anywhere.
+  const storageKey = await vault.put(bytes);
+  const filename = (part.filename ?? "schedule.pdf").slice(0, 200);
+  const doc = await ref.db.policyDocument.create({ data: { filename, storageKey } });
+
+  try {
+    const { extraction } = await extractPolicy(bytes, filename, doc.id);
+    await ref.db.policyDocument.update({ where: { id: doc.id }, data: { extraction } });
+    return { documentId: doc.id, extraction };
+  } catch (e) {
+    // A document that produced nothing is a document there is no reason to keep.
+    await vault.drop(storageKey);
+    await ref.db.policyDocument.delete({ where: { id: doc.id } }).catch(() => {});
+    const raw = (e as { status?: unknown }).status;
+    const status = typeof raw === "number" ? raw : 502;
+    return reply.code(status).send({
+      error: "extraction failed",
+      detail:
+        status === 503
+          ? "The extraction service is not configured on this server. Enter the schedule by hand."
+          : "The schedule could not be read. Enter it by hand.",
+    });
+  }
+});
+
+/**
+ * The confirmation gate, recorded.
+ *
+ * `Intake.tsx` will not let an extracted value into the engine until the user
+ * has agreed to it, and this is where that agreement is written down. It is a
+ * separate request on purpose: the extraction and the confirmation are different
+ * acts by different parties, and a row that carried both in one write could not
+ * tell them apart afterwards.
+ */
+app.post("/api/policies/:id/confirm", async (req, reply) => {
+  const { id } = req.params as { id: string };
+  try {
+    const doc = await ref.db.policyDocument.update({
+      where: { id },
+      data: { confirmedAt: new Date() },
+    });
+    return { documentId: doc.id, confirmedAt: doc.confirmedAt };
+  } catch {
+    return reply.code(404).send({ error: "no such document" });
+  }
+});
 
 async function start() {
+  // Retention is enforced on every upload, which is no good to a server that has
+  // been idle since the last one. A boot is the other moment anything is
+  // guaranteed to run, so it runs here too.
+  const swept = await vault.sweep();
+  if (swept) app.log.info({ swept, retentionDays: vault.RETENTION }, "expired documents deleted");
+
   bundle = await loadReference();
   app.log.info(
     { hospitals: bundle.hospitals.length, sources: bundle.sources.length },
