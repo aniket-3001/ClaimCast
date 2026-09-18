@@ -19,6 +19,10 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import multipart from "@fastify/multipart";
+import fastifyStatic from "@fastify/static";
+import { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { evaluate, repair, setRegistry, type Registry } from "@claimcast/engine";
 import {
   CaseInputSchema,
@@ -461,6 +465,95 @@ app.get("/api/cases", async (req, reply) => {
   });
   return rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }));
 });
+
+/* ---------------------------------------------------------------------------
+ * The web app, served by the API that answers its calls.
+ *
+ * One origin, and that is the point. Served from somewhere else, the session
+ * cookie is a third-party cookie: it needs SameSite=None, it needs the CORS
+ * allow-list to name the exact origin with no trailing slash, and it is thrown
+ * away silently by the browsers that block third-party cookies by default. The
+ * symptom is not an error -- it is a new anonymous session on every request, so
+ * saved cases vanish and the screen looks like it lost the data rather than
+ * like a cookie was dropped. In front of a panel that is unrecoverable.
+ *
+ * Same origin removes the entire class: SameSite=Lax works, CORS is not
+ * consulted, and `VITE_API_URL` stays empty because "" already means same
+ * origin in `apps/web/src/api.ts`.
+ *
+ * Registered only when a build is actually present, so development is
+ * unaffected -- there Vite serves the app on its own port and proxies /api here.
+ * ------------------------------------------------------------------------- */
+
+const WEB_DIST =
+  process.env.WEB_DIST ??
+  join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "apps", "web", "dist");
+
+if (existsSync(join(WEB_DIST, "index.html"))) {
+  await app.register(fastifyStatic, {
+    root: WEB_DIST,
+    // The SPA fallback below owns unmatched paths. Left on, the plugin's own
+    // wildcard route answers first and a reload on /journey returns 404.
+    wildcard: false,
+    index: false,
+    setHeaders(res, path) {
+      // Vite fingerprints everything under /assets, so those filenames change
+      // whenever their contents do and can be cached indefinitely. index.html
+      // is the one file whose name never changes and whose job is to name the
+      // current bundle, so caching it is how a deploy fails to take effect.
+      if (path.includes("assets")) {
+        res.header("cache-control", "public, max-age=31536000, immutable");
+      } else {
+        res.header("cache-control", "no-cache");
+      }
+    },
+  });
+
+  /* The headers that used to be Firebase Hosting's job, now that nothing sits
+   * in front of this process. The policy is tight because it can be: the bundle
+   * loads no third-party script, no web font and no remote image, and it talks
+   * to exactly one origin -- its own.
+   *
+   * 'unsafe-inline' is present for styles and absent for scripts, which is the
+   * distinction that matters. Inline styles are how React applies a style prop;
+   * inline script is how an injected payload runs. */
+  const CSP = [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data:",
+    "font-src 'self' data:",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+  ].join("; ");
+
+  app.addHook("onSend", async (_req, reply, payload) => {
+    reply.header("content-security-policy", CSP);
+    reply.header("x-content-type-options", "nosniff");
+    reply.header("referrer-policy", "same-origin");
+    reply.header("x-frame-options", "DENY");
+    return payload;
+  });
+
+  /* A single-page app routes in the browser, so every one of its paths is a 404
+   * to the server. Handing back index.html lets the app route it. Anything
+   * under /api is a real route that really is missing, and must stay JSON:
+   * answering an API call with a page of HTML turns a clear 404 into a parse
+   * error somewhere else entirely. */
+  app.setNotFoundHandler((req, reply) => {
+    if (req.method !== "GET" || req.url.startsWith("/api/")) {
+      return reply.code(404).send({ error: "no such route" });
+    }
+    return reply.type("text/html").sendFile("index.html");
+  });
+
+  app.log.info({ root: WEB_DIST }, "serving the web bundle from this process");
+} else {
+  app.log.info("no web bundle found; serving the API only");
+}
 
 async function start() {
   // A missing session secret is a server that cannot tell its users apart. It
