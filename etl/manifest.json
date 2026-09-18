@@ -72,5 +72,18 @@
       "trustStore": "system:ca-bundle.crt",
       "url": "https://hem.nha.gov.in/HBP.pdf"
     }
+  },
+  "nha-hbp-2022": {
+    "hbp-2022-om": {
+      "bytes": 4640951,
+      "contentType": "application/pdf",
+      "fetchedAt": "2026-09-18T12:38:19Z",
+      "file": "raw/nha-hbp-2022/hbp-2022-om.pdf",
+      "finalUrl": "https://cdnbbsr.s3waas.gov.in/s3169779d3852b32ce8b1a1724dbf5217d/uploads/2024/06/20240619792610196.pdf",
+      "note": "MIRROR, NOT THE ISSUING AUTHORITY. The HBP 2022 Office Memorandum, National Health Authority: the package master the 2.2 User Guidelines reference as 'Annexure 2: Packages and Rates' and do not contain. 1,893 package codes with a National Reference Price and separate Tier 3, Tier 2 and Tier 1 prices, which is the same grid shape as the CGHS schedule. Served from the Haryana State Health Agency's copy on the NIC government CDN, because nha.gov.in answers every path with the same 3,843-byte HTML shell and pmjay.gov.in refuses the connection. Haryana republishes the national memorandum; it does not issue it, so the rates are real and the chain of custody runs through a state agency.",
+      "sha256": "4f6ca823468c947449647fbea9cfd5876d1d4fee5d46f3fa27179397eeb953e4",
+      "trustStore": "certifi",
+      "url": "https://cdnbbsr.s3waas.gov.in/s3169779d3852b32ce8b1a1724dbf5217d/uploads/2024/06/20240619792610196.pdf"
+    }
   }
 }
