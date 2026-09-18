@@ -161,11 +161,12 @@ rejects is retried once against the OS root store, and the manifest records whic
 | **CGHS** Office Memorandum, 3 Oct 2025 | **1,998 published rates**, non-NABH / NABH / super-speciality, fanned out across the three city tiers by the reductions the OM states. Retrieved from a Delhi Jal Board mirror — `cghs.gov.in` does not resolve and its replacement is banner-marked a test environment — so the rates are real and the chain of custody runs through a mirror. |
 | **IRDAI** Modification Guidelines, 2019 | **Lists I–IV verbatim**: 68, 37, 23 and 18 items. IRDAI names these items without pricing or grouping them, so every illustrative amount in the app is ClaimCast's modelling, not the regulator's. |
 | **IRDAI** Master Circular, 2020 | The **Arogya Sanjeevani** standard product — the one policy whose room cap, ICU cap, co-pay and proportionate-deduction rule are quotable rather than modelled. |
-| **NHA** HBP 2.2 | **Scheme rules and medical bed-day rates only.** The retrievable file is the User Guidelines, which references "Annexure 2: Packages and Rates" without containing it; no reachable NHA URL serves the package master. **No per-procedure PM-JAY figure in this repository is a published rate** — those are attributed to the synthetic set. |
+| **NHA** HBP 2.2 User Guidelines | **Scheme rules.** The ₹5,00,000 family cover, the ₹1,00,000 unspecified-procedure cap, and the rule that medical packages are priced by bed category times bed days. It references "Annexure 2: Packages and Rates" without containing it, and no NHA URL serves that annexure. |
+| **NHA** HBP 2022 Office Memorandum | **1,949 published package rates**, each with a National Reference Price and separate Tier 1, 2 and 3 prices, transcribed as printed — including the 246 rows whose tier prices do not follow the multipliers the rest of the document uses. 1,667 are priced per episode; 228 are medical admissions priced per bed-day, which is why `tariff_rates` carries a `basis` column. `nha.gov.in` answers every path with the same HTML shell and `pmjay.gov.in` refuses the connection, so this is the Haryana SHA's copy on the NIC government CDN: the national memorandum, through a state mirror. |
 
-Published data and our own modelling are held apart rather than merged, in two places. Which CGHS
-code a procedure is priced against is a clinical-coding judgement, so it lives in
-`apps/api/prisma/cghs-map.ts` and never blurs into the published rate beside it. And
+Published data and our own modelling are held apart rather than merged, in three places. Which CGHS
+or PM-JAY code a procedure is priced against is a clinical-coding judgement, so it lives in
+`apps/api/prisma/cghs-map.ts` and `hbp-map.ts` and never blurs into the published rate beside it. And
 `non_payable_items` carries both IRDAI's annexure verbatim and the priced basket the app adds up,
 separated by a `published` column — the priced rows are attributed to the synthetic set, because
 IRDAI named these items and did not price them.

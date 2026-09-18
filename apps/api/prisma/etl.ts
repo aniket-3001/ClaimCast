@@ -117,7 +117,50 @@ export interface ArogyaFile {
   clauses: AsClause[];
 }
 
+/** The four city tiers HBP 2022 prints, plus the national reference price. */
+export type HbpTier = "nrp" | "x" | "y" | "z";
+
+/**
+ * One package from the HBP 2022 master.
+ *
+ * `pricing` is a union because the document is: a surgical package carries one
+ * price per tier, a medical admission carries a per-day grid by bed category,
+ * and forty rows carry prose that is not a number at all. The parser refuses to
+ * flatten them, so this type refuses to as well.
+ */
+export type HbpPricing =
+  | { kind: "flat"; tiers: Record<HbpTier, number> }
+  | { kind: "perDay"; tiers: Record<HbpTier, number> }
+  | {
+      kind: "bedDay";
+      beds: { bed: string; label: string }[];
+      tiers: Record<HbpTier, Record<string, number>>;
+    }
+  | { kind: "asPrinted"; tiers: Record<HbpTier, string> };
+
+export interface HbpPackage {
+  code: string;
+  specialtyCode: string;
+  package: string;
+  procedure: string;
+  status: string;
+  implant: string | null;
+  stratified: boolean;
+  remarks: string | null;
+  page: number;
+  pricing: HbpPricing;
+}
+
+export interface Hbp2022File {
+  source: EtlSource;
+  note: string;
+  specialties: Record<string, string>;
+  cityTiers: { note: string; x: string[]; y: string[] };
+  packages: HbpPackage[];
+}
+
 export const cghs = () => read<CghsFile>("cghs-rates.json");
+export const hbp2022 = () => read<Hbp2022File>("nha-hbp-2022.json");
 export const irdaiLists = () => read<IrdaiListsFile>("irdai-lists.json");
 export const arogya = () => read<ArogyaFile>("arogya-sanjeevani.json");
 

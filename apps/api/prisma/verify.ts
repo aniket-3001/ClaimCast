@@ -131,6 +131,46 @@ async function main() {
     if (got !== want) fail("IRDAI List " + list, got + " items, expected " + want);
     else pass("IRDAI List " + list + ": " + want + " items as published");
   }
+  // PM-JAY rates, which came off a published document for the first time in
+  // Phase 3. The count is checked because the shape is easy to get wrong -- ten
+  // packages priced per episode across four tiers, plus three medical
+  // admissions priced per bed-day across four tiers and four bed categories --
+  // and the attribution is checked because that is the whole point of having
+  // fetched the thing. A PM-JAY rate still pointing at the synthetic set would
+  // mean the mapping silently fell through.
+  const pmjay = await ref.db.tariffRate.findMany({ where: { scheme: "PMJAY" } });
+  const perEpisode = pmjay.filter((t) => t.basis === "PACKAGE");
+  const perDay = pmjay.filter((t) => t.basis === "PER_DAY");
+  if (perEpisode.length !== 40) {
+    fail("PM-JAY package rates", perEpisode.length + " rows, expected 40");
+  } else {
+    pass("PM-JAY package rates: 10 procedures across 4 tiers, as published");
+  }
+  if (perDay.length !== 48) {
+    fail("PM-JAY bed-day rates", perDay.length + " rows, expected 48");
+  } else {
+    pass("PM-JAY bed-day rates: 3 medical admissions, 4 tiers, 4 bed categories");
+  }
+
+  const unattributed = pmjay.filter((t) => t.sourceId !== "nha-hbp-2022");
+  if (unattributed.length) {
+    fail(
+      "PM-JAY provenance",
+      unattributed.length + " rates are not attributed to the HBP 2022 package master",
+    );
+  } else {
+    pass("PM-JAY provenance: every rate cites the HBP 2022 Office Memorandum");
+  }
+
+  // One rate read off the document by hand, to catch a mapping that points at
+  // the wrong package without changing any count.
+  const cabg = perEpisode.find((t) => t.procedureId === "p-cabg" && t.cityTier === null);
+  if (cabg?.amount !== r(129910)) {
+    fail("PM-JAY SV004A", "CABG reference price is " + fmt(cabg?.amount ?? 0) + ", expected ₹1,29,910");
+  } else {
+    pass("PM-JAY SV004A: CABG at its published reference price, ₹1,29,910");
+  }
+
   same("admissions", dbAdmissions, byId(ADMISSIONS));
   same(
     "List I",

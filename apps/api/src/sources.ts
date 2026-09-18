@@ -74,14 +74,32 @@ export const SOURCES: SourceSeed[] = [
     checksum: "9bd399d781f57d7ae0009aa157697f78ca8a0b7507dc895d1eb56962fd1eaf61",
     fetchedAt: new Date("2026-09-18T11:24:22Z"),
     caveat:
-      "Scheme rules only, and this is the honest limit of what could be obtained. The " +
-      "file behind this row is the HBP 2.2 User Guidelines, which reference 'Annexure 2: " +
-      "Packages and Rates' without containing it; the package master is served by no " +
-      "reachable NHA URL and pmjay.gov.in refused the connection. So no per-procedure " +
-      "PM-JAY figure in this database is a published rate — those are attributed to the " +
-      "synthetic set instead. What this document does publish, and what is used, is the " +
-      "₹5,00,000 family cover, the ₹1,00,000 unspecified-procedure cap and the four " +
-      "medical bed-day rates.",
+      "Scheme rules, not rates. The file behind this row is the HBP 2.2 User Guidelines, " +
+      "which reference 'Annexure 2: Packages and Rates' without containing it. That " +
+      "annexure has since been found, in the HBP 2022 Office Memorandum, and the " +
+      "per-procedure rates in this database come from there rather than from here. What " +
+      "this document supplies is the ₹5,00,000 family cover, the ₹1,00,000 " +
+      "unspecified-procedure cap and the scheme's generic medical bed-day rates.",
+  },
+  {
+    id: "nha-hbp-2022",
+    name: "Ayushman Bharat PM-JAY Health Benefit Package 2022 (package master)",
+    publisher: "National Health Authority",
+    url: "https://cdnbbsr.s3waas.gov.in/s3169779d3852b32ce8b1a1724dbf5217d/uploads/2024/06/20240619792610196.pdf",
+    checksum: "4f6ca823468c947449647fbea9cfd5876d1d4fee5d46f3fa27179397eeb953e4",
+    fetchedAt: new Date("2026-09-18T11:24:22Z"),
+    caveat:
+      "Issued by the National Health Authority, downloaded from a state mirror. The NHA's " +
+      "own portals do not serve this file — nha.gov.in answers every path, including its " +
+      "own document links, with the same 3,843-byte HTML shell, and pmjay.gov.in refuses " +
+      "the connection — so the copy checksummed here is the Haryana State Health Agency's, " +
+      "on the NIC government CDN. It is the national Office Memorandum and not a state " +
+      "variant, and Haryana republishes it rather than issuing it. 1,949 packages are " +
+      "transcribed exactly as printed, including the 246 whose city-tier prices do not " +
+      "follow the multipliers the rest of the document uses; computing those would have " +
+      "been tidier and wrong 246 times. The tier a rate applies to comes from the " +
+      "memorandum's own Annexure-3, which names the Tier 1 and Tier 2 cities and leaves " +
+      "Tier 3 to be everything else.",
   },
   {
     id: "cghs-rates",

@@ -78,7 +78,21 @@ export async function procedures(): Promise<Procedure[]> {
           })),
         }
       : {}),
-    pmjayRate: p.tariffRates.find((r) => r.scheme === "PMJAY")?.amount ?? null,
+    // The National Reference Price, which is the row with no city tier on it.
+    // PM-JAY prints four figures per package -- the reference price and one per
+    // city tier -- and `Procedure.pmjayRate` is one number, so the cell has to
+    // be named rather than picked up by whichever row came back first.
+    //
+    // Only a PACKAGE row qualifies. A medical admission is priced per bed-day
+    // and has no episode price at all, so pneumonia, septic shock and the
+    // gastroenteritis observation come back null here on purpose: the scheme
+    // publishes no package rate for them, and the per-day grid it does publish
+    // is on their PER_DAY rows. Dropping the basis filter would hand the
+    // government fork a single day's ward rate and call it the package price.
+    pmjayRate:
+      p.tariffRates.find(
+        (r) => r.scheme === "PMJAY" && r.cityTier === null && r.basis === "PACKAGE",
+      )?.amount ?? null,
     // The database holds the whole CGHS grid -- three city tiers by two
     // accreditation columns -- and `Procedure.cghsRate` is one number, so the
     // cell has to be named rather than picked up by whichever row came back

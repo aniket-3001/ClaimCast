@@ -5,7 +5,7 @@
     "publisher": "National Health Authority",
     "url": "https://hem.nha.gov.in/HBP.pdf",
     "checksum": "9bd399d781f57d7ae0009aa157697f78ca8a0b7507dc895d1eb56962fd1eaf61",
-    "caveat": "Scheme rules and medical bed-day rates only. This document is the HBP 2.2 User Guidelines, not the package master: it references 'Annexure 2: Packages and Rates' without containing it, and that annexure could not be retrieved from any NHA URL. No per-procedure PM-JAY rate in ClaimCast is a published one.",
+    "caveat": "Scheme rules and the generic medical bed-day rates. This document is the HBP 2.2 User Guidelines, not the package master: it references 'Annexure 2: Packages and Rates' without containing it, and no NHA URL serves that annexure. The rates themselves come from the HBP 2022 Office Memorandum, under the source id nha-hbp-2022; nothing per-procedure is read from here.",
     "document": "Health Benefit Package 2.2 User Guidelines, National Health Authority.",
     "effectiveFrom": null
   },
@@ -55,7 +55,7 @@
     {
       "id": "rates-not-published-here",
       "value": null,
-      "statement": "Per-procedure package rates are in 'Annexure 2: Packages and Rates', which this document references but does not contain. ClaimCast holds no published PM-JAY procedure rate.",
+      "statement": "Per-procedure package rates are in 'Annexure 2: Packages and Rates', which this document references but does not contain. They are published in the HBP 2022 Office Memorandum instead, and ClaimCast reads them from there.",
       "page": 6,
       "evidence": "Annexure 2: ‘Packages and Rates’"
     }

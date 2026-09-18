@@ -191,9 +191,26 @@ model TariffRate {
   id          String       @id @default(cuid())
   procedureId String
   scheme      TariffScheme
+
+  /// Null on a national figure that no city tier qualifies, which is what
+  /// PM-JAY's National Reference Price is.
   cityTier    CityTier?
   nabh        Boolean?
-  /// Paise.
+
+  /// Whether `amount` buys the whole episode or one day of it.
+  ///
+  /// PM-JAY prices a surgical package outright and a medical admission by bed
+  /// category per day, and the difference is not presentational: 228 of the
+  /// 1,949 packages in HBP 2022 carry no episode price at all, only a per-day
+  /// grid. Collapsing those into one number would mean either dropping the
+  /// published rate or multiplying it by a stay length nobody published.
+  basis       TariffBasis @default(PACKAGE)
+
+  /// Which bed the per-day rate is for: `routine-ward`, `high-dependency`,
+  /// `icu-no-ventilator` or `icu-ventilator`. Null on a PACKAGE row.
+  bedCategory String?
+
+  /// Paise. The whole episode on a PACKAGE row, one day on a PER_DAY row.
   amount      Int
   effectiveFrom DateTime
 
@@ -201,8 +218,13 @@ model TariffRate {
   sourceId  String
   source    Source    @relation(fields: [sourceId], references: [id])
 
-  @@unique([procedureId, scheme, cityTier, nabh, effectiveFrom])
+  @@unique([procedureId, scheme, cityTier, nabh, basis, bedCategory, effectiveFrom])
   @@map("tariff_rates")
+}
+
+enum TariffBasis {
+  PACKAGE
+  PER_DAY
 }
 
 model Policy {

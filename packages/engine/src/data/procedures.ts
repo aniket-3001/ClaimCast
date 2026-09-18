@@ -4,8 +4,17 @@ import { rupees as r } from "../money";
 /**
  * Fourteen synthetic procedures, with enough of a cost model to rebuild a bill.
  *
- * Package codes and public rates here are illustrative and follow the shape of
- * the real registries rather than their contents. Three entries exist for what
+ * The cost model is illustrative and follows the shape of the real registries
+ * rather than their contents. `pmjayRate` no longer is. Each one is the
+ * National Reference Price of the PM-JAY package named in the comment beside
+ * it, printed in the HBP 2022 Office Memorandum and carried here so these
+ * fixtures agree with the database rather than approximating it; the mapping
+ * from procedure to package code is in apps/api/prisma/hbp-map.ts.
+ *
+ * Two are null, and both are findings rather than gaps. PM-JAY prices a medical
+ * admission by bed category per day and publishes no package price for
+ * pneumonia at all, and it prices chemotherapy by cancer and by regimen across
+ * 287 codes, with no generic per-cycle package to point at. Three entries exist for what
  * they do to the arithmetic rather than for breadth: the medical admission with
  * no surgical fee, where proportionate reduction has almost nothing to bite on;
  * the intensive-care stay, which the 2020 circular exempts outright; and the
@@ -25,7 +34,7 @@ export const PROCEDURES: Procedure[] = [
       { id: "imported", label: "Titanium cage, imported", amount: r(105000) },
       { id: "domestic", label: "Titanium cage, domestic make", amount: r(62000) },
     ],
-    pmjayRate: r(90000),
+    pmjayRate: r(54375), // SN034B
     cghsRate: r(76000), // CGHS NS036, X tier, NABH
     privateLow: r(260000),
     privateHigh: r(480000),
@@ -50,7 +59,7 @@ export const PROCEDURES: Procedure[] = [
     dayCare: false,
     medianStayDays: 8,
     usesImplant: false,
-    pmjayRate: r(120000),
+    pmjayRate: r(129910), // SV004A
     cghsRate: r(180000), // CGHS CV013, X tier, NABH
     privateLow: r(280000),
     privateHigh: r(650000),
@@ -79,7 +88,7 @@ export const PROCEDURES: Procedure[] = [
       { id: "imported", label: "Drug-eluting stent, imported", amount: r(145000) },
       { id: "domestic", label: "Drug-eluting stent, domestic make", amount: r(68000) },
     ],
-    pmjayRate: r(90000),
+    pmjayRate: r(40600), // MC011A
     cghsRate: r(97000), // CGHS CP001, X tier, NABH
     privateLow: r(210000),
     privateHigh: r(490000),
@@ -108,7 +117,7 @@ export const PROCEDURES: Procedure[] = [
       { id: "imported", label: "Bilateral prosthesis, imported", amount: r(220000) },
       { id: "domestic", label: "Bilateral prosthesis, domestic make", amount: r(120000) },
     ],
-    pmjayRate: r(110000),
+    pmjayRate: r(29062.5), // SB039A, per knee
     cghsRate: r(152000), // CGHS OR089, X tier, NABH
     privateLow: r(320000),
     privateHigh: r(720000),
@@ -133,7 +142,7 @@ export const PROCEDURES: Procedure[] = [
     dayCare: false,
     medianStayDays: 2,
     usesImplant: false,
-    pmjayRate: r(22000),
+    pmjayRate: r(31050), // SG039C
     cghsRate: r(35000), // CGHS AG037, X tier, NABH
     privateLow: r(55000),
     privateHigh: r(145000),
@@ -158,7 +167,7 @@ export const PROCEDURES: Procedure[] = [
     dayCare: false,
     medianStayDays: 3,
     usesImplant: false,
-    pmjayRate: r(18000),
+    pmjayRate: r(20000), // SG017B
     cghsRate: r(20900), // CGHS AG045, X tier, NABH
     privateLow: r(46000),
     privateHigh: r(120000),
@@ -183,7 +192,7 @@ export const PROCEDURES: Procedure[] = [
     dayCare: false,
     medianStayDays: 4,
     usesImplant: false,
-    pmjayRate: r(21000),
+    pmjayRate: r(12000), // SO057A
     cghsRate: r(53000), // CGHS OG004, X tier, NABH
     privateLow: r(62000),
     privateHigh: r(180000),
@@ -208,7 +217,7 @@ export const PROCEDURES: Procedure[] = [
     dayCare: false,
     medianStayDays: 3,
     usesImplant: false,
-    pmjayRate: r(9000),
+    pmjayRate: r(8000), // SO074A
     cghsRate: r(35000), // CGHS OG002, X tier, NABH
     privateLow: r(32000),
     privateHigh: r(95000),
@@ -233,7 +242,7 @@ export const PROCEDURES: Procedure[] = [
     dayCare: false,
     medianStayDays: 5,
     usesImplant: false,
-    pmjayRate: r(12000),
+    pmjayRate: null, // MG016A is priced per bed-day
     cghsRate: null, // no CGHS procedure code: medical management, not a package
     privateLow: r(48000),
     privateHigh: r(160000),
@@ -287,7 +296,7 @@ export const PROCEDURES: Procedure[] = [
       { id: "imported", label: "Foldable intraocular lens, imported", amount: r(18000) },
       { id: "domestic", label: "Foldable intraocular lens, domestic make", amount: r(8500) },
     ],
-    pmjayRate: r(7500),
+    pmjayRate: r(4500), // SE020A
     cghsRate: r(17000), // CGHS OP100, X tier, NABH
     privateLow: r(28000),
     privateHigh: r(92000),
@@ -312,7 +321,7 @@ export const PROCEDURES: Procedure[] = [
     dayCare: true,
     medianStayDays: 1,
     usesImplant: false,
-    pmjayRate: r(12000),
+    pmjayRate: null, // no generic package exists
     cghsRate: r(2300), // CGHS CT002, X tier, NABH
     privateLow: r(22000),
     privateHigh: r(140000),
@@ -337,7 +346,7 @@ export const PROCEDURES: Procedure[] = [
     dayCare: true,
     medianStayDays: 1,
     usesImplant: false,
-    pmjayRate: r(1500),
+    pmjayRate: r(1500), // MG072D
     cghsRate: r(2500), // CGHS NU122, X tier, NABH
     privateLow: r(2800),
     privateHigh: r(6500),

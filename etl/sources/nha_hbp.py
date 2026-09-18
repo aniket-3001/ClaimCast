@@ -5,18 +5,21 @@ AB PM-JAY scheme rules, from the HBP 2.2 User Guidelines.
 64-page *User Guidelines*, not the package master. It refers to "Annexure 2:
 Packages and Rates" and does not contain it, and no reachable NHA URL serves
 that annexure -- six candidates returned HTML stubs or 503, and pmjay.gov.in
-refused the connection. So the ~1,949 surgical package rates the plan hoped for
-are **not in this pipeline**, and nothing on screen may present a per-procedure
-PM-JAY price as published.
+refused the connection.
 
-What the manual does carry, and what this module extracts, is two things worth
+The annexure was found later, in the HBP 2022 Office Memorandum, on a state
+mirror. `etl/sources/nha_hbp_2022.py` parses it and every per-procedure PM-JAY
+rate in ClaimCast comes from there. This module is no longer the reason the app
+has no package prices; it is the reason it knows what the prices mean.
+
+What the manual carries, and what this module extracts, is two things worth
 having. The scheme's structural limits -- the ₹5,00,000 family cover, the
 ₹1,00,000 unspecified-procedure ceiling inside it, the pre- and post-
-hospitalisation window -- and, on page 18, the one genuine published tariff in
-the document: **medical packages are priced as bed category × bed days**, at
-four stated per-day rates. That is exactly the shape the engine already prices
-a stay in, so a medical admission under PM-JAY can be costed from a published
-figure rather than an estimate. Surgical packages still cannot.
+hospitalisation window -- and, on page 18, the rule that makes a third of the
+package master readable: **medical packages are priced as bed category × bed
+days**, at four stated per-day rates. The 2022 memorandum prices 228 medical
+admissions that way and prints its own grid for each; these four are the
+scheme's generic figures, and the sentence explaining the mechanism is here.
 
 **How this file stays honest.** Every rule below is transcribed, not parsed --
 these are sentences, not tables, and a regex over prose would be a worse liar
@@ -135,8 +138,8 @@ RULES = [
         "value": None,
         "statement": (
             "Per-procedure package rates are in 'Annexure 2: Packages and Rates', which "
-            "this document references but does not contain. ClaimCast holds no published "
-            "PM-JAY procedure rate."
+            "this document references but does not contain. They are published in the "
+            "HBP 2022 Office Memorandum instead, and ClaimCast reads them from there."
         ),
         "page": 6,
         "evidence": "Annexure 2: ‘Packages and Rates’",
@@ -186,10 +189,11 @@ def main() -> int:
             "url": download.url,
             "checksum": sha,
             "caveat": (
-                "Scheme rules and medical bed-day rates only. This document is the HBP 2.2 "
-                "User Guidelines, not the package master: it references 'Annexure 2: Packages "
-                "and Rates' without containing it, and that annexure could not be retrieved "
-                "from any NHA URL. No per-procedure PM-JAY rate in ClaimCast is a published one."
+                "Scheme rules and the generic medical bed-day rates. This document is the "
+                "HBP 2.2 User Guidelines, not the package master: it references 'Annexure 2: "
+                "Packages and Rates' without containing it, and no NHA URL serves that "
+                "annexure. The rates themselves come from the HBP 2022 Office Memorandum, "
+                "under the source id nha-hbp-2022; nothing per-procedure is read from here."
             ),
             "document": "Health Benefit Package 2.2 User Guidelines, National Health Authority.",
             "effectiveFrom": None,

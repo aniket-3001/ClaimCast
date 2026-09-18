@@ -28,7 +28,8 @@ import {
 } from "@claimcast/engine/fixtures";
 import { CLAUSE_SOURCE, SOURCES } from "../src/sources.js";
 import { CGHS_MAP } from "./cghs-map.js";
-import { arogya, atTier, cghs, irdaiLists } from "./etl.js";
+import { HBP_MAP } from "./hbp-map.js";
+import { arogya, atTier, cghs, hbp2022, irdaiLists } from "./etl.js";
 
 const db = new PrismaClient();
 
@@ -39,6 +40,21 @@ const SYNTHETIC = "claimcast-synthetic";
 const CGHS = cghs();
 const CGHS_BY_CODE = new Map(CGHS.rates.map((r) => [r.code, r]));
 const CGHS_EFFECTIVE = new Date(CGHS.source.effectiveFrom + "T00:00:00Z");
+
+const HBP = hbp2022();
+// Keyed by code, which the document does not guarantee to be unique: four
+// codes are printed against two different procedures each. A Map would keep
+// whichever came last and price a procedure off the wrong row, so a collided
+// code is refused outright and has to be resolved in hbp-map.ts by hand.
+const HBP_BY_CODE = new Map(
+  HBP.packages
+    .filter((p, _i, all) => all.filter((q) => q.code === p.code).length === 1)
+    .map((p) => [p.code, p]),
+);
+// The Office Memorandum carries no commencement date of its own. HBP 2022 came
+// into effect on 1 November 2022 and that is the date used, unchanged from the
+// placeholder rows this replaced, so nothing about the timeline moved.
+const HBP_EFFECTIVE = new Date("2022-11-01T00:00:00Z");
 const LISTS = irdaiLists();
 const AROGYA = arogya();
 
@@ -159,24 +175,70 @@ async function main() {
         }
       }
 
-      // PM-JAY is the opposite case. The package master could not be retrieved
-      // from any NHA URL, so there is no published per-procedure rate to seed;
-      // what the fixture carries is a plausible number, and it is attributed to
-      // the synthetic set rather than to the National Health Authority. The
-      // scheme's real published figures -- the family cover, the unspecified
-      // cap, the four medical bed-day rates -- are in etl/out/nha-hbp.json and
-      // are not per-procedure rates at all.
-      if (p.pmjayRate !== null) {
-        rates.push({
-          id: p.id + ":PMJAY",
-          procedureId: p.id,
-          scheme: "PMJAY",
-          cityTier: null,
-          nabh: null,
-          amount: p.pmjayRate,
-          effectiveFrom: new Date("2022-11-01T00:00:00Z"),
-          sourceId: SYNTHETIC,
-        });
+      // PM-JAY, now that the package master has actually been found. Every
+      // figure below is printed in the HBP 2022 Office Memorandum: the National
+      // Reference Price, and the three city-tier prices beside it. None is
+      // computed from another, because 246 of the document's rows do not follow
+      // the multipliers the rest of them do.
+      //
+      // A medical admission is the interesting case. PM-JAY does not price
+      // pneumonia, septic shock or a gastroenteritis observation as a package
+      // at all -- it pays bed category times bed days -- so those seed one row
+      // per bed category per tier, on a PER_DAY basis, and carry no episode
+      // price. That is not a gap: it is the scheme's actual pricing, and it is
+      // the shape the engine already costs a stay in.
+      const hbp = HBP_MAP[p.id];
+      if (hbp) {
+        const pkg = HBP_BY_CODE.get(hbp.code);
+        if (!pkg) {
+          throw new Error(
+            "procedure " + p.id + " is mapped to PM-JAY package " + hbp.code +
+              ", which is not in the parsed package master. Either the mapping is wrong or " +
+              "the OM was re-issued; check apps/api/prisma/hbp-map.ts against etl/out/nha-hbp-2022.json.",
+          );
+        }
+        const want = hbp.basis === "perDay" ? "bedDay" : "flat";
+        if (pkg.pricing.kind !== want) {
+          throw new Error(
+            "procedure " + p.id + " is mapped to PM-JAY package " + hbp.code + " as " +
+              hbp.basis + ", but the document prices it " + pkg.pricing.kind +
+              ". Seeding it anyway would put a figure under the National Health Authority " +
+              "that the document does not support; fix apps/api/prisma/hbp-map.ts.",
+          );
+        }
+
+        for (const tier of ["nrp", "X", "Y", "Z"] as const) {
+          const key = tier === "nrp" ? "nrp" : (tier.toLowerCase() as "x" | "y" | "z");
+          if (pkg.pricing.kind === "flat") {
+            rates.push({
+              id: p.id + ":PMJAY:" + tier,
+              procedureId: p.id,
+              scheme: "PMJAY",
+              cityTier: tier === "nrp" ? null : tier,
+              nabh: null,
+              basis: "PACKAGE",
+              bedCategory: null,
+              amount: pkg.pricing.tiers[key],
+              effectiveFrom: HBP_EFFECTIVE,
+              sourceId: HBP.source.id,
+            });
+          } else if (pkg.pricing.kind === "bedDay") {
+            for (const bed of pkg.pricing.beds) {
+              rates.push({
+                id: p.id + ":PMJAY:" + tier + ":" + bed.bed,
+                procedureId: p.id,
+                scheme: "PMJAY",
+                cityTier: tier === "nrp" ? null : tier,
+                nabh: null,
+                basis: "PER_DAY",
+                bedCategory: bed.bed,
+                amount: pkg.pricing.tiers[key][bed.bed],
+                effectiveFrom: HBP_EFFECTIVE,
+                sourceId: HBP.source.id,
+              });
+            }
+          }
+        }
       }
 
       if (rates.length) await tx.tariffRate.createMany({ data: rates });
@@ -351,7 +413,7 @@ async function main() {
     ["modelled items", await db.nonPayableItem.count({ where: { published: false } })],
     ["admissions", await db.admission.count()],
   ];
-  for (const [label, n] of counts) console.log("  " + label.padEnd(13) + n);
+  for (const [label, n] of counts) console.log("  " + label.padEnd(16) + n);
   console.log("seeded");
 }
 
