@@ -42,6 +42,49 @@ const PORT = Number(process.env.PORT ?? 3001);
 const HOST = process.env.HOST ?? "0.0.0.0";
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL ?? "";
 
+/**
+ * An identity token for the ML service, when there is a metadata server to ask.
+ *
+ * The cost model is deployed with authentication required, so that the only
+ * thing on the public internet is this API. Left open it would be a CPU-burning
+ * endpoint anyone could find and hold down -- and on an account kept inside a
+ * free tier deliberately, a stranger's traffic is a bill.
+ *
+ * On Cloud Run the metadata server mints a token for the service's own identity,
+ * audienced to the callee; `run.invoker` on that identity is what makes it work.
+ * Off Cloud Run -- a laptop, a container on a laptop -- there is no metadata
+ * server, the fetch fails fast, and the call goes out unauthenticated, which is
+ * exactly right against a local uvicorn that asks for nothing.
+ *
+ * Tokens last an hour. This keeps one for fifty minutes rather than fetching per
+ * request: the metadata server is quick but it is a network hop inside the
+ * request path of a screen the user is waiting on.
+ */
+let mlToken: { value: string; until: number } | null = null;
+
+async function mlAuthHeader(): Promise<Record<string, string>> {
+  if (!ML_SERVICE_URL.startsWith("https://")) return {};
+  if (mlToken && Date.now() < mlToken.until) {
+    return { authorization: `Bearer ${mlToken.value}` };
+  }
+  try {
+    const res = await fetch(
+      "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/identity" +
+        `?audience=${encodeURIComponent(ML_SERVICE_URL)}`,
+      { headers: { "metadata-flavor": "Google" }, signal: AbortSignal.timeout(3000) },
+    );
+    if (!res.ok) return {};
+    const value = (await res.text()).trim();
+    if (!value) return {};
+    mlToken = { value, until: Date.now() + 50 * 60_000 };
+    return { authorization: `Bearer ${value}` };
+  } catch {
+    // No metadata server. Not an error: it is how this process knows it is not
+    // running on Google, and the local cost model is not asking for a token.
+    return {};
+  }
+}
+
 const app = Fastify({
   // Cloud Run terminates TLS and forwards, so the socket address is always the
   // proxy's. Without this `req.ip` is one value for every caller on earth and
@@ -266,9 +309,16 @@ app.post("/api/forecast", async (req, reply) => {
   }
   const res = await fetch(ML_SERVICE_URL + "/forecast", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers: { "content-type": "application/json", ...(await mlAuthHeader()) },
     body: JSON.stringify(parsed.data),
   });
+  if (res.status === 401 || res.status === 403) {
+    // Worth separating from a generic 502. This one is never the model's fault
+    // and never transient: it is the API's service account missing run.invoker
+    // on the cost model, and it will keep happening until someone grants it.
+    req.log.error({ status: res.status }, "the cost model refused this service's identity");
+    return reply.code(502).send({ error: "cost model rejected this service's identity" });
+  }
   if (res.status === 422) {
     // The model refuses rather than guesses: an unknown procedure, an ailment
     // category nobody has coded, a procedure no scheme publishes a rate for. The
@@ -566,12 +616,48 @@ async function start() {
   const swept = await vault.sweep();
   if (swept) app.log.info({ swept, retentionDays: vault.RETENTION }, "expired documents deleted");
 
-  bundle = await loadReference();
+  bundle = await withDatabaseReady(loadReference);
   app.log.info(
     { hospitals: bundle.hospitals.length, sources: bundle.sources.length },
     "reference data loaded",
   );
   await app.listen({ port: PORT, host: HOST });
+}
+
+/**
+ * Give the network a moment to exist before deciding the database does not.
+ *
+ * On a laptop the first query works or the database is genuinely not running,
+ * so failing immediately is the useful behaviour and it is kept: the first
+ * attempt is not delayed, and a real absence still ends the process rather than
+ * leaving a server up that answers every request with an error.
+ *
+ * On Cloud Run with direct VPC egress the container is started before its
+ * network interface is necessarily ready, so the first connection to a private
+ * address can be refused for a second or two on a perfectly healthy deployment.
+ * Fail-fast turns that into a failed revision, and the log says "no database",
+ * which sends you to look at the database -- where everything is fine. This cost
+ * two deploys and a firewall investigation to learn.
+ *
+ * Bounded deliberately. A database that is still unreachable after half a minute
+ * is not slow, it is misconfigured, and a container that keeps retrying forever
+ * hides that behind a health check that never goes green.
+ */
+async function withDatabaseReady<T>(work: () => Promise<T>): Promise<T> {
+  const deadline = Date.now() + 30_000;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await work();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      const reachability = /P1001|ECONNREFUSED|ENETUNREACH|EHOSTUNREACH|Can't reach database/.test(
+        msg,
+      );
+      if (!reachability || Date.now() >= deadline) throw e;
+      app.log.warn({ attempt }, "database not reachable yet, retrying");
+      await new Promise((r) => setTimeout(r, Math.min(1000 * attempt, 4000)));
+    }
+  }
 }
 
 start().catch((e) => {
