@@ -134,28 +134,48 @@ export function evaluate(input: CaseInput): Evaluated {
 /**
  * A range, not a number.
  *
- * The room rate is known exactly — it is on a board at the admission desk — so
+ * The room rate is known exactly -- it is on a board at the admission desk -- so
  * the room line is held fixed and only the clinical part of the bill is spread
- * across the observed private-sector range for the procedure. That is why the
- * band on the patient share is tighter than the band on the bill: a good part
- * of what the patient will pay is decided by the tariff and the policy, not by
- * how the operation goes.
+ * across the private-sector range for the procedure. That is why the band on the
+ * patient share is tighter than the band on the bill: a good part of what the
+ * patient will pay is decided by the tariff and the policy, not by how the
+ * operation goes.
+ *
+ * **Where the spread comes from.** `Band` is a pair of multiples of the centre,
+ * and the caller chooses which pair. Passing none uses the procedure's own
+ * `privateLow`/`privateHigh`, which slide 5 declares as simulated; passing the
+ * cost model's p10 and p90 divided by its p50 uses a spread fitted to NSS 75th
+ * Round strata instead. The engine takes the spread and nothing else from the
+ * model -- the level stays the hospital's own tariff, because the hospital is
+ * the thing the journey is manipulating and a national mean cannot tell you what
+ * this bed costs. That is the topology slide 5 draws: a fitted distribution at
+ * the edge, a deterministic core that adjudicates it.
  */
+export interface Band {
+  /** The tenth percentile as a multiple of the centre, so below 1. */
+  low: number;
+  /** The ninetieth, so above 1. */
+  high: number;
+}
+
 export interface Forecast {
   low: Adjudication;
   point: Adjudication;
   high: Adjudication;
   /** Refused for certain, whatever the clinical bill turns out to be. */
   certain: Paise;
+  /** Which spread produced this band, for the screen to say so. */
+  spread: "simulated" | "fitted";
 }
 
-export function forecast(e: Evaluated): Forecast {
+export function forecast(e: Evaluated, band?: Band): Forecast {
   const { privateLow: lo, privateHigh: hi } = e.procedure;
   const mid = (lo + hi) / 2;
+  const k = band ?? { low: lo / mid, high: hi / mid };
   const dayCareDowngrade = !e.procedure.dayCare && !e.input.admittedInpatient;
-  const scale = (k: number): Adjudication =>
+  const scale = (f: number): Adjudication =>
     adjudicate({
-      lines: e.lines.map((l) => (l.kind === "room" ? l : { ...l, amount: Math.round(l.amount * k) })),
+      lines: e.lines.map((l) => (l.kind === "room" ? l : { ...l, amount: Math.round(l.amount * f) })),
       policy: e.policy,
       siUsed: e.input.siUsed,
       repudiated: e.repudiation,
@@ -166,7 +186,13 @@ export function forecast(e: Evaluated): Forecast {
     .filter((d) => d.clause === "ROOM_CAP" || d.clause === "ICU_CAP")
     .reduce((t, d) => t + d.amount, 0);
 
-  return { low: scale(lo / mid), point: e.result, high: scale(hi / mid), certain: roomExcess };
+  return {
+    low: scale(k.low),
+    point: e.result,
+    high: scale(k.high),
+    certain: roomExcess,
+    spread: band ? "fitted" : "simulated",
+  };
 }
 
 export interface Option {

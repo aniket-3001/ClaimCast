@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { bandOf, useCostModel, CostModelNote } from "./CostModel";
 import {
   fmt,
   signed,
@@ -27,7 +28,11 @@ import {
 export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput) => void }) {
   const { clauses: CLAUSES } = registry();
   const g = gate(e);
-  const f = forecast(e);
+  // The model supplies the spread; the hospital's own tariff still supplies the
+  // level. Until the request lands, `bandOf` returns nothing and the engine falls
+  // back to the simulated range -- the page never waits and never blanks.
+  const m = useCostModel(e);
+  const f = forecast(e, bandOf(m));
   const fixed = fixedRegardless(e);
   const fixedTotal = fixed.reduce((t, x) => t + x.amount, 0);
   const r = e.result;
@@ -126,10 +131,12 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
               <div className="tnode-k">You pay</div>
               <div className="tnode-v loss">{fmt(r.patientPays)}</div>
               <div className="tnode-sub">
-                {fmt(f.low.patientPays)} – {fmt(f.high.patientPays)} once the clinical bill is known.
+                {fmt(f.low.patientPays)} – {fmt(f.high.patientPays)} once the clinical bill is
+                known, on the {f.spread === "fitted" ? "fitted" : "simulated"} spread.
                 The insurer pays {fmt(r.insurerPays)} of {fmt(r.billTotal)}.
               </div>
               <Split insurer={r.insurerPays} total={r.billTotal} patient={r.patientPays} />
+              <CostModelNote m={m} />
             </div>
           </>
         )}

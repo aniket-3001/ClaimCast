@@ -1303,3 +1303,140 @@ footer.foot {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.85em;
 }
+
+/* ---------------------------------------------------------------------------
+   The cost model.
+
+   Set apart from the tree on purpose. Everything above it is computed from a
+   published rate and a clause; this is the one block on the page that is an
+   estimate, and it should not be mistaken for the rest by looking the same.
+   The caveats sit in a <details> so the number is readable at a glance and the
+   objections are one click away rather than hidden.
+   --------------------------------------------------------------------------- */
+
+.model {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px dashed var(--hair);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 3%, transparent);
+}
+
+.model-quiet {
+  color: var(--ink-3);
+  font-size: 13px;
+}
+
+.model-h {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.model-k {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.model-why {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.model-band {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--num);
+}
+
+.model-edge {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+.model-mid {
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.model-band-k {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.model-anchor {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.model-split {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.model-split li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.model-split .k {
+  color: var(--ink-3);
+}
+
+.model-split .v {
+  font-family: var(--num);
+  color: var(--ink-2);
+}
+
+.model-caveats {
+  margin-top: 12px;
+  border-top: 1px solid var(--hair);
+  padding-top: 10px;
+}
+
+.model-caveats summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.model-basis {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+
+.model-caveats ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.model-caveats li {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}
