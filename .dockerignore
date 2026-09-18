@@ -1,0 +1,25 @@
+# What must never reach an image.
+#
+# .env is first and is the reason this file exists. Keys are supplied by the
+# platform at run time; one baked into a layer is in the registry forever, and
+# `docker history` will show it to anyone who can pull the image.
+.env
+.env.*
+!.env.example
+
+# Uploaded policy schedules. Encrypted, but they are still other people's
+# financial documents and they have no business in a build context.
+apps/api/.vault/
+
+node_modules
+**/node_modules
+dist
+**/dist
+.git
+.gitignore
+
+# The deck, its mockups and the ETL's downloads. Hundreds of megabytes that no
+# service reads at run time, and every one of them slows a build.
+presentation deck/
+etl/raw/
+*.log

@@ -47,4 +47,9 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
     CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health').status==200 else 1)"
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Cloud Run assigns the port and expects the process to read it; nothing else
+# does, hence the default. Shell form on purpose -- the exec form would pass
+# "$PORT" to uvicorn as four literal characters, which fails at start with a
+# message about an invalid integer rather than about a missing variable.
+ENV PORT=8000
+CMD exec uvicorn app:app --host 0.0.0.0 --port ${PORT}
