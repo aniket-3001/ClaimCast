@@ -6,7 +6,7 @@
     "url": "https://www.mospi.gov.in/sites/default/files/publication_reports/KI_Health_75th_Final.pdf",
     "checksum": "37da83c65ebf2b426d7a7d9eb31c204dd64a47991273b626466466690a631baf",
     "caveat": "A household survey, not a price list, and eight years old. Every figure is an average over a stratum -- a state, a sector, an ailment category -- and the report publishes no quantile of the patient-level distribution, so a band fitted to these cells describes the spread of average cost across strata and not the spread across patients. The public-hospital column is out-of-pocket spending at a government hospital, which is neither the CGHS rate nor the PM-JAY package price. Figures are July 2017 - June 2018 rupees and exclude hospitalisation for childbirth, transport to hospital, and food.",
-    "document": "NSS Report KI(75/25.0), Key Indicators of Social Consumption in India: Health, July 2017 - June 2018. Statements 3.15, 3.16 and 3.17, and Table A17 of Appendix A.",
+    "document": "NSS Report KI(75/25.0), Key Indicators of Social Consumption in India: Health, July 2017 - June 2018. Statements 3.15, 3.16 and 3.17, and Tables A16, A17 and A18 of Appendix A.",
     "effectiveFrom": "2018-06-30"
   },
   "note": "Paise, in 2017-18 prices. Multiply by the factor in cpi-health.json to state any of these in December 2025 rupees.",
@@ -102,6 +102,346 @@
       "public": 445200,
       "private": 3184500,
       "all": 2013500
+    }
+  ],
+  "byAilmentAndSector": [
+    {
+      "category": "infections",
+      "sector": "rural",
+      "printed": "a. Infections",
+      "public": 214900,
+      "private": 1410200,
+      "all": 800500
+    },
+    {
+      "category": "cardio-vascular",
+      "sector": "rural",
+      "printed": "b. Cardio-vascular ailments",
+      "public": 691900,
+      "private": 4275900,
+      "all": 2713600
+    },
+    {
+      "category": "gastro-intestinal",
+      "sector": "rural",
+      "printed": "c. Gastro-intestinal ailment",
+      "public": 345600,
+      "private": 2674500,
+      "all": 1683300
+    },
+    {
+      "category": "respiratory",
+      "sector": "rural",
+      "printed": "d. Respiratory ailments",
+      "public": 338600,
+      "private": 1984600,
+      "all": 1162500
+    },
+    {
+      "category": "genito-urinary",
+      "sector": "rural",
+      "printed": "e. Genito-urinary ailments",
+      "public": 528400,
+      "private": 2661100,
+      "all": 1967400
+    },
+    {
+      "category": "musculo-skeletal",
+      "sector": "rural",
+      "printed": "f. Musculo-skeletal ailments",
+      "public": 472200,
+      "private": 3772900,
+      "all": 2557200
+    },
+    {
+      "category": "psychiatric-neurological",
+      "sector": "rural",
+      "printed": "g. Psychiatric and neurological ailments",
+      "public": 686800,
+      "private": 3365400,
+      "all": 2180600
+    },
+    {
+      "category": "eye",
+      "sector": "rural",
+      "printed": "h. Eye ailments",
+      "public": 242100,
+      "private": 1576700,
+      "all": 874700
+    },
+    {
+      "category": "cancers",
+      "sector": "rural",
+      "printed": "i. Cancers",
+      "public": 2390500,
+      "private": 8532600,
+      "all": 5699600
+    },
+    {
+      "category": "any",
+      "sector": "rural",
+      "printed": "Any ailment",
+      "public": 429000,
+      "private": 2734700,
+      "all": 1667600
+    },
+    {
+      "category": "infections",
+      "sector": "urban",
+      "printed": "a. Infections",
+      "public": 182200,
+      "private": 1684300,
+      "all": 1099200
+    },
+    {
+      "category": "cardio-vascular",
+      "sector": "urban",
+      "printed": "b. Cardio-vascular ailments",
+      "public": 615200,
+      "private": 6892000,
+      "all": 4778800
+    },
+    {
+      "category": "gastro-intestinal",
+      "sector": "urban",
+      "printed": "c. Gastro-intestinal ailment",
+      "public": 500300,
+      "private": 3544200,
+      "all": 2620200
+    },
+    {
+      "category": "respiratory",
+      "sector": "urban",
+      "printed": "d. Respiratory ailments",
+      "public": 327400,
+      "private": 3011100,
+      "all": 1767000
+    },
+    {
+      "category": "genito-urinary",
+      "sector": "urban",
+      "printed": "e. Genito-urinary ailments",
+      "public": 546800,
+      "private": 4400100,
+      "all": 3327200
+    },
+    {
+      "category": "musculo-skeletal",
+      "sector": "urban",
+      "printed": "f. Musculo-skeletal ailments",
+      "public": 816400,
+      "private": 6065700,
+      "all": 4452600
+    },
+    {
+      "category": "psychiatric-neurological",
+      "sector": "urban",
+      "printed": "g. Psychiatric and neurological ailments",
+      "public": 805200,
+      "private": 5342000,
+      "all": 3608200
+    },
+    {
+      "category": "eye",
+      "sector": "urban",
+      "printed": "h. Eye ailments",
+      "public": 303100,
+      "private": 2356800,
+      "all": 1506400
+    },
+    {
+      "category": "cancers",
+      "sector": "urban",
+      "printed": "i. Cancers",
+      "public": 1998200,
+      "private": 10654800,
+      "all": 6825900
+    },
+    {
+      "category": "any",
+      "sector": "urban",
+      "printed": "Any ailment",
+      "public": 483700,
+      "private": 3882200,
+      "all": 2647500
+    },
+    {
+      "category": "infections",
+      "sector": "combined",
+      "printed": "a. Infections",
+      "public": 205400,
+      "private": 1520800,
+      "all": 906400
+    },
+    {
+      "category": "cardio-vascular",
+      "sector": "combined",
+      "printed": "b. Cardio-vascular ailments",
+      "public": 663500,
+      "private": 5497000,
+      "all": 3600100
+    },
+    {
+      "category": "gastro-intestinal",
+      "sector": "combined",
+      "printed": "c. Gastro-intestinal ailment",
+      "public": 384700,
+      "private": 2987000,
+      "all": 1982100
+    },
+    {
+      "category": "respiratory",
+      "sector": "combined",
+      "printed": "d. Respiratory ailments",
+      "public": 334600,
+      "private": 2404900,
+      "all": 1390500
+    },
+    {
+      "category": "genito-urinary",
+      "sector": "combined",
+      "printed": "Rural + e. Genito-urinary ailments",
+      "public": 534500,
+      "private": 3340900,
+      "all": 2477000
+    },
+    {
+      "category": "musculo-skeletal",
+      "sector": "combined",
+      "printed": "f. Musculo-skeletal ailments",
+      "public": 571600,
+      "private": 4636500,
+      "all": 3206600
+    },
+    {
+      "category": "psychiatric-neurological",
+      "sector": "combined",
+      "printed": "g. Psychiatric and neurological ailments",
+      "public": 723500,
+      "private": 4123900,
+      "all": 2684300
+    },
+    {
+      "category": "eye",
+      "sector": "combined",
+      "printed": "h. Eye ailments",
+      "public": 260500,
+      "private": 1876700,
+      "all": 1091200
+    },
+    {
+      "category": "cancers",
+      "sector": "combined",
+      "printed": "i. Cancers",
+      "public": 2252000,
+      "private": 9330500,
+      "all": 6121600
+    },
+    {
+      "category": "any",
+      "sector": "combined",
+      "printed": "Any ailment",
+      "public": 445200,
+      "private": 3184500,
+      "all": 2013500
+    }
+  ],
+  "byQuintile": [
+    {
+      "quintile": "q1",
+      "sector": "rural",
+      "printed": "1st (lowest 20% of population)",
+      "public": 386300,
+      "private": 2259500,
+      "all": 1227200
+    },
+    {
+      "quintile": "q2",
+      "sector": "rural",
+      "printed": "2nd (next 20% of population)",
+      "public": 438700,
+      "private": 2738300,
+      "all": 1562200
+    },
+    {
+      "quintile": "q3",
+      "sector": "rural",
+      "printed": "3rd",
+      "public": 363200,
+      "private": 2528100,
+      "all": 1426100
+    },
+    {
+      "quintile": "q4",
+      "sector": "rural",
+      "printed": "4th",
+      "public": 387600,
+      "private": 2470600,
+      "all": 1526600
+    },
+    {
+      "quintile": "q5",
+      "sector": "rural",
+      "printed": "(top 20% of population)",
+      "public": 535600,
+      "private": 3133100,
+      "all": 2133800
+    },
+    {
+      "quintile": "all",
+      "sector": "rural",
+      "printed": "all",
+      "public": 429000,
+      "private": 2734700,
+      "all": 1667600
+    },
+    {
+      "quintile": "q1",
+      "sector": "urban",
+      "printed": "(lowest 20% of population)",
+      "public": 419500,
+      "private": 2503000,
+      "all": 1414000
+    },
+    {
+      "quintile": "q2",
+      "sector": "urban",
+      "printed": "2nd (next 20% of population)",
+      "public": 409100,
+      "private": 3035700,
+      "all": 1875900
+    },
+    {
+      "quintile": "q3",
+      "sector": "urban",
+      "printed": "3rd",
+      "public": 392400,
+      "private": 3704000,
+      "all": 2359100
+    },
+    {
+      "quintile": "q4",
+      "sector": "urban",
+      "printed": "4th",
+      "public": 591900,
+      "private": 3664600,
+      "all": 2661200
+    },
+    {
+      "quintile": "q5",
+      "sector": "urban",
+      "printed": "5th (top 20% of population)",
+      "public": 777400,
+      "private": 5267400,
+      "all": 4457300
+    },
+    {
+      "quintile": "all",
+      "sector": "urban",
+      "printed": "all",
+      "public": 483700,
+      "private": 3882200,
+      "all": 2647500
     }
   ],
   "components": [

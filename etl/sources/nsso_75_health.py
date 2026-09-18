@@ -55,7 +55,30 @@ RUPEE = 100
 
 P_STATEMENTS = 26  # Statements 3.15 and 3.16 share a page.
 P_COMPONENTS = 27  # Statement 3.17.
+P_AILMENT_SECTOR = 59  # Table A16, Appendix A.
 P_STATES = 60  # Table A17, Appendix A.
+P_QUINTILE = 61  # Table A18, Appendix A.
+
+# The three axes along which this report lets private-hospital cost be observed
+# varying, and the reason all three are read rather than just the headline one.
+#
+# Statement 3.16 gives ailment category and Table A17 gives geography, but each
+# alone is a marginal. Tables A16 and A18 are joint with sector, and A18's axis
+# -- quintile class of household expenditure -- is the only one in the report
+# that varies *within* a place and a diagnosis. It is the closest published
+# proxy for the spread between two patients who look otherwise alike, and
+# without it any band fitted here would be a band across states and nothing
+# more.
+SECTORS = ("rural", "urban", "combined")
+
+QUINTILES = [
+    ("1st", "q1"),
+    ("2nd", "q2"),
+    ("3rd", "q3"),
+    ("4th", "q4"),
+    ("5th", "q5"),
+    ("all", "all"),
+]
 
 # Each row label as the report prints it, paired with the name this project uses
 # for it. The report's own wording is kept in `printed` so a reader can find the
@@ -76,6 +99,24 @@ AILMENTS = [
 # Statement 3.17's rows. "Package component" is the hospital's own bundled
 # charge, which is the closest thing in this survey to a procedure package, and
 # it is by far the largest single line in a private bill.
+# Appendix Table A16 lists the same nine categories as Statement 3.16 but in a
+# different order, so the two cannot share one list. The words are carried here
+# as well as the slugs: the rows are taken positionally, and the label is then
+# required to contain the expected word, which turns a silent misalignment into
+# a stop.
+A16_AILMENTS = [
+    ("Infections", "infections"),
+    ("Cardio-vascular", "cardio-vascular"),
+    ("Gastro-intestinal", "gastro-intestinal"),
+    ("Respiratory", "respiratory"),
+    ("Genito-urinary", "genito-urinary"),
+    ("Musculo-skeletal", "musculo-skeletal"),
+    ("Psychiatric", "psychiatric-neurological"),
+    ("Eye", "eye"),
+    ("Cancers", "cancers"),
+    ("Any ailment", "any"),
+]
+
 COMPONENTS = [
     ("Package component", "package"),
     ("surgeon", "doctor-surgeon-fee"),  # printed with a curly apostrophe
@@ -101,6 +142,10 @@ EVIDENCE = [
     (P_COMPONENTS, "Package component 427 867 6,631 15,380"),
     (P_STATES, "Table A17"),
     (P_STATES, "excluding hospitalization for childbirth"),
+    (P_AILMENT_SECTOR, "Table A16"),
+    (P_AILMENT_SECTOR, "a. Infections 2149 14102 8005"),
+    (P_QUINTILE, "Table A18"),
+    (P_QUINTILE, "2nd (next 20% of population) 4387 27383 15622"),
 ]
 
 
@@ -176,6 +221,110 @@ def read_states(lines: list[str]) -> list[dict]:
     return out
 
 
+def section(lines: list[str], table: str) -> list[str]:
+    """
+    The lines belonging to one appendix table, where a page holds two.
+
+    Table A18 shares page 61 with the start of Table A19, whose rows carry nine
+    figures each and would otherwise be counted as data. The table is bounded by
+    its own heading and the next "Table A.." heading rather than by the page.
+    """
+    start = next((i for i, ln in enumerate(lines) if table + ":" in ln), None)
+    if start is None:
+        raise SystemExit("no heading for " + table + " on the page it is read from")
+    end = next(
+        (i for i in range(start + 1, len(lines)) if re.match(r"\s*Table A\d+:", lines[i])),
+        len(lines),
+    )
+    return lines[start:end]
+
+
+def triples(lines: list[str]) -> list[tuple[str, list[int]]]:
+    """
+    Every data row on a page, as its last three figures, in printed order.
+
+    Tables A16 and A18 are laid out as stacked sector blocks with the sector
+    named once, vertically, beside the middle of its block -- which puts the
+    word on a visual row of its own, between two data rows, rather than at the
+    head of the block. Reading the label is therefore worse than counting, so
+    these tables are taken positionally and then checked against a row whose
+    value is already known from Statement 3.15.
+
+    Two things on these pages look like data and are not. The running footer
+    "NSS KI (75/25.0)" yields three numbers, and Table A18 labels its rows "1st
+    (lowest 20% of population)", which contributes two more before the figures
+    begin. So the footer is excluded by name and the figures are taken as the
+    last three on the row rather than the only three.
+    """
+    out: list[tuple[str, list[int]]] = []
+    pending = ""
+    for ln in lines:
+        if "NSS KI" in ln:
+            continue
+        nums = numbers(ln)
+        if len(nums) >= 3:
+            vals = [money(n) for n in nums[-3:]]
+            label = ln[: ln.rfind(nums[-3])].strip(" .*") if nums[-3] in ln else ""
+            out.append(((label or pending), vals))
+            pending = ""
+        elif not nums and ln.strip():
+            pending = ln.strip()
+    return out
+
+
+def read_by_ailment_sector(lines: list[str]) -> list[dict]:
+    """Table A16: nine ailment categories plus a total, for each of three sectors."""
+    rows = triples(section(lines, "Table A16"))
+    if len(rows) != 30:
+        raise SystemExit(
+            "Table A16 should be three sectors of ten rows but yielded "
+            + str(len(rows)) + " rows of three figures"
+        )
+    out: list[dict] = []
+    for block, sector in enumerate(SECTORS):
+        for i, (label, vals) in enumerate(rows[block * 10 : block * 10 + 10]):
+            word, slug = A16_AILMENTS[i]
+            if word.lower() not in label.lower():
+                raise SystemExit(
+                    "Table A16 row " + str(i) + " of the " + sector + " block reads "
+                    + repr(label) + ", which is not the " + word + " row this parser "
+                    "expected there. The rows are taken in printed order, so an "
+                    "inserted or dropped row would put every figure under the wrong "
+                    "heading."
+                )
+            out.append(
+                {
+                    "category": slug,
+                    "sector": sector,
+                    "printed": label,
+                    **dict(zip(("public", "private", "all"), vals)),
+                }
+            )
+    return out
+
+
+def read_by_quintile(lines: list[str]) -> list[dict]:
+    """Table A18: five quintile classes plus a total, for rural and urban."""
+    rows = triples(section(lines, "Table A18"))
+    if len(rows) != 12:
+        raise SystemExit(
+            "Table A18 should be two sectors of six rows but yielded "
+            + str(len(rows)) + " rows of three figures"
+        )
+    out: list[dict] = []
+    for block, sector in enumerate(("rural", "urban")):
+        for i, (label, vals) in enumerate(rows[block * 6 : block * 6 + 6]):
+            out.append(
+                {
+                    "quintile": QUINTILES[i][1],
+                    "sector": sector,
+                    "printed": label,
+                    **dict(zip(("public", "private", "all"), vals)),
+                }
+            )
+    return out
+
+
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
 
@@ -188,7 +337,8 @@ def main() -> int:
         )
 
     with fitz.open(pdf) as doc:
-        pages = {p: layout_lines(doc[p - 1]) for p in (P_STATEMENTS, P_COMPONENTS, P_STATES)}
+        wanted = (P_STATEMENTS, P_COMPONENTS, P_AILMENT_SECTOR, P_STATES, P_QUINTILE)
+        pages = {p: layout_lines(doc[p - 1]) for p in wanted}
         flat = {p: " ".join(ls) for p, ls in pages.items()}
 
     missing = [
@@ -236,8 +386,10 @@ def main() -> int:
     ]
 
     by_state = read_states(pages[P_STATES])
+    by_ailment_sector = read_by_ailment_sector(pages[P_AILMENT_SECTOR])
+    by_quintile = read_by_quintile(pages[P_QUINTILE])
 
-    verify(by_type, by_ailment, components, by_state)
+    verify(by_type, by_ailment, components, by_state, by_ailment_sector, by_quintile)
 
     doc_out = {
         "source": {
@@ -260,7 +412,7 @@ def main() -> int:
             "document": (
                 "NSS Report KI(75/25.0), Key Indicators of Social Consumption in India: "
                 "Health, July 2017 - June 2018. Statements 3.15, 3.16 and 3.17, and "
-                "Table A17 of Appendix A."
+                "Tables A16, A17 and A18 of Appendix A."
             ),
             "effectiveFrom": "2018-06-30",
         },
@@ -271,6 +423,8 @@ def main() -> int:
         "surveyPeriod": {"from": "2017-07-01", "to": "2018-06-30", "households": 113823},
         "byHospitalType": by_type,
         "byAilment": by_ailment,
+        "byAilmentAndSector": by_ailment_sector,
+        "byQuintile": by_quintile,
         "components": components,
         "byState": by_state,
     }
@@ -282,14 +436,16 @@ def main() -> int:
     print(
         "  " + str(len(by_ailment) - 1) + " ailment categories, "
         + str(len(components) - 1) + " bill components, "
-        + str(len(by_state) - 1) + " states"
+        + str(len(by_state) - 1) + " states, "
+        + str(len(by_quintile)) + " quintile cells, "
+        + str(len(by_ailment_sector)) + " ailment-by-sector cells"
     )
     print("  private hospital mean, all-India: Rs " + f"{private:,}" + " per case (2017-18)")
     print("  -> " + str(OUT.relative_to(ROOT.parent)))
     return 0
 
 
-def verify(by_type, by_ailment, components, by_state) -> None:
+def verify(by_type, by_ailment, components, by_state, by_ailment_sector, by_quintile) -> None:
     """
     Cross-checks that the report itself makes available.
 
@@ -347,6 +503,42 @@ def verify(by_type, by_ailment, components, by_state) -> None:
                 "Statement 3.17 total " + col + " is " + str(total[col] // RUPEE)
                 + " but Statement 3.15 says " + str(by_type[slug][sector] // RUPEE)
             )
+
+    # Table A16 and Table A18 each print a total row per sector, and each of
+    # those is Statement 3.15 again. This is what makes it safe to read those
+    # two tables positionally: if a block boundary were off by a row, the row
+    # landing on the total would not match.
+    for row in by_ailment_sector:
+        if row["category"] == "any":
+            for slug in ("public", "private", "all"):
+                if row[slug] != by_type[slug][row["sector"]]:
+                    fail.append(
+                        "Table A16 " + row["sector"] + " total " + slug + " is "
+                        + str(row[slug] // RUPEE) + " but Statement 3.15 says "
+                        + str(by_type[slug][row["sector"]] // RUPEE)
+                    )
+    for row in by_quintile:
+        if row["quintile"] == "all":
+            for slug in ("public", "private", "all"):
+                if row[slug] != by_type[slug][row["sector"]]:
+                    fail.append(
+                        "Table A18 " + row["sector"] + " total " + slug + " is "
+                        + str(row[slug] // RUPEE) + " but Statement 3.15 says "
+                        + str(by_type[slug][row["sector"]] // RUPEE)
+                    )
+
+    # Table A16's combined column is Statement 3.16, printed a second time.
+    for row in by_ailment_sector:
+        if row["sector"] != "combined":
+            continue
+        printed = next(a for a in by_ailment if a["category"] == row["category"])
+        for slug in ("public", "private", "all"):
+            if row[slug] != printed[slug]:
+                fail.append(
+                    "Table A16 combined " + row["category"] + " " + slug + " is "
+                    + str(row[slug] // RUPEE) + " but Statement 3.16 says "
+                    + str(printed[slug] // RUPEE)
+                )
 
     # Enough states to be the table rather than a fragment of it.
     if len(by_state) < 30:
