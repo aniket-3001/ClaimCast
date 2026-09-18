@@ -14,6 +14,10 @@
  * exact is what makes the check meaningful rather than approximate.
  */
 
+// Before the client is constructed, because it reads DATABASE_URL at that
+// moment. Every entry point that touches the database goes through this module,
+// so loading the environment here covers the scripts as well as the server.
+import "./env.js";
 import { PrismaClient } from "@prisma/client";
 import type {
   Admission,

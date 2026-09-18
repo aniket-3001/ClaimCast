@@ -14,13 +14,15 @@
  * client prices with what this endpoint gave it.
  */
 
-import "dotenv/config";
+import "./env.js";
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import cookie from "@fastify/cookie";
 import multipart from "@fastify/multipart";
 import { evaluate, repair, setRegistry, type Registry } from "@claimcast/engine";
 import {
   CaseInputSchema,
+  CredentialsSchema,
   ForecastRequestSchema,
   ForecastResponseSchema,
   SaveCaseSchema,
@@ -29,12 +31,20 @@ import {
 import * as ref from "./reference.js";
 import * as vault from "./vault.js";
 import { extractPolicy } from "./extract.js";
+import * as session from "./session.js";
+import { attempt } from "./throttle.js";
 
 const PORT = Number(process.env.PORT ?? 3001);
 const HOST = process.env.HOST ?? "0.0.0.0";
 const ML_SERVICE_URL = process.env.ML_SERVICE_URL ?? "";
 
 const app = Fastify({
+  // Cloud Run terminates TLS and forwards, so the socket address is always the
+  // proxy's. Without this `req.ip` is one value for every caller on earth and
+  // the login throttle becomes a global counter that one attacker can exhaust
+  // for everybody. Only in production: trusting the header locally would let
+  // anything set its own address.
+  trustProxy: process.env.NODE_ENV === "production",
   logger: {
     level: process.env.LOG_LEVEL ?? "info",
     // Nothing a user typed gets logged. A case input describes someone's
@@ -61,7 +71,22 @@ const ORIGINS = (process.env.WEB_ORIGIN ?? "")
 await app.register(cors, {
   origin: ORIGINS.length ? ORIGINS : false,
   methods: ["GET", "POST"],
+  // The session cookie has to cross from the static web origin to this one, and
+  // a browser will not send it unless the server says so. This is also why the
+  // origin list above can never become a wildcard: `credentials: true` with `*`
+  // is exactly the combination that hands someone's session to any site.
+  credentials: true,
 });
+
+/**
+ * Cookies, signed.
+ *
+ * The cookie carries a user id and nothing else -- no claim about who they are
+ * that the server would then believe. The signature is what stops one id being
+ * swapped for another, and it is checked in `session.current` before the id is
+ * looked up.
+ */
+await app.register(cookie, { secret: session.cookieSecret() });
 
 /**
  * One file, and not a large one.
@@ -176,18 +201,29 @@ app.post("/api/cases", async (req, reply) => {
   if (!parsed.success) {
     return reply.code(400).send({ error: "invalid case", detail: parsed.error.flatten() });
   }
+  const userId = await session.current(req, reply);
   const row = await ref.db.case.create({
     data: {
       input: parsed.data.input,
       label: parsed.data.label ?? null,
+      userId,
     },
   });
   return reply.code(201).send({ id: row.id, createdAt: row.createdAt.toISOString() });
 });
 
 app.get<{ Params: { id: string } }>("/api/cases/:id", async (req, reply) => {
+  const userId = await session.current(req, reply);
   const row = await ref.db.case.findUnique({ where: { id: req.params.id } });
-  if (!row) return reply.code(404).send({ error: "no such case" });
+
+  // Someone else's case, or one from before ownership existed, is answered the
+  // same way a case that was never saved is: 404. Distinguishing them would
+  // turn this route into a way of asking whether a given case id exists, and a
+  // case id is the only thing standing between a stranger and an admission
+  // record. A row with no owner belongs to nobody and is readable by nobody.
+  if (!row || row.userId === null || row.userId !== userId) {
+    return reply.code(404).send({ error: "no such case" });
+  }
 
   const parsed = CaseInputSchema.safeParse(row.input);
   if (!parsed.success) {
@@ -271,6 +307,10 @@ app.post("/api/forecast", async (req, reply) => {
  * the caller's own copy of the file.
  */
 app.post("/api/policies/extract", async (req, reply) => {
+  // Before the file is touched, so that the row it creates has an owner from the
+  // moment it exists rather than acquiring one afterwards.
+  const userId = await session.current(req, reply);
+
   if (!vault.configured()) {
     return reply.code(503).send({
       error: "not configured",
@@ -301,7 +341,7 @@ app.post("/api/policies/extract", async (req, reply) => {
   // extraction cannot leave a plaintext copy anywhere.
   const storageKey = await vault.put(bytes);
   const filename = (part.filename ?? "schedule.pdf").slice(0, 200);
-  const doc = await ref.db.policyDocument.create({ data: { filename, storageKey } });
+  const doc = await ref.db.policyDocument.create({ data: { filename, storageKey, userId } });
 
   try {
     const { extraction } = await extractPolicy(bytes, filename, doc.id);
@@ -334,18 +374,99 @@ app.post("/api/policies/extract", async (req, reply) => {
  */
 app.post("/api/policies/:id/confirm", async (req, reply) => {
   const { id } = req.params as { id: string };
-  try {
-    const doc = await ref.db.policyDocument.update({
-      where: { id },
-      data: { confirmedAt: new Date() },
-    });
-    return { documentId: doc.id, confirmedAt: doc.confirmedAt };
-  } catch {
-    return reply.code(404).send({ error: "no such document" });
+  const userId = await session.current(req, reply);
+
+  // `updateMany` with the owner in the filter, rather than a read followed by a
+  // write: one statement, so there is no window in which the row is checked and
+  // then written under a different owner. A count of zero covers both "no such
+  // document" and "not yours", which are the same answer to the caller.
+  const hit = await ref.db.policyDocument.updateMany({
+    where: { id, userId },
+    data: { confirmedAt: new Date() },
+  });
+  if (hit.count === 0) return reply.code(404).send({ error: "no such document" });
+  return { documentId: id, confirmedAt: new Date().toISOString() };
+});
+
+/**
+ * Who this browser is, as far as the server is concerned.
+ *
+ * Called on load so the web app knows whether to offer "keep these cases" or
+ * "sign out". It creates the session if there is not one, which means the very
+ * first request a browser makes is the one that gives it an identity -- before
+ * anything has been uploaded that would need an owner.
+ */
+app.get("/api/me", async (req, reply) => {
+  const id = await session.current(req, reply);
+  const me = await ref.db.user.findUnique({ where: { id } });
+  const cases = await ref.db.case.count({ where: { userId: id } });
+  return { id, email: me?.email ?? null, anonymous: !me?.email, cases };
+});
+
+/**
+ * Put a name to the session, or sign in to one that already has a name.
+ *
+ * One endpoint for both because from the browser they are one act: you type an
+ * email and a password, and either it is yours already or it becomes yours. The
+ * server can tell which; telling the browser which would also tell anyone who
+ * asks whether a given person has an account here.
+ */
+app.post("/api/auth/claim", async (req, reply) => {
+  const parsed = CredentialsSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return reply.code(400).send({ error: "invalid credentials", detail: parsed.error.flatten() });
   }
+  // Before the hash, not after: scrypt is deliberately slow, and letting a
+  // rejected caller spend that time is a way to take the server down as well as
+  // a way to guess.
+  const gate = attempt(req.ip, parsed.data.email);
+  if (!gate.ok) {
+    return reply.code(429).header("retry-after", gate.retryIn).send({
+      error: "too many attempts",
+      detail: `Too many attempts. Try again in ${Math.ceil(gate.retryIn / 60)} minutes.`,
+    });
+  }
+
+  const out = await session.claim(req, reply, parsed.data.email, parsed.data.password);
+  if (!out.ok) return reply.code(401).send({ error: "rejected", detail: out.reason });
+  const cases = await ref.db.case.count({ where: { userId: out.id } });
+  return { id: out.id, email: out.email, anonymous: false, cases };
+});
+
+/**
+ * Let go of this browser. The cases stay on the account; only the cookie goes.
+ * The next request gets a fresh anonymous session, which is the right state for
+ * a shared machine -- signed out means starting over, not seeing the last
+ * person's claim.
+ */
+app.post("/api/auth/signout", async (_req, reply) => {
+  session.signOut(reply);
+  return { ok: true };
+});
+
+/**
+ * The cases on this account, newest first.
+ *
+ * Inputs only. Each one is re-adjudicated when it is opened, so this list never
+ * carries a figure -- a label and a date is all it takes to choose one, and a
+ * stale number in a list is a number someone might read.
+ */
+app.get("/api/cases", async (req, reply) => {
+  const userId = await session.current(req, reply);
+  const rows = await ref.db.case.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    select: { id: true, label: true, createdAt: true },
+  });
+  return rows.map((r) => ({ ...r, createdAt: r.createdAt.toISOString() }));
 });
 
 async function start() {
+  // A missing session secret is a server that cannot tell its users apart. It
+  // fails here, at boot, rather than on whichever request happens to be first.
+  session.check();
+
   // Retention is enforced on every upload, which is no good to a server that has
   // been idle since the last one. A boot is the other moment anything is
   // guaranteed to run, so it runs here too.

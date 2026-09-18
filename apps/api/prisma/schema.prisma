@@ -366,11 +366,21 @@ model Admission {
 
 // ── Application state ─────────────────────────────────────────────────────
 
+/// A person, or a browser that has not said who it is yet.
+///
+/// Both are the same row. A session is created on first contact so that a case
+/// and an uploaded schedule have an owner from the moment they exist, and `email`
+/// is null until someone chooses to name themselves. That ordering is deliberate:
+/// scoping someone's financial document to an account they have not made yet is
+/// not possible, and leaving it unscoped until they do is the thing to avoid.
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  /// Null for a session that has not been claimed with an email.
+  email        String?  @unique
+  /// scrypt, with the salt and parameters stored alongside the hash.
+  passwordHash String?
+  name         String?
+  createdAt    DateTime @default(now())
 
   cases     Case[]
   documents PolicyDocument[]

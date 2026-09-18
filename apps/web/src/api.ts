@@ -19,10 +19,14 @@ import {
   ExtractionSchema,
   ForecastResponseSchema,
   ReferenceBundleSchema,
+  SavedCaseSchema,
+  SessionSchema,
   type Extraction,
   type ForecastRequest,
   type ForecastResponse,
   type ReferenceBundle,
+  type SavedCase,
+  type Session,
 } from "@claimcast/contracts";
 
 /**
@@ -35,8 +39,20 @@ import {
 // `import.meta.env` is not there at all. Same origin is the right answer in both.
 const BASE = import.meta.env?.VITE_API_URL ?? "";
 
+/**
+ * Every request carries the session cookie.
+ *
+ * `credentials: "include"` is needed because in a deployed build the API is on
+ * a different origin from the page, and a browser withholds cookies across
+ * origins unless both sides opt in. The server's half is `credentials: true`
+ * on CORS with an explicit origin list. Leave this off and the symptom is a new
+ * anonymous session on every request, which looks like data loss rather than
+ * like a missing flag.
+ */
+const CREDS: RequestCredentials = "include";
+
 async function get<T>(path: string): Promise<T> {
-  const res = await fetch(BASE + path);
+  const res = await fetch(BASE + path, { credentials: CREDS });
   if (!res.ok) throw new Error("GET " + path + " returned " + res.status);
   return (await res.json()) as T;
 }
@@ -44,6 +60,7 @@ async function get<T>(path: string): Promise<T> {
 async function post<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(BASE + path, {
     method: "POST",
+    credentials: CREDS,
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
@@ -98,6 +115,7 @@ export async function getForecast(
 ): Promise<{ ok: true; forecast: ForecastResponse } | { ok: false; reason: string }> {
   const res = await fetch(BASE + "/api/forecast", {
     method: "POST",
+    credentials: CREDS,
     headers: { "content-type": "application/json" },
     body: JSON.stringify(req),
   });
@@ -130,7 +148,11 @@ export async function extractPolicy(
 > {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(BASE + "/api/policies/extract", { method: "POST", body: form });
+  const res = await fetch(BASE + "/api/policies/extract", {
+    method: "POST",
+    credentials: CREDS,
+    body: form,
+  });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { detail?: string };
     return { ok: false, reason: body.detail ?? "The schedule could not be read." };
@@ -153,5 +175,56 @@ export async function extractPolicy(
 export async function confirmDocument(id: string): Promise<void> {
   await fetch(BASE + "/api/policies/" + encodeURIComponent(id) + "/confirm", {
     method: "POST",
+    credentials: CREDS,
   }).catch(() => {});
+}
+
+/**
+ * Who the server thinks this browser is.
+ *
+ * The first call is also what creates the session, so it runs at boot -- before
+ * anything exists that would need an owner. An anonymous session is the normal
+ * state, not a degraded one: it owns cases and uploads exactly the way a named
+ * account does, and the only thing an email buys is the ability to come back to
+ * them from another browser.
+ */
+export async function whoami(): Promise<Session | null> {
+  try {
+    return SessionSchema.parse(await get<unknown>("/api/me"));
+  } catch {
+    // The reference load has already told the user the API is unreachable, and
+    // saying it twice on the same screen helps nobody.
+    return null;
+  }
+}
+
+/** Attach an email and password to this session, or sign in to an existing one. */
+export async function claimAccount(
+  email: string,
+  password: string,
+): Promise<{ ok: true; session: Session } | { ok: false; reason: string }> {
+  const res = await fetch(BASE + "/api/auth/claim", {
+    method: "POST",
+    credentials: CREDS,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    return { ok: false, reason: body.detail ?? "That did not work. Check the email and password." };
+  }
+  return { ok: true, session: SessionSchema.parse(await res.json()) };
+}
+
+export async function signOut(): Promise<void> {
+  await fetch(BASE + "/api/auth/signout", { method: "POST", credentials: CREDS }).catch(() => {});
+}
+
+/** The cases on this account, newest first. Labels and dates only, never figures. */
+export async function myCases(): Promise<SavedCase[]> {
+  try {
+    return SavedCaseSchema.array().parse(await get<unknown>("/api/cases"));
+  } catch {
+    return [];
+  }
 }

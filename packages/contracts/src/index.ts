@@ -361,3 +361,35 @@ export const ExtractionSchema = z.object({
 export type Span = z.infer<typeof SpanSchema>;
 export type ExtractedValue = z.infer<typeof ExtractedValueSchema>;
 export type Extraction = z.infer<typeof ExtractionSchema>;
+
+/**
+ * Signing in, or naming a session that already exists.
+ *
+ * The password floor is ten characters and there is no composition rule. Length
+ * is the thing that actually costs an attacker time; requiring a digit and a
+ * capital reliably produces the same handful of substitutions and a password
+ * people write down. This is checked on the server too -- a schema shared with
+ * the browser is a convenience for the person typing, never the control.
+ */
+export const CredentialsSchema = z.object({
+  email: z.string().email().max(254),
+  password: z.string().min(10).max(200),
+});
+export type Credentials = z.infer<typeof CredentialsSchema>;
+
+/** Who the server thinks is asking. `anonymous` means the session has no email yet. */
+export const SessionSchema = z.object({
+  id: z.string(),
+  email: z.string().nullable(),
+  anonymous: z.boolean(),
+  cases: z.number().int(),
+});
+export type Session = z.infer<typeof SessionSchema>;
+
+/** One row of "the cases on this account". Inputs are fetched when one is opened. */
+export const SavedCaseSchema = z.object({
+  id: z.string(),
+  label: z.string().nullable(),
+  createdAt: z.string(),
+});
+export type SavedCase = z.infer<typeof SavedCaseSchema>;

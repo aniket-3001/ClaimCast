@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import Account from "./components/Account";
 import { rupees, evaluate, registry, repair, stayDays, type CaseInput } from "@claimcast/engine";
 import { Intake } from "./components/Intake";
 import { Controls } from "./components/Controls";
@@ -71,8 +72,11 @@ export default function App() {
           <div className="brand">ClaimCast</div>
           <div className="brand-sub">What the policy will not pay, before the admission</div>
         </div>
-        <div className="brand-sub">
-          {name || policyholder ? `For ${name || policyholder}` : "Prototype"} · synthetic data
+        <div className="masthead-right">
+          <div className="brand-sub">
+            {name || policyholder ? `For ${name || policyholder}` : "Prototype"} · synthetic data
+          </div>
+          <Account />
         </div>
       </header>
 
