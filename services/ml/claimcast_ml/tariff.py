@@ -45,7 +45,7 @@ from functools import lru_cache
 
 from .categories import LOOSE, SPECIALTIES, UNMAPPED
 from .coding import CODING
-from .paths import ETL_OUT, REPO
+from .paths import ETL_OUT, ROOT
 
 #: Which PM-JAY bed category a ClaimCast room class is billed against. The room
 #: classes above semi-private have no counterpart in the scheme, which prices a
@@ -99,7 +99,7 @@ def _codes_from_ts(filename: str, const: str) -> dict[str, str]:
     the correct outcome -- a mapping that cannot be read is not a mapping that
     should be assumed.
     """
-    path = REPO / "apps" / "api" / "prisma" / filename
+    path = ROOT / "apps" / "api" / "prisma" / filename
     text = path.read_text(encoding="utf-8")
     body = text[text.index(const) :]
     pairs = re.findall(r'"(p-[a-z-]+)"\s*:\s*\{(.*?)\}', body, re.S)

@@ -17,6 +17,7 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app import app  # noqa: E402
+from claimcast_ml import model as model_mod, paths  # noqa: E402
 
 #: Every key `ForecastResponseSchema` requires. A response missing one would be
 #: rejected by the API's Zod parse, and a response carrying an extra one would be
@@ -92,3 +93,27 @@ def test_a_bad_city_tier_never_reaches_the_model(client):
         "roomClass": "general", "days": 2, "icuDays": 0,
     })
     assert r.status_code == 422
+
+
+def test_the_artifact_is_self_contained():
+    """
+    The regression test for a container that built cleanly and served a 500.
+
+    The image copies `services/ml` and nothing else, so anything a forecast reads
+    from the repository at request time exists in the build and not in the
+    container. `/health` still answered, because loading the artifact touches none
+    of it. This asserts what the Dockerfile relies on: that the artifact carries
+    every file `paths.SNAPSHOT` names.
+    """
+    m = model_mod.load()
+    data = paths.ARTIFACTS / m.version / "data"
+    assert data.is_dir(), (
+        "artifact " + m.version + " carries no snapshot. Rebuild it with "
+        "`python -m training.train`."
+    )
+    for relative in paths.SNAPSHOT:
+        assert (data / relative).is_file(), relative + " is not in the artifact."
+    assert paths.ROOT == data, (
+        "the model is reading " + str(paths.ROOT) + " rather than the snapshot at "
+        + str(data) + "."
+    )

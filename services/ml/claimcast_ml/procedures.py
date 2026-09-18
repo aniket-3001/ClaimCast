@@ -19,9 +19,9 @@ from __future__ import annotations
 import re
 from functools import lru_cache
 
-from .paths import REPO
+from .paths import ROOT
 
-SOURCE = REPO / "packages" / "engine" / "src" / "data" / "procedures.ts"
+SOURCE = ROOT / "packages" / "engine" / "src" / "data" / "procedures.ts"
 
 
 @lru_cache(maxsize=1)

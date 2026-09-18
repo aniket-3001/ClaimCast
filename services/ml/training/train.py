@@ -22,14 +22,22 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import shutil
 import sys
 from datetime import date, timezone, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# Training reads the repository; the service reads the snapshot training writes.
+# This has to be set before claimcast_ml is imported, because paths.py resolves its
+# root once at import -- otherwise a rebuild would read the artifact it is about to
+# replace and every run after the first would be a fixed point.
+os.environ["CLAIMCAST_SOURCE_ROOT"] = str(Path(__file__).resolve().parents[3])
+
 from claimcast_ml import dispersion, multiplier, procedures, split, survey  # noqa: E402
-from claimcast_ml.paths import ARTIFACTS, ETL_OUT  # noqa: E402
+from claimcast_ml.paths import ARTIFACTS, ETL_OUT, ROOT, SNAPSHOT  # noqa: E402
 
 #: The ETL outputs a forecast depends on, and what each one supplies.
 SOURCES = {
@@ -181,7 +189,25 @@ def main() -> int:
     )
 
     band = artifact["dispersion"]
+
+    # The inputs, frozen beside the figures fitted from them. The service reads
+    # these and not the repository, so the artifact is the whole of what a running
+    # container knows and a version number identifies a set of documents rather
+    # than a moment in someone's working tree.
+    for relative in SNAPSHOT:
+        src = ROOT / relative
+        if not src.is_file():
+            raise SystemExit(
+                str(src) + " is missing. The forecast reads it at request time, so an "
+                "artifact built without it would serve until the first request and fail "
+                "on it."
+            )
+        dst = out / "data" / relative
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(src, dst)
+
     print("wrote " + str(out / "model.json"))
+    print("  snapshot              " + str(len(SNAPSHOT)) + " source files frozen under " + str(out / "data"))
     print("  multiplier            " + format(artifact["multiplier"]["value"], ".3f")
           + "x tariff, from " + artifact["multiplier"]["estimatedFrom"])
     for sector in sorted(band["quantiles"]):

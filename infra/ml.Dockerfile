@@ -24,10 +24,19 @@ COPY services/ml/app.py ./app.py
 COPY services/ml/claimcast_ml ./claimcast_ml
 COPY services/ml/artifacts ./artifacts
 
-# The service reads the artifact and never the ETL output, so etl/ is not copied.
-# If the artifact is missing the service refuses to start rather than serving an
-# untrained estimate, which is checked here so the failure is at build time.
-RUN python -c "import app; print('artifact', app.model_mod.load().version)"
+# The artifact carries a snapshot of every file a forecast reads -- the ETL output,
+# the procedure list and the two code maps -- so the repository is not copied and
+# not needed. That claim is checked by forecasting here rather than by asserting it
+# in a comment, which is what the previous version of this file did while the
+# container returned a 500 on its first real request. A missing artifact, a missing
+# snapshot or a broken contract fails the build instead of the demo.
+RUN python -c "\
+import app, json; \
+from claimcast_ml.forecast import forecast; \
+m = app.model_mod.load(); \
+f = forecast(m, 'p-tkr', 'X', True, 'semi_private', 6, 0); \
+assert f.p10 < f.p50 < f.p90 and sum(f.split.values()) == f.p50; \
+print('artifact', m.version, 'forecasts p50 Rs', f.p50 // 100)"
 
 # Not root: this process takes uploads from the API and has no reason to own the
 # filesystem it runs on.

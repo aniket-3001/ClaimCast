@@ -1,0 +1,1461 @@
+{
+  "source": {
+    "id": "nsso-75-health",
+    "name": "NSS 75th Round, Household Social Consumption: Health (Key Indicators)",
+    "publisher": "National Statistical Office, Ministry of Statistics and Programme Implementation",
+    "url": "https://www.mospi.gov.in/sites/default/files/publication_reports/KI_Health_75th_Final.pdf",
+    "checksum": "37da83c65ebf2b426d7a7d9eb31c204dd64a47991273b626466466690a631baf",
+    "caveat": "A household survey, not a price list, and eight years old. Every figure is an average over a stratum -- a state, a sector, an ailment category -- and the report publishes no quantile of the patient-level distribution, so a band fitted to these cells describes the spread of average cost across strata and not the spread across patients. The public-hospital column is out-of-pocket spending at a government hospital, which is neither the CGHS rate nor the PM-JAY package price. Figures are July 2017 - June 2018 rupees and exclude hospitalisation for childbirth, transport to hospital, and food.",
+    "document": "NSS Report KI(75/25.0), Key Indicators of Social Consumption in India: Health, July 2017 - June 2018. Statements 3.15, 3.16 and 3.17, and Tables A16, A17, A18, A29 and A30 of Appendix A.",
+    "effectiveFrom": "2018-06-30"
+  },
+  "note": "Paise, in 2017-18 prices. Multiply by the factor in cpi-health.json to state any of these in December 2025 rupees.",
+  "surveyPeriod": {
+    "from": "2017-07-01",
+    "to": "2018-06-30",
+    "households": 113823
+  },
+  "byHospitalType": {
+    "public": {
+      "rural": 429000,
+      "urban": 483700,
+      "combined": 445200
+    },
+    "private": {
+      "rural": 2734700,
+      "urban": 3882200,
+      "combined": 3184500
+    },
+    "all": {
+      "rural": 1667600,
+      "urban": 2647500,
+      "combined": 2013500
+    }
+  },
+  "byAilment": [
+    {
+      "category": "cancers",
+      "printed": "Cancers",
+      "public": 2252000,
+      "private": 9330500,
+      "all": 6121600
+    },
+    {
+      "category": "psychiatric-neurological",
+      "printed": "Psychiatric and neurological ailments",
+      "public": 723500,
+      "private": 4123900,
+      "all": 2684300
+    },
+    {
+      "category": "cardio-vascular",
+      "printed": "Cardio-vascular ailments",
+      "public": 663500,
+      "private": 5497000,
+      "all": 3600100
+    },
+    {
+      "category": "musculo-skeletal",
+      "printed": "Musculo-skeletal ailments",
+      "public": 571600,
+      "private": 4636500,
+      "all": 3206600
+    },
+    {
+      "category": "genito-urinary",
+      "printed": "Genito-urinary ailments",
+      "public": 534500,
+      "private": 3340900,
+      "all": 2477000
+    },
+    {
+      "category": "gastro-intestinal",
+      "printed": "Gastro-intestinal ailment",
+      "public": 384700,
+      "private": 2987000,
+      "all": 1982100
+    },
+    {
+      "category": "respiratory",
+      "printed": "Respiratory ailments",
+      "public": 334600,
+      "private": 2404900,
+      "all": 1390500
+    },
+    {
+      "category": "eye",
+      "printed": "Eye ailments",
+      "public": 260500,
+      "private": 1876700,
+      "all": 1091200
+    },
+    {
+      "category": "infections",
+      "printed": "Infections",
+      "public": 205400,
+      "private": 1520800,
+      "all": 906400
+    },
+    {
+      "category": "any",
+      "printed": "any ailment",
+      "public": 445200,
+      "private": 3184500,
+      "all": 2013500
+    }
+  ],
+  "byAilmentAndSector": [
+    {
+      "category": "infections",
+      "sector": "rural",
+      "printed": "a. Infections",
+      "public": 214900,
+      "private": 1410200,
+      "all": 800500
+    },
+    {
+      "category": "cardio-vascular",
+      "sector": "rural",
+      "printed": "b. Cardio-vascular ailments",
+      "public": 691900,
+      "private": 4275900,
+      "all": 2713600
+    },
+    {
+      "category": "gastro-intestinal",
+      "sector": "rural",
+      "printed": "c. Gastro-intestinal ailment",
+      "public": 345600,
+      "private": 2674500,
+      "all": 1683300
+    },
+    {
+      "category": "respiratory",
+      "sector": "rural",
+      "printed": "d. Respiratory ailments",
+      "public": 338600,
+      "private": 1984600,
+      "all": 1162500
+    },
+    {
+      "category": "genito-urinary",
+      "sector": "rural",
+      "printed": "e. Genito-urinary ailments",
+      "public": 528400,
+      "private": 2661100,
+      "all": 1967400
+    },
+    {
+      "category": "musculo-skeletal",
+      "sector": "rural",
+      "printed": "f. Musculo-skeletal ailments",
+      "public": 472200,
+      "private": 3772900,
+      "all": 2557200
+    },
+    {
+      "category": "psychiatric-neurological",
+      "sector": "rural",
+      "printed": "g. Psychiatric and neurological ailments",
+      "public": 686800,
+      "private": 3365400,
+      "all": 2180600
+    },
+    {
+      "category": "eye",
+      "sector": "rural",
+      "printed": "h. Eye ailments",
+      "public": 242100,
+      "private": 1576700,
+      "all": 874700
+    },
+    {
+      "category": "cancers",
+      "sector": "rural",
+      "printed": "i. Cancers",
+      "public": 2390500,
+      "private": 8532600,
+      "all": 5699600
+    },
+    {
+      "category": "any",
+      "sector": "rural",
+      "printed": "Any ailment",
+      "public": 429000,
+      "private": 2734700,
+      "all": 1667600
+    },
+    {
+      "category": "infections",
+      "sector": "urban",
+      "printed": "a. Infections",
+      "public": 182200,
+      "private": 1684300,
+      "all": 1099200
+    },
+    {
+      "category": "cardio-vascular",
+      "sector": "urban",
+      "printed": "b. Cardio-vascular ailments",
+      "public": 615200,
+      "private": 6892000,
+      "all": 4778800
+    },
+    {
+      "category": "gastro-intestinal",
+      "sector": "urban",
+      "printed": "c. Gastro-intestinal ailment",
+      "public": 500300,
+      "private": 3544200,
+      "all": 2620200
+    },
+    {
+      "category": "respiratory",
+      "sector": "urban",
+      "printed": "d. Respiratory ailments",
+      "public": 327400,
+      "private": 3011100,
+      "all": 1767000
+    },
+    {
+      "category": "genito-urinary",
+      "sector": "urban",
+      "printed": "e. Genito-urinary ailments",
+      "public": 546800,
+      "private": 4400100,
+      "all": 3327200
+    },
+    {
+      "category": "musculo-skeletal",
+      "sector": "urban",
+      "printed": "f. Musculo-skeletal ailments",
+      "public": 816400,
+      "private": 6065700,
+      "all": 4452600
+    },
+    {
+      "category": "psychiatric-neurological",
+      "sector": "urban",
+      "printed": "g. Psychiatric and neurological ailments",
+      "public": 805200,
+      "private": 5342000,
+      "all": 3608200
+    },
+    {
+      "category": "eye",
+      "sector": "urban",
+      "printed": "h. Eye ailments",
+      "public": 303100,
+      "private": 2356800,
+      "all": 1506400
+    },
+    {
+      "category": "cancers",
+      "sector": "urban",
+      "printed": "i. Cancers",
+      "public": 1998200,
+      "private": 10654800,
+      "all": 6825900
+    },
+    {
+      "category": "any",
+      "sector": "urban",
+      "printed": "Any ailment",
+      "public": 483700,
+      "private": 3882200,
+      "all": 2647500
+    },
+    {
+      "category": "infections",
+      "sector": "combined",
+      "printed": "a. Infections",
+      "public": 205400,
+      "private": 1520800,
+      "all": 906400
+    },
+    {
+      "category": "cardio-vascular",
+      "sector": "combined",
+      "printed": "b. Cardio-vascular ailments",
+      "public": 663500,
+      "private": 5497000,
+      "all": 3600100
+    },
+    {
+      "category": "gastro-intestinal",
+      "sector": "combined",
+      "printed": "c. Gastro-intestinal ailment",
+      "public": 384700,
+      "private": 2987000,
+      "all": 1982100
+    },
+    {
+      "category": "respiratory",
+      "sector": "combined",
+      "printed": "d. Respiratory ailments",
+      "public": 334600,
+      "private": 2404900,
+      "all": 1390500
+    },
+    {
+      "category": "genito-urinary",
+      "sector": "combined",
+      "printed": "Rural + e. Genito-urinary ailments",
+      "public": 534500,
+      "private": 3340900,
+      "all": 2477000
+    },
+    {
+      "category": "musculo-skeletal",
+      "sector": "combined",
+      "printed": "f. Musculo-skeletal ailments",
+      "public": 571600,
+      "private": 4636500,
+      "all": 3206600
+    },
+    {
+      "category": "psychiatric-neurological",
+      "sector": "combined",
+      "printed": "g. Psychiatric and neurological ailments",
+      "public": 723500,
+      "private": 4123900,
+      "all": 2684300
+    },
+    {
+      "category": "eye",
+      "sector": "combined",
+      "printed": "h. Eye ailments",
+      "public": 260500,
+      "private": 1876700,
+      "all": 1091200
+    },
+    {
+      "category": "cancers",
+      "sector": "combined",
+      "printed": "i. Cancers",
+      "public": 2252000,
+      "private": 9330500,
+      "all": 6121600
+    },
+    {
+      "category": "any",
+      "sector": "combined",
+      "printed": "Any ailment",
+      "public": 445200,
+      "private": 3184500,
+      "all": 2013500
+    }
+  ],
+  "byQuintile": [
+    {
+      "quintile": "q1",
+      "sector": "rural",
+      "printed": "1st (lowest 20% of population)",
+      "public": 386300,
+      "private": 2259500,
+      "all": 1227200
+    },
+    {
+      "quintile": "q2",
+      "sector": "rural",
+      "printed": "2nd (next 20% of population)",
+      "public": 438700,
+      "private": 2738300,
+      "all": 1562200
+    },
+    {
+      "quintile": "q3",
+      "sector": "rural",
+      "printed": "3rd",
+      "public": 363200,
+      "private": 2528100,
+      "all": 1426100
+    },
+    {
+      "quintile": "q4",
+      "sector": "rural",
+      "printed": "4th",
+      "public": 387600,
+      "private": 2470600,
+      "all": 1526600
+    },
+    {
+      "quintile": "q5",
+      "sector": "rural",
+      "printed": "(top 20% of population)",
+      "public": 535600,
+      "private": 3133100,
+      "all": 2133800
+    },
+    {
+      "quintile": "all",
+      "sector": "rural",
+      "printed": "all",
+      "public": 429000,
+      "private": 2734700,
+      "all": 1667600
+    },
+    {
+      "quintile": "q1",
+      "sector": "urban",
+      "printed": "(lowest 20% of population)",
+      "public": 419500,
+      "private": 2503000,
+      "all": 1414000
+    },
+    {
+      "quintile": "q2",
+      "sector": "urban",
+      "printed": "2nd (next 20% of population)",
+      "public": 409100,
+      "private": 3035700,
+      "all": 1875900
+    },
+    {
+      "quintile": "q3",
+      "sector": "urban",
+      "printed": "3rd",
+      "public": 392400,
+      "private": 3704000,
+      "all": 2359100
+    },
+    {
+      "quintile": "q4",
+      "sector": "urban",
+      "printed": "4th",
+      "public": 591900,
+      "private": 3664600,
+      "all": 2661200
+    },
+    {
+      "quintile": "q5",
+      "sector": "urban",
+      "printed": "5th (top 20% of population)",
+      "public": 777400,
+      "private": 5267400,
+      "all": 4457300
+    },
+    {
+      "quintile": "all",
+      "sector": "urban",
+      "printed": "all",
+      "public": 483700,
+      "private": 3882200,
+      "all": 2647500
+    }
+  ],
+  "childbirth": {
+    "note": "Childbirth is excluded from every other figure in this file. `medical` is Table A29 and is the comparable one: expenditure on the hospital bill. `withNonMedical` is Table A30, which adds transport, food and lodging and is therefore larger; it is here only because it is the sole published split between normal and caesarean delivery, and should be used for that ratio rather than for a level.",
+    "medical": [
+      {
+        "sector": "rural",
+        "hospitalType": "public",
+        "q1": 110600,
+        "q2": 128300,
+        "q3": 130400,
+        "q4": 147600,
+        "q5": 160600,
+        "all": 132400
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "private",
+        "q1": 1479300,
+        "q2": 1641000,
+        "q3": 1666300,
+        "q4": 1933600,
+        "q5": 2219700,
+        "all": 1877100
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "all",
+        "q1": 292600,
+        "q2": 383800,
+        "q3": 460200,
+        "q4": 644700,
+        "q5": 1009100,
+        "all": 544100
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "public",
+        "q1": 162900,
+        "q2": 197900,
+        "q3": 212400,
+        "q4": 225200,
+        "q5": 209000,
+        "all": 191900
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "private",
+        "q1": 1890500,
+        "q2": 2124200,
+        "q3": 3027600,
+        "q4": 2837500,
+        "q5": 3588000,
+        "all": 2745100
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "all",
+        "q1": 728900,
+        "q2": 922500,
+        "q3": 1634700,
+        "q4": 1920900,
+        "q5": 2920800,
+        "all": 1445500
+      },
+      {
+        "sector": "combined",
+        "hospitalType": "public",
+        "q1": 119800,
+        "q2": 129600,
+        "q3": 146800,
+        "q4": 167700,
+        "q5": 207400,
+        "all": 143300
+      },
+      {
+        "sector": "combined",
+        "hospitalType": "private",
+        "q1": 1602600,
+        "q2": 1646300,
+        "q3": 1900100,
+        "q4": 2119600,
+        "q5": 3049400,
+        "all": 2236400
+      },
+      {
+        "sector": "combined",
+        "hospitalType": "all",
+        "q1": 343200,
+        "q2": 429600,
+        "q3": 635800,
+        "q4": 892700,
+        "q5": 1979700,
+        "all": 773400
+      }
+    ],
+    "withNonMedical": [
+      {
+        "sector": "rural",
+        "hospitalType": "public",
+        "delivery": "all",
+        "q1": 194000,
+        "q2": 224700,
+        "q3": 238500,
+        "q4": 266800,
+        "q5": 315800,
+        "all": 240400
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "public",
+        "delivery": "normal",
+        "q1": 180500,
+        "q2": 197800,
+        "q3": 206400,
+        "q4": 226200,
+        "q5": 262200,
+        "all": 208400
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "public",
+        "delivery": "caesarean",
+        "q1": 466400,
+        "q2": 522600,
+        "q3": 565900,
+        "q4": 552200,
+        "q5": 566000,
+        "all": 542300
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "private",
+        "delivery": "all",
+        "q1": 1649500,
+        "q2": 1797300,
+        "q3": 1890100,
+        "q4": 2121500,
+        "q5": 2452200,
+        "all": 2078800
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "private",
+        "delivery": "normal",
+        "q1": 1023500,
+        "q2": 1016700,
+        "q3": 1179800,
+        "q4": 1304700,
+        "q5": 1618300,
+        "all": 1293100
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "private",
+        "delivery": "caesarean",
+        "q1": 2694900,
+        "q2": 2754600,
+        "q3": 2735600,
+        "q4": 2805800,
+        "q5": 3307800,
+        "all": 2940600
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "all",
+        "delivery": "all",
+        "q1": 389700,
+        "q2": 493900,
+        "q3": 596400,
+        "q4": 791800,
+        "q5": 1206800,
+        "all": 679900
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "all",
+        "delivery": "normal",
+        "q1": 258000,
+        "q2": 286900,
+        "q3": 345100,
+        "q4": 408800,
+        "q5": 675800,
+        "all": 374600
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "all",
+        "delivery": "caesarean",
+        "q1": 1705500,
+        "q2": 1708500,
+        "q3": 1837200,
+        "q4": 2025500,
+        "q5": 2399600,
+        "all": 2020000
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "public",
+        "delivery": "all",
+        "q1": 255800,
+        "q2": 318200,
+        "q3": 353400,
+        "q4": 376000,
+        "q5": 342600,
+        "all": 310600
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "public",
+        "delivery": "normal",
+        "q1": 212400,
+        "q2": 236000,
+        "q3": 292600,
+        "q4": 300300,
+        "q5": 276600,
+        "all": 245900
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "public",
+        "delivery": "caesarean",
+        "q1": 486000,
+        "q2": 646400,
+        "q3": 506800,
+        "q4": 560100,
+        "q5": 569000,
+        "all": 550400
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "private",
+        "delivery": "all",
+        "q1": 2053400,
+        "q2": 2272600,
+        "q3": 3114000,
+        "q4": 3052300,
+        "q5": 3817200,
+        "all": 2910500
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "private",
+        "delivery": "normal",
+        "q1": 1224100,
+        "q2": 1430100,
+        "q3": 1658300,
+        "q4": 1986500,
+        "q5": 2700000,
+        "all": 1796000
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "private",
+        "delivery": "caesarean",
+        "q1": 3044200,
+        "q2": 3249800,
+        "q3": 3412400,
+        "q4": 3865000,
+        "q5": 4740700,
+        "all": 3750800
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "all",
+        "delivery": "all",
+        "q1": 851000,
+        "q2": 1066800,
+        "q3": 1807500,
+        "q4": 2118100,
+        "q5": 3145300,
+        "all": 1609200
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "all",
+        "delivery": "normal",
+        "q1": 456200,
+        "q2": 587600,
+        "q3": 890200,
+        "q4": 1190200,
+        "q5": 1994600,
+        "all": 838200
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "all",
+        "delivery": "caesarean",
+        "q1": 1998400,
+        "q2": 2178900,
+        "q3": 2357200,
+        "q4": 3195300,
+        "q5": 4365000,
+        "all": 2805800
+      }
+    ]
+  },
+  "components": [
+    {
+      "component": "package",
+      "publicRural": 42700,
+      "publicUrban": 86700,
+      "privateRural": 663100,
+      "privateUrban": 1538000
+    },
+    {
+      "component": "doctor-surgeon-fee",
+      "publicRural": 17200,
+      "publicUrban": 19700,
+      "privateRural": 534000,
+      "privateUrban": 628400
+    },
+    {
+      "component": "medicines",
+      "publicRural": 222000,
+      "publicUrban": 210000,
+      "privateRural": 681800,
+      "privateUrban": 703500
+    },
+    {
+      "component": "diagnostics",
+      "publicRural": 80000,
+      "publicUrban": 77000,
+      "privateRural": 280200,
+      "privateUrban": 340300
+    },
+    {
+      "component": "bed",
+      "publicRural": 11800,
+      "publicUrban": 15200,
+      "privateRural": 337700,
+      "privateUrban": 417600
+    },
+    {
+      "component": "other",
+      "publicRural": 55300,
+      "publicUrban": 75200,
+      "privateRural": 237900,
+      "privateUrban": 254400
+    },
+    {
+      "component": "total",
+      "publicRural": 429000,
+      "publicUrban": 483700,
+      "privateRural": 2734700,
+      "privateUrban": 3882200
+    }
+  ],
+  "byState": [
+    {
+      "state": "Andhra Pradesh",
+      "public": {
+        "rural": 145300,
+        "urban": 120800,
+        "combined": 135800
+      },
+      "private": {
+        "rural": 2241500,
+        "urban": 3284700,
+        "combined": 2569200
+      },
+      "all": {
+        "rural": 1671700,
+        "urban": 2247900,
+        "combined": 1866500
+      }
+    },
+    {
+      "state": "Arunachal Pradesh",
+      "public": {
+        "rural": 379300,
+        "urban": 481000,
+        "combined": 395200
+      },
+      "private": {
+        "rural": 1396600,
+        "urban": 2349700,
+        "combined": 1546900
+      },
+      "all": {
+        "rural": 450400,
+        "urban": 609200,
+        "combined": 475400
+      }
+    },
+    {
+      "state": "Assam",
+      "public": {
+        "rural": 454500,
+        "urban": 784200,
+        "combined": 499100
+      },
+      "private": {
+        "rural": 2878500,
+        "urban": 7165700,
+        "combined": 4420400
+      },
+      "all": {
+        "rural": 982600,
+        "urban": 3893500,
+        "combined": 1566100
+      }
+    },
+    {
+      "state": "Bihar",
+      "public": {
+        "rural": 406400,
+        "urban": 402700,
+        "combined": 406100
+      },
+      "private": {
+        "rural": 1647900,
+        "urban": 2505200,
+        "combined": 1751800
+      },
+      "all": {
+        "rural": 1159500,
+        "urban": 1786100,
+        "combined": 1229800
+      }
+    },
+    {
+      "state": "Chhattisgarh",
+      "public": {
+        "rural": 330300,
+        "urban": 461800,
+        "combined": 353700
+      },
+      "private": {
+        "rural": 6528800,
+        "urban": 2815100,
+        "combined": 5162200
+      },
+      "all": {
+        "rural": 2612300,
+        "urban": 1987300,
+        "combined": 2452100
+      }
+    },
+    {
+      "state": "Delhi",
+      "public": {
+        "rural": 337800,
+        "urban": 221700,
+        "combined": 228500
+      },
+      "private": {
+        "rural": 2786800,
+        "urban": 6407500,
+        "combined": 6350000
+      },
+      "all": {
+        "rural": 679700,
+        "urban": 2589600,
+        "combined": 2509400
+      }
+    },
+    {
+      "state": "Goa",
+      "public": {
+        "rural": 181800,
+        "urban": 346600,
+        "combined": 289400
+      },
+      "private": {
+        "rural": 4135100,
+        "urban": 3551200,
+        "combined": 3619900
+      },
+      "all": {
+        "rural": 776500,
+        "urban": 1674200,
+        "combined": 1433300
+      }
+    },
+    {
+      "state": "Gujarat",
+      "public": {
+        "rural": 115100,
+        "urban": 352900,
+        "combined": 193600
+      },
+      "private": {
+        "rural": 2502700,
+        "urban": 2928100,
+        "combined": 2736100
+      },
+      "all": {
+        "rural": 1492400,
+        "urban": 2241800,
+        "combined": 1853000
+      }
+    },
+    {
+      "state": "Haryana",
+      "public": {
+        "rural": 724200,
+        "urban": 721500,
+        "combined": 723600
+      },
+      "private": {
+        "rural": 2634600,
+        "urban": 3410900,
+        "combined": 2945800
+      },
+      "all": {
+        "rural": 1917700,
+        "urban": 3033700,
+        "combined": 2310700
+      }
+    },
+    {
+      "state": "Himachal Pradesh",
+      "public": {
+        "rural": 1279700,
+        "urban": 1273800,
+        "combined": 1279200
+      },
+      "private": {
+        "rural": 3779700,
+        "urban": 3600300,
+        "combined": 3763900
+      },
+      "all": {
+        "rural": 2030800,
+        "urban": 1779100,
+        "combined": 2009800
+      }
+    },
+    {
+      "state": "Jammu & Kashmir",
+      "public": {
+        "rural": 472000,
+        "urban": 920300,
+        "combined": 571400
+      },
+      "private": {
+        "rural": 5004300,
+        "urban": 3971800,
+        "combined": 4309800
+      },
+      "all": {
+        "rural": 637100,
+        "urban": 1567800,
+        "combined": 878900
+      }
+    },
+    {
+      "state": "Jharkhand",
+      "public": {
+        "rural": 397100,
+        "urban": 1569900,
+        "combined": 814700
+      },
+      "private": {
+        "rural": 2822900,
+        "urban": 3305800,
+        "combined": 3035300
+      },
+      "all": {
+        "rural": 1728800,
+        "urban": 2605500,
+        "combined": 2074100
+      }
+    },
+    {
+      "state": "Karnataka",
+      "public": {
+        "rural": 344500,
+        "urban": 419500,
+        "combined": 362400
+      },
+      "private": {
+        "rural": 1708500,
+        "urban": 3146200,
+        "combined": 2314900
+      },
+      "all": {
+        "rural": 1276800,
+        "urban": 2657500,
+        "combined": 1790000
+      }
+    },
+    {
+      "state": "Kerala",
+      "public": {
+        "rural": 439500,
+        "urban": 458900,
+        "combined": 446900
+      },
+      "private": {
+        "rural": 2594900,
+        "urban": 3274600,
+        "combined": 2877500
+      },
+      "all": {
+        "rural": 1705400,
+        "urban": 2212300,
+        "combined": 1910900
+      }
+    },
+    {
+      "state": "Madhya Pradesh",
+      "public": {
+        "rural": 209300,
+        "urban": 203000,
+        "combined": 207300
+      },
+      "private": {
+        "rural": 2508600,
+        "urban": 3109400,
+        "combined": 2703700
+      },
+      "all": {
+        "rural": 1432500,
+        "urban": 1736500,
+        "combined": 1527800
+      }
+    },
+    {
+      "state": "Maharashtra",
+      "public": {
+        "rural": 560600,
+        "urban": 718900,
+        "combined": 617700
+      },
+      "private": {
+        "rural": 2382100,
+        "urban": 4254000,
+        "combined": 3256600
+      },
+      "all": {
+        "rural": 1938300,
+        "urban": 3661200,
+        "combined": 2709600
+      }
+    },
+    {
+      "state": "Manipur",
+      "public": {
+        "rural": 593200,
+        "urban": 905100,
+        "combined": 694400
+      },
+      "private": {
+        "rural": 6036100,
+        "urban": 3954100,
+        "combined": 4978400
+      },
+      "all": {
+        "rural": 1417000,
+        "urban": 1750500,
+        "combined": 1536600
+      }
+    },
+    {
+      "state": "Meghalaya",
+      "public": {
+        "rural": 189400,
+        "urban": 766800,
+        "combined": 238500
+      },
+      "private": {
+        "rural": 1487000,
+        "urban": 3568700,
+        "combined": 2737500
+      },
+      "all": {
+        "rural": 279000,
+        "urban": 2271100,
+        "combined": 604100
+      }
+    },
+    {
+      "state": "Mizoram",
+      "public": {
+        "rural": 562200,
+        "urban": 752800,
+        "combined": 641500
+      },
+      "private": {
+        "rural": 1955800,
+        "urban": 4774000,
+        "combined": 3957800
+      },
+      "all": {
+        "rural": 726000,
+        "urban": 1737100,
+        "combined": 1210900
+      }
+    },
+    {
+      "state": "Nagaland",
+      "public": {
+        "rural": 464800,
+        "urban": 508900,
+        "combined": 474800
+      },
+      "private": {
+        "rural": 1309800,
+        "urban": 1969900,
+        "combined": 1695300
+      },
+      "all": {
+        "rural": 602000,
+        "urban": 1210900,
+        "combined": 797800
+      }
+    },
+    {
+      "state": "Odisha",
+      "public": {
+        "rural": 509800,
+        "urban": 669800,
+        "combined": 528300
+      },
+      "private": {
+        "rural": 2997400,
+        "urban": 3393500,
+        "combined": 3094700
+      },
+      "all": {
+        "rural": 1115900,
+        "urban": 1874800,
+        "combined": 1229500
+      }
+    },
+    {
+      "state": "Punjab",
+      "public": {
+        "rural": 1509300,
+        "urban": 1029300,
+        "combined": 1327700
+      },
+      "private": {
+        "rural": 4030300,
+        "urban": 3750200,
+        "combined": 3920800
+      },
+      "all": {
+        "rural": 3180500,
+        "urban": 2933800,
+        "combined": 3086900
+      }
+    },
+    {
+      "state": "Rajasthan",
+      "public": {
+        "rural": 733200,
+        "urban": 670700,
+        "combined": 717400
+      },
+      "private": {
+        "rural": 2578800,
+        "urban": 3522800,
+        "combined": 2822600
+      },
+      "all": {
+        "rural": 1626800,
+        "urban": 2082400,
+        "combined": 1743500
+      }
+    },
+    {
+      "state": "Sikkim",
+      "public": {
+        "rural": 333900,
+        "urban": 291500,
+        "combined": 326600
+      },
+      "private": {
+        "rural": 2480500,
+        "urban": 1916800,
+        "combined": 2320100
+      },
+      "all": {
+        "rural": 718000,
+        "urban": 770300,
+        "combined": 728200
+      }
+    },
+    {
+      "state": "Tamil Nadu",
+      "public": {
+        "rural": 52000,
+        "urban": 43300,
+        "combined": 48500
+      },
+      "private": {
+        "rural": 2841200,
+        "urban": 4156600,
+        "combined": 3558100
+      },
+      "all": {
+        "rural": 1236200,
+        "urban": 2326000,
+        "combined": 1757000
+      }
+    },
+    {
+      "state": "Telangana",
+      "public": {
+        "rural": 127800,
+        "urban": 692200,
+        "combined": 336700
+      },
+      "private": {
+        "rural": 2601900,
+        "urban": 3519100,
+        "combined": 3033600
+      },
+      "all": {
+        "rural": 1988700,
+        "urban": 3008200,
+        "combined": 2447100
+      }
+    },
+    {
+      "state": "Tripura",
+      "public": {
+        "rural": 331400,
+        "urban": 607700,
+        "combined": 375200
+      },
+      "private": {
+        "rural": 6401700,
+        "urban": 6713900,
+        "combined": 6532600
+      },
+      "all": {
+        "rural": 516100,
+        "urban": 1340000,
+        "combined": 657400
+      }
+    },
+    {
+      "state": "Uttarakhand",
+      "public": {
+        "rural": 277400,
+        "urban": 2237600,
+        "combined": 737200
+      },
+      "private": {
+        "rural": 2550200,
+        "urban": 4164700,
+        "combined": 3237200
+      },
+      "all": {
+        "rural": 1594500,
+        "urban": 3703800,
+        "combined": 2342100
+      }
+    },
+    {
+      "state": "Uttar Pradesh",
+      "public": {
+        "rural": 691400,
+        "urban": 1023900,
+        "combined": 776500
+      },
+      "private": {
+        "rural": 2976800,
+        "urban": 4070600,
+        "combined": 3307100
+      },
+      "all": {
+        "rural": 2314400,
+        "urban": 3333900,
+        "combined": 2608900
+      }
+    },
+    {
+      "state": "West Bengal",
+      "public": {
+        "rural": 272600,
+        "urban": 395400,
+        "combined": 306100
+      },
+      "private": {
+        "rural": 4502300,
+        "urban": 5754900,
+        "combined": 5038000
+      },
+      "all": {
+        "rural": 1331000,
+        "urban": 2523500,
+        "combined": 1714100
+      }
+    },
+    {
+      "state": "A & N Islands",
+      "public": {
+        "rural": 3900,
+        "urban": 22800,
+        "combined": 9800
+      },
+      "private": {
+        "rural": 10601500,
+        "urban": 10703800,
+        "combined": 10680000
+      },
+      "all": {
+        "rural": 731600,
+        "urban": 3664200,
+        "combined": 1868600
+      }
+    },
+    {
+      "state": "Chandigarh",
+      "public": {
+        "rural": 906100,
+        "urban": 2381900,
+        "combined": 2358500
+      },
+      "private": {
+        "rural": 12609000,
+        "urban": 12014500,
+        "combined": 12016500
+      },
+      "all": {
+        "rural": 1977700,
+        "urban": 5528600,
+        "combined": 5487000
+      }
+    },
+    {
+      "state": "Dadra & Nagar Haveli",
+      "public": {
+        "rural": 10300,
+        "urban": 42400,
+        "combined": 23000
+      },
+      "private": {
+        "rural": 722400,
+        "urban": 1708100,
+        "combined": 1644900
+      },
+      "all": {
+        "rural": 47400,
+        "urban": 959900,
+        "combined": 576900
+      }
+    },
+    {
+      "state": "Daman & Diu",
+      "public": {
+        "rural": 27000,
+        "urban": 3400,
+        "combined": 13700
+      },
+      "private": {
+        "rural": 4320600,
+        "urban": 2401200,
+        "combined": 2714300
+      },
+      "all": {
+        "rural": 2647900,
+        "urban": 2070200,
+        "combined": 2194900
+      }
+    },
+    {
+      "state": "Lakshadweep",
+      "public": {
+        "rural": 51200,
+        "urban": 17500,
+        "combined": 28700
+      },
+      "private": {
+        "rural": 4094300,
+        "urban": 4143200,
+        "combined": 4134700
+      },
+      "all": {
+        "rural": 794000,
+        "urban": 1298400,
+        "combined": 1138000
+      }
+    },
+    {
+      "state": "Puducherry",
+      "public": {
+        "rural": 21600,
+        "urban": 266800,
+        "combined": 151600
+      },
+      "private": {
+        "rural": 2724600,
+        "urban": 7186500,
+        "combined": 6081800
+      },
+      "all": {
+        "rural": 535400,
+        "urban": 2945300,
+        "combined": 1980400
+      }
+    },
+    {
+      "state": "All-India",
+      "public": {
+        "rural": 429000,
+        "urban": 483700,
+        "combined": 445200
+      },
+      "private": {
+        "rural": 2734700,
+        "urban": 3882200,
+        "combined": 3184500
+      },
+      "all": {
+        "rural": 1667600,
+        "urban": 2647500,
+        "combined": 2013500
+      }
+    }
+  ]
+}

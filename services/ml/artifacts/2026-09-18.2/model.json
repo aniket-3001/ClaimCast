@@ -1,5 +1,5 @@
 {
-  "builtAt": "2026-09-18T14:45:32+00:00",
+  "builtAt": "2026-09-18T17:03:42+00:00",
   "deflator": {
     "basis": "CPI Health sub-group 6.1.02, base 2012=100",
     "factor": 1.536384,
@@ -62,7 +62,7 @@
       22000000
     ]
   },
-  "modelVersion": "2026-09-18.1",
+  "modelVersion": "2026-09-18.2",
   "multiplier": {
     "basis": "Private charge estimated at 3.37x the government tariff, from the one ailment category where the survey and the tariff price the same event: private-hospital expenditure on a delivery (NSS 75th round, Table A29, deflated to December 2025) against the mean of the two PM-JAY delivery packages. The same ratio computed for the other categories ranges from 0.79 (cardio-vascular) to 4.02 (respiratory), but those compare a survey average over admissions with an unweighted average over catalogue rows, which are different populations; they are reported as evidence, not used. One category is one observation.",
     "byCategory": {

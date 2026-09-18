@@ -1,10 +1,12 @@
 """
 The trained artifact, loaded once and held.
-
 The service reads an artifact rather than the ETL output, so that a running
 instance cannot change its answers because someone re-ran the ETL underneath it.
-The artifact names its own version and the checksum of every document behind it;
-`/health` reports both.
+The artifact is the fitted figures in `model.json` and, beside it, a `data/`
+snapshot of every file a forecast reads -- see `paths.py`, which is where that
+second half was missing until a container built cleanly and then failed on its
+first request. The artifact names its own version and the checksum of every
+document behind it; `/health` reports both.
 """
 
 from __future__ import annotations
