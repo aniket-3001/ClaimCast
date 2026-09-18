@@ -56,50 +56,61 @@ export const SOURCES: SourceSeed[] = [
     id: "irdai-lists",
     name: "IRDAI Lists I-IV of non-payable, consumable and optional items",
     publisher: "Insurance Regulatory and Development Authority of India",
-    url: "https://irdai.gov.in/",
-    checksum: null,
-    fetchedAt: ASSEMBLED,
+    url: "https://irdai.gov.in/documents/37343/365525/Modification+Guidelines+on+Standardization+in+Health+Insurance.pdf",
+    checksum: "ca53bb9d872e89c854359d4ea72e8a676ccc36dd05f401100490264485ae3e1a",
+    fetchedAt: new Date("2026-09-18T11:22:10Z"),
     caveat:
-      "The item names and their grouping follow the published lists. The amounts do not: " +
-      "IRDAI names the items without pricing them, so every `typical` figure here is " +
-      "modelled for a five-day metro admission and is synthetic.",
+      "The circular has been downloaded and checksummed, and the four lists parsed from " +
+      "Annexure-I of IRDAI/HLT/REG/CIR/176/09/2019 run to 68, 37, 23 and 18 items. What is " +
+      "published is the item names and nothing else: IRDAI names these items without pricing " +
+      "or grouping them, so every `typical` amount and every group heading here is ClaimCast's " +
+      "own modelling of a five-day metro admission, not the regulator's.",
   },
   {
     id: "nha-hbp-2-2",
-    name: "Ayushman Bharat PM-JAY Health Benefit Package 2.2",
+    name: "Ayushman Bharat PM-JAY Health Benefit Package 2.2 (User Guidelines)",
     publisher: "National Health Authority",
-    url: "https://nha.gov.in/PM-JAY",
-    checksum: null,
-    fetchedAt: ASSEMBLED,
+    url: "https://hem.nha.gov.in/HBP.pdf",
+    checksum: "9bd399d781f57d7ae0009aa157697f78ca8a0b7507dc895d1eb56962fd1eaf61",
+    fetchedAt: new Date("2026-09-18T11:24:22Z"),
     caveat:
-      "HBP 2.2 publishes roughly 1,949 package rates across 27 specialties. None of them " +
-      "have been ingested yet. The PM-JAY rates seeded here are placeholders of plausible " +
-      "magnitude and are replaced wholesale in Phase 3.",
+      "Scheme rules only, and this is the honest limit of what could be obtained. The " +
+      "file behind this row is the HBP 2.2 User Guidelines, which reference 'Annexure 2: " +
+      "Packages and Rates' without containing it; the package master is served by no " +
+      "reachable NHA URL and pmjay.gov.in refused the connection. So no per-procedure " +
+      "PM-JAY figure in this database is a published rate — those are attributed to the " +
+      "synthetic set instead. What this document does publish, and what is used, is the " +
+      "₹5,00,000 family cover, the ₹1,00,000 unspecified-procedure cap and the four " +
+      "medical bed-day rates.",
   },
   {
     id: "cghs-rates",
-    name: "CGHS city-wise rate lists",
+    name: "CGHS rate list (Annexure I), Office Memorandum of 3 October 2025",
     publisher: "Central Government Health Scheme, Ministry of Health and Family Welfare",
-    url: "https://cghs.gov.in/",
-    checksum: null,
-    fetchedAt: ASSEMBLED,
+    url: "https://delhijalboard.delhi.gov.in/sites/default/files/Jalboard/universal-tab/new_cghs_rates_applicable.pdf",
+    checksum: "fd56c4e1d46b4cb926e0a52fc96344075072cda38ca289a7ce2e19c8b6b32a33",
+    fetchedAt: new Date("2026-09-18T11:24:22Z"),
     caveat:
-      "PARTIAL. That CGHS publishes city-wise, NABH-differentiated rates is well " +
-      "established, but no authoritative rate document has been retrieved. The CGHS " +
-      "figures seeded here are placeholders and no derived figure may ship until the " +
-      "real file is pulled and checksummed.",
+      "Mirror, not the issuing authority. This is CGHS OM F.No. 5-16/CGHS(HQ)/HEC/2024(PartI) " +
+      "of 3 October 2025, in supersession of all previous memoranda — the current national " +
+      "schedule, and its 1,998 coded rates are ingested verbatim. But it was retrieved from a " +
+      "Delhi Jal Board copy: cghs.gov.in did not resolve and cghs.mohfw.gov.in is banner-marked " +
+      "a test environment with its rate-list links disabled. The rates are real; the chain of " +
+      "custody runs through a mirror, and that is what this caveat records.",
   },
   {
     id: "arogya-sanjeevani",
     name: "Arogya Sanjeevani standard product wording",
     publisher: "Insurance Regulatory and Development Authority of India",
-    url: "https://irdai.gov.in/",
-    checksum: null,
-    fetchedAt: ASSEMBLED,
+    url: "https://irdai.gov.in/documents/37343/366029/Master+Circular+on+Standardization+of+Health+Insurance+Products.pdf",
+    checksum: "cdde737a8f562db8ce4749d9a4d34841cf382e813f48546a752cba45902cf2ee",
+    fetchedAt: new Date("2026-09-18T11:22:16Z"),
     caveat:
-      "The regulator-prescribed standard product. Its wording has not yet been ingested; " +
-      "the policies seeded here are invented products carrying realistic terms, not this " +
-      "or any other real insurer's schedule.",
+      "The Master Circular of 22 July 2020 has been downloaded and checksummed, and the " +
+      "regulator-prescribed terms parsed out of it. The policies currently seeded are still " +
+      "invented products carrying realistic terms; the standard product itself, whose room " +
+      "cap, ICU cap, co-pay and proportionate-deduction rule are quotable rather than " +
+      "modelled, is built in etl/out/arogya-sanjeevani.json and is not yet seeded.",
   },
   {
     id: "irdai-master-circular-2024",

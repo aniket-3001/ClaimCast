@@ -1,0 +1,85 @@
+{
+  "source": {
+    "id": "nha-hbp-2-2",
+    "name": "AB PM-JAY Health Benefit Package 2.2 (User Guidelines)",
+    "publisher": "National Health Authority",
+    "url": "https://hem.nha.gov.in/HBP.pdf",
+    "checksum": "9bd399d781f57d7ae0009aa157697f78ca8a0b7507dc895d1eb56962fd1eaf61",
+    "caveat": "Scheme rules and medical bed-day rates only. This document is the HBP 2.2 User Guidelines, not the package master: it references 'Annexure 2: Packages and Rates' without containing it, and that annexure could not be retrieved from any NHA URL. No per-procedure PM-JAY rate in ClaimCast is a published one.",
+    "document": "Health Benefit Package 2.2 User Guidelines, National Health Authority.",
+    "effectiveFrom": null
+  },
+  "rules": [
+    {
+      "id": "family-cover",
+      "value": 50000000,
+      "statement": "AB PM-JAY covers a beneficiary family up to ₹5,00,000 per year, across secondary, tertiary and day-care procedures at empanelled hospitals.",
+      "page": 6,
+      "evidence": "within the overall limit of ₹ 5,00,000"
+    },
+    {
+      "id": "unspecified-procedure-cap",
+      "value": 10000000,
+      "statement": "A treatment not listed in the package master may still be claimed as an 'Unspecified Procedure', up to ₹1,00,000, inside the ₹5,00,000 family limit.",
+      "page": 6,
+      "evidence": "up to a limit of ₹ 1,00,000"
+    },
+    {
+      "id": "unspecified-beyond-cap",
+      "value": null,
+      "statement": "Above ₹1,00,000 an unspecified surgical package is not refused outright: the hospital raises a request on the ticketing system and the State Health Agency records its recommendation.",
+      "page": 15,
+      "evidence": "unspecified surgical packages beyond Rs. 1,00,000"
+    },
+    {
+      "id": "post-discharge-window",
+      "value": null,
+      "statement": "The package price absorbs consultation, diagnostics and medicines before admission, and diagnostics and medicines for 15 days after discharge for the same ailment or surgery.",
+      "page": 8,
+      "evidence": "up to 15 days after discharge from the hospital for the same ailment"
+    },
+    {
+      "id": "medical-package-pricing",
+      "value": null,
+      "statement": "Medical packages are priced as bed category multiplied by number of bed days, at the four per-day rates in bedDayRates.",
+      "page": 18,
+      "evidence": "calculated on the basis of the bed category, multiplied"
+    },
+    {
+      "id": "implants-priced-separately",
+      "value": null,
+      "statement": "Implants and high-end consumables are costed independently of the package rate at the back end, so the same procedure prices differently by implant.",
+      "page": 20,
+      "evidence": "Splitting of cost of Implants / High End Consumables"
+    },
+    {
+      "id": "rates-not-published-here",
+      "value": null,
+      "statement": "Per-procedure package rates are in 'Annexure 2: Packages and Rates', which this document references but does not contain. ClaimCast holds no published PM-JAY procedure rate.",
+      "page": 6,
+      "evidence": "Annexure 2: ‘Packages and Rates’"
+    }
+  ],
+  "bedDayRates": [
+    {
+      "bed": "routine-ward",
+      "label": "Routine Ward",
+      "perDay": 180000
+    },
+    {
+      "bed": "high-dependency",
+      "label": "High Dependency unit",
+      "perDay": 270000
+    },
+    {
+      "bed": "icu-no-ventilator",
+      "label": "Intensive care not requiring ventilator support",
+      "perDay": 360000
+    },
+    {
+      "bed": "icu-ventilator",
+      "label": "Intensive care requiring ventilator support",
+      "perDay": 450000
+    }
+  ]
+}

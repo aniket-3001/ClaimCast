@@ -26,10 +26,18 @@ import {
   PROCEDURES,
 } from "@claimcast/engine/fixtures";
 import { CLAUSE_SOURCE, SOURCES } from "../src/sources.js";
+import { CGHS_MAP } from "./cghs-map.js";
+import { atTier, cghs } from "./etl.js";
 
 const db = new PrismaClient();
 
 const SYNTHETIC = "claimcast-synthetic";
+
+// The CGHS Office Memorandum, as parsed by etl/sources/cghs_rates.py. Read once
+// rather than per procedure: it is two thousand rows.
+const CGHS = cghs();
+const CGHS_BY_CODE = new Map(CGHS.rates.map((r) => [r.code, r]));
+const CGHS_EFFECTIVE = new Date(CGHS.source.effectiveFrom + "T00:00:00Z");
 
 async function main() {
   // Order matters: everything below points at a Source, and the child rows of
@@ -113,11 +121,48 @@ async function main() {
         });
       }
 
-      // One row per published scheme rate. Both are tier- and NABH-agnostic
-      // today because the fixtures carry a single number each; Phase 3 fans
-      // these out per city tier, which is why the table is shaped for it.
+      // Scheme rates. The CGHS ones are real: the published semi-private,
+      // Tier I figure for this procedure's CGHS code, fanned out across the
+      // city tiers by the reductions the OM states in prose (Y is 10% lower
+      // than X, Z is 20%) and across the accreditation columns it prints.
+      // Six rows per procedure, every one traceable to a page of the document.
       await tx.tariffRate.deleteMany({ where: { procedureId: p.id } });
       const rates: Prisma.TariffRateCreateManyInput[] = [];
+
+      const mapping = CGHS_MAP[p.id];
+      if (mapping) {
+        const row = CGHS_BY_CODE.get(mapping.code);
+        if (!row) {
+          throw new Error(
+            "procedure " + p.id + " is mapped to CGHS code " + mapping.code +
+              ", which is not in the parsed rate list. Either the mapping is wrong or " +
+              "the OM was re-issued; check apps/api/prisma/cghs-map.ts against etl/out/cghs-rates.json.",
+          );
+        }
+        for (const tier of ["X", "Y", "Z"] as const) {
+          const factor = CGHS.rules.cityFactor[tier];
+          for (const nabh of [false, true]) {
+            rates.push({
+              id: p.id + ":CGHS:" + tier + ":" + (nabh ? "NABH" : "NON"),
+              procedureId: p.id,
+              scheme: "CGHS",
+              cityTier: tier,
+              nabh,
+              amount: atTier(nabh ? row.nabh : row.nonNabh, factor),
+              effectiveFrom: CGHS_EFFECTIVE,
+              sourceId: "cghs-rates",
+            });
+          }
+        }
+      }
+
+      // PM-JAY is the opposite case. The package master could not be retrieved
+      // from any NHA URL, so there is no published per-procedure rate to seed;
+      // what the fixture carries is a plausible number, and it is attributed to
+      // the synthetic set rather than to the National Health Authority. The
+      // scheme's real published figures -- the family cover, the unspecified
+      // cap, the four medical bed-day rates -- are in etl/out/nha-hbp.json and
+      // are not per-procedure rates at all.
       if (p.pmjayRate !== null) {
         rates.push({
           id: p.id + ":PMJAY",
@@ -127,21 +172,10 @@ async function main() {
           nabh: null,
           amount: p.pmjayRate,
           effectiveFrom: new Date("2022-11-01T00:00:00Z"),
-          sourceId: "nha-hbp-2-2",
+          sourceId: SYNTHETIC,
         });
       }
-      if (p.cghsRate !== null) {
-        rates.push({
-          id: p.id + ":CGHS",
-          procedureId: p.id,
-          scheme: "CGHS",
-          cityTier: null,
-          nabh: null,
-          amount: p.cghsRate,
-          effectiveFrom: new Date("2023-01-01T00:00:00Z"),
-          sourceId: "cghs-rates",
-        });
-      }
+
       if (rates.length) await tx.tariffRate.createMany({ data: rates });
     }
 

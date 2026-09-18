@@ -79,7 +79,15 @@ export async function procedures(): Promise<Procedure[]> {
         }
       : {}),
     pmjayRate: p.tariffRates.find((r) => r.scheme === "PMJAY")?.amount ?? null,
-    cghsRate: p.tariffRates.find((r) => r.scheme === "CGHS")?.amount ?? null,
+    // The database holds the whole CGHS grid -- three city tiers by two
+    // accreditation columns -- and `Procedure.cghsRate` is one number, so the
+    // cell has to be named rather than picked up by whichever row came back
+    // first. X tier, NABH accredited: the ClaimCast hospitals are metro and
+    // accredited, so that is the figure a user is actually comparing against.
+    // Everything else in the grid is on the procedure's tariffRates rows.
+    cghsRate:
+      p.tariffRates.find((r) => r.scheme === "CGHS" && r.cityTier === "X" && r.nabh === true)
+        ?.amount ?? null,
     privateLow: p.privateLow,
     privateHigh: p.privateHigh,
     costs: {

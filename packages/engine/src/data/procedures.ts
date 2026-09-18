@@ -26,7 +26,7 @@ export const PROCEDURES: Procedure[] = [
       { id: "domestic", label: "Titanium cage, domestic make", amount: r(62000) },
     ],
     pmjayRate: r(90000),
-    cghsRate: r(110000),
+    cghsRate: r(76000), // CGHS NS036, X tier, NABH
     privateLow: r(260000),
     privateHigh: r(480000),
     costs: {
@@ -51,7 +51,7 @@ export const PROCEDURES: Procedure[] = [
     medianStayDays: 8,
     usesImplant: false,
     pmjayRate: r(120000),
-    cghsRate: r(155000),
+    cghsRate: r(180000), // CGHS CV013, X tier, NABH
     privateLow: r(280000),
     privateHigh: r(650000),
     costs: {
@@ -80,7 +80,7 @@ export const PROCEDURES: Procedure[] = [
       { id: "domestic", label: "Drug-eluting stent, domestic make", amount: r(68000) },
     ],
     pmjayRate: r(90000),
-    cghsRate: r(108000),
+    cghsRate: r(97000), // CGHS CP001, X tier, NABH
     privateLow: r(210000),
     privateHigh: r(490000),
     costs: {
@@ -109,7 +109,7 @@ export const PROCEDURES: Procedure[] = [
       { id: "domestic", label: "Bilateral prosthesis, domestic make", amount: r(120000) },
     ],
     pmjayRate: r(110000),
-    cghsRate: r(145000),
+    cghsRate: r(152000), // CGHS OR089, X tier, NABH
     privateLow: r(320000),
     privateHigh: r(720000),
     costs: {
@@ -134,7 +134,7 @@ export const PROCEDURES: Procedure[] = [
     medianStayDays: 2,
     usesImplant: false,
     pmjayRate: r(22000),
-    cghsRate: r(27000),
+    cghsRate: r(35000), // CGHS AG037, X tier, NABH
     privateLow: r(55000),
     privateHigh: r(145000),
     costs: {
@@ -159,7 +159,7 @@ export const PROCEDURES: Procedure[] = [
     medianStayDays: 3,
     usesImplant: false,
     pmjayRate: r(18000),
-    cghsRate: r(24000),
+    cghsRate: r(20900), // CGHS AG045, X tier, NABH
     privateLow: r(46000),
     privateHigh: r(120000),
     costs: {
@@ -184,7 +184,7 @@ export const PROCEDURES: Procedure[] = [
     medianStayDays: 4,
     usesImplant: false,
     pmjayRate: r(21000),
-    cghsRate: r(28000),
+    cghsRate: r(53000), // CGHS OG004, X tier, NABH
     privateLow: r(62000),
     privateHigh: r(180000),
     costs: {
@@ -209,7 +209,7 @@ export const PROCEDURES: Procedure[] = [
     medianStayDays: 3,
     usesImplant: false,
     pmjayRate: r(9000),
-    cghsRate: r(15000),
+    cghsRate: r(35000), // CGHS OG002, X tier, NABH
     privateLow: r(32000),
     privateHigh: r(95000),
     costs: {
@@ -234,7 +234,7 @@ export const PROCEDURES: Procedure[] = [
     medianStayDays: 5,
     usesImplant: false,
     pmjayRate: r(12000),
-    cghsRate: r(16000),
+    cghsRate: null, // no CGHS procedure code: medical management, not a package
     privateLow: r(48000),
     privateHigh: r(160000),
     costs: {
@@ -259,7 +259,7 @@ export const PROCEDURES: Procedure[] = [
     medianStayDays: 5,
     usesImplant: false,
     pmjayRate: null,
-    cghsRate: null,
+    cghsRate: null, // no CGHS procedure code: medical management, not a package
     privateLow: r(180000),
     privateHigh: r(540000),
     costs: {
@@ -288,7 +288,7 @@ export const PROCEDURES: Procedure[] = [
       { id: "domestic", label: "Foldable intraocular lens, domestic make", amount: r(8500) },
     ],
     pmjayRate: r(7500),
-    cghsRate: r(12000),
+    cghsRate: r(17000), // CGHS OP100, X tier, NABH
     privateLow: r(28000),
     privateHigh: r(92000),
     costs: {
@@ -313,7 +313,7 @@ export const PROCEDURES: Procedure[] = [
     medianStayDays: 1,
     usesImplant: false,
     pmjayRate: r(12000),
-    cghsRate: r(18000),
+    cghsRate: r(2300), // CGHS CT002, X tier, NABH
     privateLow: r(22000),
     privateHigh: r(140000),
     costs: {
@@ -338,7 +338,7 @@ export const PROCEDURES: Procedure[] = [
     medianStayDays: 1,
     usesImplant: false,
     pmjayRate: r(1500),
-    cghsRate: r(2200),
+    cghsRate: r(2500), // CGHS NU122, X tier, NABH
     privateLow: r(2800),
     privateHigh: r(6500),
     costs: {
@@ -363,7 +363,7 @@ export const PROCEDURES: Procedure[] = [
     medianStayDays: 1,
     usesImplant: false,
     pmjayRate: null,
-    cghsRate: null,
+    cghsRate: null, // no CGHS procedure code: medical management, not a package
     privateLow: r(8000),
     privateHigh: r(34000),
     costs: {

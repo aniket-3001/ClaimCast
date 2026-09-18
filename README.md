@@ -139,9 +139,35 @@ The deck stands on four references, all public:
    cancer in India*, Lancet Reg. Health SE Asia 2022;6:100058.
 4. **IRDAI Master Circular on Health Insurance Business**, 29 May 2024.
 
-The system's own data comes entirely from public sources: NHA / PM-JAY Health Benefit Packages,
-CGHS city-wise rate lists, IRDAI's List I of non-payables, IRDAI standard wordings (Arogya
-Sanjeevani), and the NHA empanelled-hospital registry.
+### The data pipeline
+
+`etl/` downloads the published documents, checks that what arrived is actually the document, and
+parses them into `etl/out/*.json`, which the database seeds from. The raw files are gitignored and
+re-downloadable; their SHA-256s live in `etl/manifest.json`, so any rate can be traced to the exact
+bytes it came from.
+
+```bash
+python -m etl.fetch     # download and verify; writes etl/manifest.json
+python -m etl.build     # parse etl/raw/ -> etl/out/
+```
+
+The verification is the point, not the download. Government portals answer a request for a missing
+PDF with HTTP 200 and an HTML error page, so every file is checked against its magic bytes and a
+size floor before it is accepted. Certificate verification is never disabled; a chain certifi
+rejects is retried once against the OS root store, and the manifest records which store was used.
+
+| Source | What we have |
+|---|---|
+| **CGHS** Office Memorandum, 3 Oct 2025 | **1,998 published rates**, non-NABH / NABH / super-speciality, fanned out across the three city tiers by the reductions the OM states. Retrieved from a Delhi Jal Board mirror — `cghs.gov.in` does not resolve and its replacement is banner-marked a test environment — so the rates are real and the chain of custody runs through a mirror. |
+| **IRDAI** Modification Guidelines, 2019 | **Lists I–IV verbatim**: 68, 37, 23 and 18 items. IRDAI names these items without pricing or grouping them, so every illustrative amount in the app is ClaimCast's modelling, not the regulator's. |
+| **IRDAI** Master Circular, 2020 | The **Arogya Sanjeevani** standard product — the one policy whose room cap, ICU cap, co-pay and proportionate-deduction rule are quotable rather than modelled. |
+| **NHA** HBP 2.2 | **Scheme rules and medical bed-day rates only.** The retrievable file is the User Guidelines, which references "Annexure 2: Packages and Rates" without containing it; no reachable NHA URL serves the package master. **No per-procedure PM-JAY figure in this repository is a published rate** — those are attributed to the synthetic set. |
+
+Two things stay explicitly simulated and are labelled so wherever they surface: per-hospital tariffs
+and `Hospital.costIndex`, because no public source gives what a named private hospital charges per
+bed-day; and the illustrative rupee amounts on the non-payables list. Deciding which CGHS code each
+procedure is priced against is ClaimCast's own clinical-coding judgement and is kept separately, in
+`apps/api/prisma/cghs-map.ts`, so it never blurs into the published rate beside it.
 
 ---
 

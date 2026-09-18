@@ -1,0 +1,90 @@
+{
+  "source": {
+    "id": "arogya-sanjeevani",
+    "name": "Arogya Sanjeevani standard product",
+    "publisher": "Insurance Regulatory and Development Authority of India",
+    "url": "https://irdai.gov.in/documents/37343/366029/Master+Circular+on+Standardization+of+Health+Insurance+Products.pdf/40548736-71a8-1b76-e28d-0df899407e1e?version=1.2&t=1665033878433&download=true",
+    "checksum": "cdde737a8f562db8ce4749d9a4d34841cf382e813f48546a752cba45902cf2ee",
+    "caveat": null,
+    "document": "IRDAI/HLT/REG/CIR/193/07/2020, 22 July 2020, Master Circular on Standardization of Health Insurance Products.",
+    "effectiveFrom": "2020-07-22"
+  },
+  "policy": {
+    "id": "pol-arogya-sanjeevani",
+    "insurer": "IRDAI standard product",
+    "product": "Arogya Sanjeevani Policy",
+    "sumInsured": 50000000,
+    "sumInsuredMin": 10000000,
+    "sumInsuredMax": 50000000,
+    "roomCapPerDay": 500000,
+    "roomCapPctOfSI": 0.02,
+    "icuCapPerDay": 1000000,
+    "icuCapPctOfSI": 0.05,
+    "proportionateDeduction": true,
+    "copayPct": 0.05,
+    "implantSubLimit": null,
+    "preHospDays": 30,
+    "postHospDays": 60,
+    "dayCareCovered": true,
+    "monthsInForce": 0,
+    "pedWaitingMonths": 48,
+    "moratoriumMonths": 96,
+    "notes": "Terms prescribed by IRDAI, not set by the insurer. Every figure here is quoted from the Master Circular except the pre-existing waiting period, which the product inherits from standard exclusion Excl01."
+  },
+  "clauses": [
+    {
+      "id": "as-room-cap",
+      "cite": "Arogya Sanjeevani, Customer Information Sheet, Loss sharing 6(a)(i)(a)",
+      "text": "Room Rent - Up to 2% of SI, subject to max of INR 5,000 per day.",
+      "page": 143
+    },
+    {
+      "id": "as-icu-cap",
+      "cite": "Arogya Sanjeevani, Customer Information Sheet, Loss sharing 6(a)(i)(b)",
+      "text": "ICU charges - Up to 5% of SI subject to max of INR 10,000 per day.",
+      "page": 143
+    },
+    {
+      "id": "as-proportionate-deduction",
+      "cite": "Arogya Sanjeevani, Customer Information Sheet, Loss sharing 6(a)(i)(c)",
+      "text": "In case Room/ICU/ICCU rent exceeds the limits specified the claim shall be subject to the proportionate deduction.",
+      "page": 143
+    },
+    {
+      "id": "as-copay",
+      "cite": "Arogya Sanjeevani, Customer Information Sheet, Loss sharing 6(b)",
+      "text": "Each and every claim under the Policy shall be subject to a Copayment of 5% applicable to claim amount admissible and payable as per the terms and conditions of the Policy.",
+      "page": 143
+    },
+    {
+      "id": "as-cataract-sublimit",
+      "cite": "Master Circular, Arogya Sanjeevani, Para C.13",
+      "text": "Limits on cataract Surgery: expenses incurred on treatment of Cataract shall be covered up to 25% of Sum insured or Rs.40,000/- whichever is lower, per eye.",
+      "page": 111
+    },
+    {
+      "id": "as-sum-insured-range",
+      "cite": "Master Circular, Arogya Sanjeevani, Para 7",
+      "text": "The minimum sum insured under the standard product shall be Rs 1,00,000/-. Maximum limit shall be Rs 5 lakhs, in multiples of fifty thousand.",
+      "page": 111
+    },
+    {
+      "id": "as-pre-post-hospitalisation",
+      "cite": "Master Circular, Arogya Sanjeevani, Paras 11 and 12",
+      "text": "Pre-hospitalisation medical expenses incurred for 30 days prior to the date of hospitalisation are admissible, and post-hospitalisation medical expenses for 60 days from the date of discharge following an admissible claim are included.",
+      "page": 109
+    },
+    {
+      "id": "as-ayush",
+      "cite": "Master Circular, Arogya Sanjeevani, Para 10",
+      "text": "Expenses incurred on hospitalisation under AYUSH systems of medicine shall be covered without any sub-limits.",
+      "page": 109
+    },
+    {
+      "id": "as-moratorium",
+      "cite": "Master Circular, Standard wordings, Moratorium Period",
+      "text": "After completion of eight continuous years under the policy no look back to be applied. This period of eight years is called as moratorium period.",
+      "page": 107
+    }
+  ]
+}

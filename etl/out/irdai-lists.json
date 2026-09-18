@@ -1,0 +1,629 @@
+{
+  "source": {
+    "id": "irdai-lists",
+    "name": "IRDAI Lists I-IV (Annexure-I)",
+    "publisher": "Insurance Regulatory and Development Authority of India",
+    "url": "https://irdai.gov.in/documents/37343/365525/Modification+Guidelines+on+Standardization+in+Health+Insurance.pdf/c11bdea3-aef4-b638-6501-296ccc372ef2?version=1.1&t=1665917813498&download=true",
+    "checksum": "ca53bb9d872e89c854359d4ea72e8a676ccc36dd05f401100490264485ae3e1a",
+    "caveat": null,
+    "document": "IRDAI/HLT/REG/CIR/176/09/2019, 27 September 2019, Modification Guidelines on Standardization in Health Insurance, Annexure-I.",
+    "effectiveFrom": "2019-09-27"
+  },
+  "note": "Items as published. IRDAI lists them without prices or groupings, so this file carries neither; the illustrative amounts and groupings the app shows are ClaimCast's own modelling and are labelled as such there.",
+  "framework": [
+    {
+      "id": "I",
+      "title": "List I - Optional Items",
+      "effect": "Items that may be retained as it is as optional items. Billed by the hospital and settled by the patient unless the insurer offers cover for them."
+    },
+    {
+      "id": "II",
+      "title": "List II - Items that are to be subsumed into Room Charges",
+      "effect": "Items specified in the list shall form part of room charges."
+    },
+    {
+      "id": "III",
+      "title": "List III - Items that are to be subsumed into Procedure Charges",
+      "effect": "Items specified in the list shall be considered as part of procedure charges."
+    },
+    {
+      "id": "IV",
+      "title": "List IV - Items that are to be subsumed into costs of treatment",
+      "effect": "Items specified in the list shall be considered as part of the costs of treatment, including the costs of diagnostics."
+    }
+  ],
+  "lists": {
+    "I": [
+      {
+        "serial": 1,
+        "label": "BABY FOOD"
+      },
+      {
+        "serial": 2,
+        "label": "BABY UTILITIES CHARGES"
+      },
+      {
+        "serial": 3,
+        "label": "BEAUTY SERVICES"
+      },
+      {
+        "serial": 4,
+        "label": "BELTS/ BRACES"
+      },
+      {
+        "serial": 5,
+        "label": "BUDS"
+      },
+      {
+        "serial": 6,
+        "label": "COLD PACK/HOT PACK"
+      },
+      {
+        "serial": 7,
+        "label": "CARRY BAGS"
+      },
+      {
+        "serial": 8,
+        "label": "EMAIL/ INTERNET CHARGES"
+      },
+      {
+        "serial": 9,
+        "label": "FOOD CHARGES (OTHER THAN PATIENT's DIET PROVIDED BY HOSPITAL)"
+      },
+      {
+        "serial": 10,
+        "label": "LEGGINGS"
+      },
+      {
+        "serial": 11,
+        "label": "LAUNDRY CHARGES"
+      },
+      {
+        "serial": 12,
+        "label": "MINERAL WATER"
+      },
+      {
+        "serial": 13,
+        "label": "SANITARY PAD"
+      },
+      {
+        "serial": 14,
+        "label": "TELEPHONE CHARGES"
+      },
+      {
+        "serial": 15,
+        "label": "GUEST SERVICES"
+      },
+      {
+        "serial": 16,
+        "label": "CREPE BANDAGE"
+      },
+      {
+        "serial": 17,
+        "label": "DIAPER OF ANY TYPE"
+      },
+      {
+        "serial": 18,
+        "label": "EYELET COLLAR"
+      },
+      {
+        "serial": 19,
+        "label": "SLINGS"
+      },
+      {
+        "serial": 20,
+        "label": "BLOOD GROUPING AND CROSS MATCHING OF DONORS SAMPLES"
+      },
+      {
+        "serial": 21,
+        "label": "SERVICE CHARGES WHERE NURSING CHARGE ALSO CHARGED"
+      },
+      {
+        "serial": 22,
+        "label": "Television Charges"
+      },
+      {
+        "serial": 23,
+        "label": "SURCHARGES"
+      },
+      {
+        "serial": 24,
+        "label": "ATTENDANT CHARGES"
+      },
+      {
+        "serial": 25,
+        "label": "EXTRA DIET OF PATIENT (OTHER THAN THAT WHICH FORMS PART OF BED CHARGE)"
+      },
+      {
+        "serial": 26,
+        "label": "BIRTH CERTIFICATE"
+      },
+      {
+        "serial": 27,
+        "label": "CERTIFICATE CHARGES"
+      },
+      {
+        "serial": 28,
+        "label": "COURIER CHARGES"
+      },
+      {
+        "serial": 29,
+        "label": "CONVEYANCE CHARGES"
+      },
+      {
+        "serial": 30,
+        "label": "MEDICAL CERTIFICATE"
+      },
+      {
+        "serial": 31,
+        "label": "MEDICAL RECORDS"
+      },
+      {
+        "serial": 32,
+        "label": "PHOTOCOPIES CHARGES"
+      },
+      {
+        "serial": 33,
+        "label": "MORTUARY CHARGES"
+      },
+      {
+        "serial": 34,
+        "label": "WALKING AIDS CHARGES"
+      },
+      {
+        "serial": 35,
+        "label": "OXYGEN CYLINDER (FOR USAGE OUTSIDE THE HOSPITAL)"
+      },
+      {
+        "serial": 36,
+        "label": "SPACER"
+      },
+      {
+        "serial": 37,
+        "label": "SPIROMETRE"
+      },
+      {
+        "serial": 38,
+        "label": "NEBULIZER KIT"
+      },
+      {
+        "serial": 39,
+        "label": "STEAM INHALER"
+      },
+      {
+        "serial": 40,
+        "label": "ARMSLING"
+      },
+      {
+        "serial": 41,
+        "label": "THERMOMETER"
+      },
+      {
+        "serial": 42,
+        "label": "CERVICAL COLLAR"
+      },
+      {
+        "serial": 43,
+        "label": "SPLINT"
+      },
+      {
+        "serial": 44,
+        "label": "DIABETIC FOOT WEAR"
+      },
+      {
+        "serial": 45,
+        "label": "KNEE BRACES (LONG/ SHORT/ HINGED)"
+      },
+      {
+        "serial": 46,
+        "label": "KNEE IMMOBILIZER/SHOULDER IMMOBILIZER"
+      },
+      {
+        "serial": 47,
+        "label": "LUM BO SACRAL BELT"
+      },
+      {
+        "serial": 48,
+        "label": "NIMBUS BED OR WATER OR AIR BED CHARGES"
+      },
+      {
+        "serial": 49,
+        "label": "AMBULANCE COLLAR"
+      },
+      {
+        "serial": 50,
+        "label": "AMBULANCE EQUIPMENT"
+      },
+      {
+        "serial": 51,
+        "label": "ABDOMINAL BINDER"
+      },
+      {
+        "serial": 52,
+        "label": "PRIVATE NURSES CHARGES- SPECIAL NURSING CHARGES"
+      },
+      {
+        "serial": 53,
+        "label": "SUGAR FREE Tablets"
+      },
+      {
+        "serial": 54,
+        "label": "CREAMS POWDERS LOTIONS (Toiletries are not payable, only prescribed medical pharmaceuticals payable)"
+      },
+      {
+        "serial": 55,
+        "label": "ECG ELECTRODES"
+      },
+      {
+        "serial": 56,
+        "label": "GLOVES"
+      },
+      {
+        "serial": 57,
+        "label": "NEBULISATION KIT"
+      },
+      {
+        "serial": 58,
+        "label": "ANY KIT WITH NO DETAILS MENTIONED [DELIVERY KIT, ORTHOKIT, RECOVERY KIT, ETC]"
+      },
+      {
+        "serial": 59,
+        "label": "KIDNEY TRAY"
+      },
+      {
+        "serial": 60,
+        "label": "MASK"
+      },
+      {
+        "serial": 61,
+        "label": "OUNCE GLASS"
+      },
+      {
+        "serial": 62,
+        "label": "OXYGEN MASK"
+      },
+      {
+        "serial": 63,
+        "label": "PEL VIC TRACTION BELT"
+      },
+      {
+        "serial": 64,
+        "label": "PAN CAN"
+      },
+      {
+        "serial": 65,
+        "label": "TROLL Y COVER"
+      },
+      {
+        "serial": 66,
+        "label": "UROMETER, URINE JUG"
+      },
+      {
+        "serial": 67,
+        "label": "AMBULANCE"
+      },
+      {
+        "serial": 68,
+        "label": "VASOFIX SAFETY"
+      }
+    ],
+    "II": [
+      {
+        "serial": 1,
+        "label": "BABY CHARGES (UNLESS SPECIFIED/INDICATED)"
+      },
+      {
+        "serial": 2,
+        "label": "HAND WASH"
+      },
+      {
+        "serial": 3,
+        "label": "SHOE COVER"
+      },
+      {
+        "serial": 4,
+        "label": "CAPS"
+      },
+      {
+        "serial": 5,
+        "label": "CRADLE CHARGES"
+      },
+      {
+        "serial": 6,
+        "label": "COMB"
+      },
+      {
+        "serial": 7,
+        "label": "EAU-DE-COLOGNE/ ROOM FRESHNERS"
+      },
+      {
+        "serial": 8,
+        "label": "FOOT COVER"
+      },
+      {
+        "serial": 9,
+        "label": "GOWN"
+      },
+      {
+        "serial": 10,
+        "label": "SLIPPERS"
+      },
+      {
+        "serial": 11,
+        "label": "TISSUE PAPER"
+      },
+      {
+        "serial": 12,
+        "label": "TOOTH PASTE"
+      },
+      {
+        "serial": 13,
+        "label": "TOOTH BRUSH"
+      },
+      {
+        "serial": 14,
+        "label": "BED PAN"
+      },
+      {
+        "serial": 15,
+        "label": "FACE MASK"
+      },
+      {
+        "serial": 16,
+        "label": "FLEX! MASK"
+      },
+      {
+        "serial": 17,
+        "label": "HAND HOLDER"
+      },
+      {
+        "serial": 18,
+        "label": "SPUTUM CUP"
+      },
+      {
+        "serial": 19,
+        "label": "DISINFECTANT LOTIONS"
+      },
+      {
+        "serial": 20,
+        "label": "LUXURY TAX"
+      },
+      {
+        "serial": 21,
+        "label": "HVAC"
+      },
+      {
+        "serial": 22,
+        "label": "HOUSE KEEPING CHARGES"
+      },
+      {
+        "serial": 23,
+        "label": "AIR CONDITIONER CHARGES"
+      },
+      {
+        "serial": 24,
+        "label": "IM IV INJECTION CHARGES"
+      },
+      {
+        "serial": 25,
+        "label": "CLEAN SHEET"
+      },
+      {
+        "serial": 26,
+        "label": "BLANKET/WARMER BLANKET"
+      },
+      {
+        "serial": 27,
+        "label": "ADMISSION KIT"
+      },
+      {
+        "serial": 28,
+        "label": "DIABETIC CHART CHARGES"
+      },
+      {
+        "serial": 29,
+        "label": "DOCUMENTATION CHARGES / ADMINISTRATIVE EXPENSES"
+      },
+      {
+        "serial": 30,
+        "label": "DISCHARGE PROCEDURE CHARGES"
+      },
+      {
+        "serial": 31,
+        "label": "DAILY CHART CHARGES"
+      },
+      {
+        "serial": 32,
+        "label": "ENTRANCE PASS / VISITORS PASS CHARGES"
+      },
+      {
+        "serial": 33,
+        "label": "EXPENSES RELATED TO PRESCRIPTION ON DISCHARGE"
+      },
+      {
+        "serial": 34,
+        "label": "FILE OPENING CHARGES"
+      },
+      {
+        "serial": 35,
+        "label": "INCIDENTAL EXPENSES/ MISC. CHARGES (NOT EXPLAINED)"
+      },
+      {
+        "serial": 36,
+        "label": "PATIENT IDENTIFICATION BAND / NAME TAG"
+      },
+      {
+        "serial": 37,
+        "label": "PULSEOXYMETER CHARGES"
+      }
+    ],
+    "III": [
+      {
+        "serial": 1,
+        "label": "HAIR REMOVAL CREAM"
+      },
+      {
+        "serial": 2,
+        "label": "DISPOSABLES RAZORS CHARGES (for site preparations)"
+      },
+      {
+        "serial": 3,
+        "label": "EYE PAD"
+      },
+      {
+        "serial": 4,
+        "label": "EYE SHEILD"
+      },
+      {
+        "serial": 5,
+        "label": "CAMERA COVER"
+      },
+      {
+        "serial": 6,
+        "label": "DVD, CD CHARGES"
+      },
+      {
+        "serial": 7,
+        "label": "GAUSE SOFT"
+      },
+      {
+        "serial": 8,
+        "label": "GAUZE"
+      },
+      {
+        "serial": 9,
+        "label": "WARD AND THEATRE BOOKING CHARGES"
+      },
+      {
+        "serial": 10,
+        "label": "ARTHROSCOPY AND ENDOSCOPY INSTRUMENTS"
+      },
+      {
+        "serial": 11,
+        "label": "MICROSCOPE COVER"
+      },
+      {
+        "serial": 12,
+        "label": "SURGICAL BLADES, HARMONICSCALPEL,SHAVER"
+      },
+      {
+        "serial": 13,
+        "label": "SURGICAL DRILL"
+      },
+      {
+        "serial": 14,
+        "label": "EYE KIT"
+      },
+      {
+        "serial": 15,
+        "label": "EYE DRAPE"
+      },
+      {
+        "serial": 16,
+        "label": "X-RAY FILM"
+      },
+      {
+        "serial": 17,
+        "label": "BOYLES APPARATUS CHARGES"
+      },
+      {
+        "serial": 18,
+        "label": "COTTON"
+      },
+      {
+        "serial": 19,
+        "label": "COTTON BANDAGE"
+      },
+      {
+        "serial": 20,
+        "label": "SURGICAL TAPE"
+      },
+      {
+        "serial": 21,
+        "label": "APRON"
+      },
+      {
+        "serial": 22,
+        "label": "TORNIQUET"
+      },
+      {
+        "serial": 23,
+        "label": "ORTHOBUNDLE, GYNAEC BUNDLE"
+      }
+    ],
+    "IV": [
+      {
+        "serial": 1,
+        "label": "ADMISSION/REGISTRATION CHARGES"
+      },
+      {
+        "serial": 2,
+        "label": "HOSPITALISATION FOR EVALUATION/ DIAGNOSTIC PURPOSE"
+      },
+      {
+        "serial": 3,
+        "label": "URINE CONTAINER"
+      },
+      {
+        "serial": 4,
+        "label": "BLOOD RESERVATION CHARGES AND ANTE NATAL BOOKING CHARGES"
+      },
+      {
+        "serial": 5,
+        "label": "BIPAP MACHINE"
+      },
+      {
+        "serial": 6,
+        "label": "CPAP/ CAPO EQUIPMENTS"
+      },
+      {
+        "serial": 7,
+        "label": "INFUSION PUMP- COST"
+      },
+      {
+        "serial": 8,
+        "label": "HYDROGEN PEROXIDE\\SPIRIT\\ DISINFECTANTS ETC"
+      },
+      {
+        "serial": 9,
+        "label": "NUTRITION PLANNING CHARGES - DIETICIAN CHARGES- DIET CHARGES-"
+      },
+      {
+        "serial": 10,
+        "label": "HIV KIT"
+      },
+      {
+        "serial": 11,
+        "label": "ANTISEPTIC MOUTHWASH"
+      },
+      {
+        "serial": 12,
+        "label": "LOZENGES"
+      },
+      {
+        "serial": 13,
+        "label": "MOUTH PAINT"
+      },
+      {
+        "serial": 14,
+        "label": "VACCINATION CHARGES"
+      },
+      {
+        "serial": 15,
+        "label": "ALCOHOL SWABES"
+      },
+      {
+        "serial": 16,
+        "label": "SCRUB SOLUTIONISTERILLIUM"
+      },
+      {
+        "serial": 17,
+        "label": "Glucometer & Strips"
+      },
+      {
+        "serial": 18,
+        "label": "URINE BAG"
+      }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "arogya-sanjeevani": {
+    "master-circular-standardization-2020": {
+      "bytes": 3834283,
+      "contentType": "application/pdf",
+      "fetchedAt": "2026-09-18T11:22:16Z",
+      "file": "raw/arogya-sanjeevani/master-circular-standardization-2020.pdf",
+      "finalUrl": "https://irdai.gov.in/documents/37343/366029/Master+Circular+on+Standardization+of+Health+Insurance+Products.pdf/40548736-71a8-1b76-e28d-0df899407e1e?version=1.2&t=1665033878433&download=true",
+      "note": "IRDAI/HLT/REG/CIR/193/07/2020, 22 July 2020. 155 pages consolidating every standardization guideline in force at 31 March 2020, including the Arogya Sanjeevani standard product wording and the four lists.",
+      "sha256": "cdde737a8f562db8ce4749d9a4d34841cf382e813f48546a752cba45902cf2ee",
+      "url": "https://irdai.gov.in/documents/37343/366029/Master+Circular+on+Standardization+of+Health+Insurance+Products.pdf/40548736-71a8-1b76-e28d-0df899407e1e?version=1.2&t=1665033878433&download=true"
+    }
+  },
+  "cghs-rates": {
+    "cghs-om-2025-10-03": {
+      "bytes": 1238870,
+      "contentType": "application/pdf",
+      "fetchedAt": "2026-09-18T11:24:22Z",
+      "file": "raw/cghs-rates/cghs-om-2025-10-03.pdf",
+      "finalUrl": "https://delhijalboard.delhi.gov.in/sites/default/files/Jalboard/universal-tab/new_cghs_rates_applicable.pdf",
+      "note": "MIRROR, NOT THE ISSUING AUTHORITY. CGHS package rates as circulated by the Delhi Jal Board. The CGHS portal did not resolve and its replacement is banner-marked a test environment, so this is the closest to source that could be reached. The Ministry of Jal Shakti hosts the same list at mowr.nic.in/core/Circulars/2023/GA_12-06-2023_20.pdf, but that host sends an incomplete certificate chain and is not fetchable under verification.",
+      "sha256": "fd56c4e1d46b4cb926e0a52fc96344075072cda38ca289a7ce2e19c8b6b32a33",
+      "trustStore": "certifi",
+      "url": "https://delhijalboard.delhi.gov.in/sites/default/files/Jalboard/universal-tab/new_cghs_rates_applicable.pdf"
+    }
+  },
+  "irdai-lists": {
+    "modification-guidelines-2019": {
+      "bytes": 2299775,
+      "contentType": "application/pdf",
+      "fetchedAt": "2026-09-18T11:22:10Z",
+      "file": "raw/irdai-lists/modification-guidelines-2019.pdf",
+      "finalUrl": "https://irdai.gov.in/documents/37343/365525/Modification+Guidelines+on+Standardization+in+Health+Insurance.pdf/c11bdea3-aef4-b638-6501-296ccc372ef2?version=1.1&t=1665917813498&download=true",
+      "note": "IRDAI/HLT/REG/CIR/176/09/2019, 27 September 2019. Replaces Annexure I of the 2016 standardization guidelines with Lists I-IV: the optional items a patient pays for, and the items subsumed into room charges, procedure charges and treatment costs.",
+      "sha256": "ca53bb9d872e89c854359d4ea72e8a676ccc36dd05f401100490264485ae3e1a",
+      "url": "https://irdai.gov.in/documents/37343/365525/Modification+Guidelines+on+Standardization+in+Health+Insurance.pdf/c11bdea3-aef4-b638-6501-296ccc372ef2?version=1.1&t=1665917813498&download=true"
+    }
+  },
+  "nha-hbp-2-2": {
+    "hbp-2.2-user-guidelines": {
+      "bytes": 7345416,
+      "contentType": "application/pdf",
+      "fetchedAt": "2026-09-18T11:24:22Z",
+      "file": "raw/nha-hbp-2-2/hbp-2.2-user-guidelines.pdf",
+      "finalUrl": "https://hem.nha.gov.in/HBP.pdf",
+      "note": "Health Benefit Package 2.2 master list, National Health Authority. Served from hem.nha.gov.in; the nha.gov.in path for the same file returns an HTML error page under a .pdf URL.",
+      "sha256": "9bd399d781f57d7ae0009aa157697f78ca8a0b7507dc895d1eb56962fd1eaf61",
+      "trustStore": "system:ca-bundle.crt",
+      "url": "https://hem.nha.gov.in/HBP.pdf"
+    }
+  }
+}
