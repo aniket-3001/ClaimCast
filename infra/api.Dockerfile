@@ -37,6 +37,7 @@ RUN npm ci
 
 COPY packages ./packages
 COPY apps/api ./apps/api
+COPY apps/web ./apps/web
 
 # The Prisma client is generated against the schema, not shipped with it, and the
 # engine binary it downloads is platform-specific -- which is why this happens in
@@ -55,6 +56,16 @@ RUN npx esbuild apps/api/src/server.ts \
       --external:'@anthropic-ai/sdk' \
       --external:dotenv \
       --external:zod
+
+# The web app, into the same image. It is served by the API process on one
+# origin -- see the static block in apps/api/src/server.ts for why -- so there
+# is no second service to deploy, and no VITE_API_URL to set because "" already
+# means same origin in apps/web/src/api.ts.
+#
+# Built here rather than copied in: .dockerignore excludes every dist/ from the
+# build context deliberately, so what ships is always compiled from the source
+# in this image and never from whatever happened to be on someone's laptop.
+RUN npm run build --workspace @claimcast/web
 
 # ── The runtime tree ─────────────────────────────────────────────────────
 #
@@ -92,10 +103,12 @@ RUN apt-get update \
 
 ENV NODE_ENV=production \
     HOST=0.0.0.0 \
-    DOCUMENT_DIR=/tmp/vault
+    DOCUMENT_DIR=/tmp/vault \
+    WEB_DIST=/app/web
 
 COPY --from=build /prod/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/apps/web/dist ./web
 
 # Not root. This process accepts uploaded PDFs from anyone on the internet and
 # has no reason to be able to write to its own filesystem.
