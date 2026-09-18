@@ -258,12 +258,27 @@ export const ForecastResponseSchema = z.object({
   p50: Paise,
   p90: Paise,
   /** The government tariff the estimate was anchored on, and which scheme published it. */
-  anchor: z.object({ scheme: z.enum(["PMJAY", "CGHS"]), amount: Paise, sourceId: z.string() }),
+  anchor: z.object({
+    scheme: z.enum(["PMJAY", "CGHS"]),
+    amount: Paise,
+    sourceId: z.string(),
+    /** The package or rate code, so the figure can be looked up in the published document. */
+    code: z.string(),
+    /** How the amount was arrived at: a package price, a per-day rate times a stay, a ward factor. */
+    detail: z.string(),
+  }),
   /** Shares by bill line kind, because the engine adjudicates by kind and a total tells it nothing. */
   split: z.record(LineKind, z.number()),
   modelVersion: z.string(),
   trainedOn: z.string(),
   basis: z.string(),
+  /**
+   * What is wrong with this estimate, in the estimate. A forecast built on a survey of
+   * stratum means and a government tariff has specific, nameable weaknesses, and the
+   * only dishonest thing to do with them is to keep them in the model and not in the
+   * response. The UI shows these beside the band.
+   */
+  caveats: z.array(z.string()),
 });
 
 export type ForecastRequest = z.infer<typeof ForecastRequestSchema>;

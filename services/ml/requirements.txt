@@ -1,5 +1,19 @@
+# The cost model's runtime. There is no LightGBM here and no numpy, and their
+# absence is deliberate rather than an oversight.
+#
+# The approved plan named LightGBM quantile regression, on the assumption that
+# the ETL would land NSSO unit-level microdata -- one row per household, which is
+# what a gradient booster needs. What the ETL actually reads is the Key
+# Indicators report: about a hundred published cells, every one of them a mean
+# over a stratum, and not a single patient-level record in 127 pages. Fitting
+# trees to 360 points that this project itself produced by multiplying two
+# marginals would smooth an assumption and hand it back looking like a finding.
+#
+# So the quantiles are read off the empirical sample and a lognormal is fitted
+# beside them as a description of shape, both in `claimcast_ml/dispersion.py`,
+# which is arithmetic the standard library does. Listing a dependency the service
+# does not import would suggest a model that is not there.
+
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
-lightgbm==4.5.0
-numpy==2.2.1

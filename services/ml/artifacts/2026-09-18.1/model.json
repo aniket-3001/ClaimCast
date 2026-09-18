@@ -1,0 +1,158 @@
+{
+  "builtAt": "2026-09-18T14:45:32+00:00",
+  "deflator": {
+    "basis": "CPI Health sub-group 6.1.02, base 2012=100",
+    "factor": 1.536384,
+    "from": "January 2018",
+    "to": "December 2025"
+  },
+  "dispersion": {
+    "basis": "Ratios of each state's and each household expenditure quintile's private-hospital mean to its own all-India figure (NSS 75th round, Tables A17, A18 and A29), combined across the two axes on an assumption of independence. These are spreads between stratum means, not between individual bills; the survey publishes no patient-level quantile anywhere.",
+    "coverage": {
+      "rural": 0.7722222222222223,
+      "urban": 0.7805555555555556
+    },
+    "lognormal": {
+      "rural": {
+        "mu": 0.03772611842981853,
+        "sigma": 0.5739000297072139
+      },
+      "urban": {
+        "mu": -0.08529002808736734,
+        "sigma": 0.49187349341348247
+      }
+    },
+    "lognormalGap": {
+      "rural": 0.07791834484800786,
+      "urban": 0.053903661850944085
+    },
+    "points": {
+      "rural": 360,
+      "urban": 360
+    },
+    "quantiles": {
+      "rural": {
+        "0.10": 0.5267230158957015,
+        "0.50": 0.9605284376440699,
+        "0.90": 2.1230401661475393
+      },
+      "urban": {
+        "0.10": 0.5157910731819244,
+        "0.50": 0.8723167863326307,
+        "0.90": 1.7786348696148966
+      }
+    }
+  },
+  "excludes": "The survey's expenditure figures exclude childbirth, which is carried separately, and exclude transport, food and lodging throughout.",
+  "implantOptions": {
+    "p-angioplasty": [
+      6800000,
+      14500000
+    ],
+    "p-cataract": [
+      850000,
+      1800000
+    ],
+    "p-spine-fusion": [
+      6200000,
+      10500000
+    ],
+    "p-tkr": [
+      12000000,
+      22000000
+    ]
+  },
+  "modelVersion": "2026-09-18.1",
+  "multiplier": {
+    "basis": "Private charge estimated at 3.37x the government tariff, from the one ailment category where the survey and the tariff price the same event: private-hospital expenditure on a delivery (NSS 75th round, Table A29, deflated to December 2025) against the mean of the two PM-JAY delivery packages. The same ratio computed for the other categories ranges from 0.79 (cardio-vascular) to 4.02 (respiratory), but those compare a survey average over admissions with an unweighted average over catalogue rows, which are different populations; they are reported as evidence, not used. One category is one observation.",
+    "byCategory": {
+      "cancers": 3.5802481791700496,
+      "cardio-vascular": 0.7886954465912253,
+      "childbirth": 3.3740224,
+      "eye": 3.363470531710442,
+      "gastro-intestinal": 1.6651571396485894,
+      "genito-urinary": 1.7787449226688345,
+      "infections": 2.2502017391304348,
+      "musculo-skeletal": 3.5498867138975156,
+      "psychiatric-neurological": 1.3827242284898815,
+      "respiratory": 4.022787826086956
+    },
+    "denominator": {
+      "cancers": "mean of 458 packages in MO/MR/SC",
+      "cardio-vascular": "mean of 166 packages in MC/SV",
+      "childbirth": "mean tariff of the 2 ClaimCast procedure(s) coded as childbirth, because Obstetrics and Gynecology mixes deliveries with gynaecological surgery",
+      "eye": "mean of 58 packages in SE",
+      "gastro-intestinal": "mean of 177 packages in SG, loosely mapped: General Surgery is mostly abdominal but also carries hernias, thyroids and varicose veins",
+      "genito-urinary": "mean of 123 packages in SU",
+      "infections": "mean tariff of the 1 ClaimCast procedure(s) coded as infections, because Infectious Diseases holds four packages, too few to average",
+      "musculo-skeletal": "mean of 157 packages in SB/ST",
+      "psychiatric-neurological": "mean of 85 packages in SN/MM, loosely mapped: Neurosurgery and Mental Disorders together, which is the survey's own pairing but an unusual one for a tariff",
+      "respiratory": "mean tariff of the 1 ClaimCast procedure(s) coded as respiratory, because pneumonia sits in General Medicine, which is 159 packages of everything"
+    },
+    "estimatedFrom": "childbirth",
+    "value": 3.3740224
+  },
+  "sources": {
+    "cghs-rates.json": {
+      "checksum": "fd56c4e1d46b4cb926e0a52fc96344075072cda38ca289a7ce2e19c8b6b32a33",
+      "fetchedAt": null,
+      "id": "cghs-rates",
+      "name": "CGHS rate list (Annexure I)",
+      "publisher": "Central Government Health Scheme, Ministry of Health and Family Welfare",
+      "supplies": "the CGHS rate, for procedures PM-JAY does not package",
+      "url": "https://delhijalboard.delhi.gov.in/sites/default/files/Jalboard/universal-tab/new_cghs_rates_applicable.pdf"
+    },
+    "cpi-health.json": {
+      "checksum": "e00e487b37b100055014a59929d3ecff13e461c13d009b022e0402c23d05c61e",
+      "fetchedAt": null,
+      "id": "mospi-cpi-health",
+      "name": "CPI Health sub-group index (base 2012=100)",
+      "publisher": "Ministry of Statistics and Programme Implementation",
+      "supplies": "the deflator from 2017-18 to December 2025 rupees",
+      "url": "https://www.mospi.gov.in/uploads/latestReleases/latest_release_1768213461321_53cd35fd-1bbc-4b43-b92d-8fb67474ee74_Press_Release_of_CPI_for_December_2025.pdf"
+    },
+    "nha-hbp-2022.json": {
+      "checksum": "4f6ca823468c947449647fbea9cfd5876d1d4fee5d46f3fa27179397eeb953e4",
+      "fetchedAt": null,
+      "id": "nha-hbp-2022",
+      "name": "AB PM-JAY Health Benefit Package 2022 (package master)",
+      "publisher": "National Health Authority",
+      "supplies": "the PM-JAY package price that anchors each forecast",
+      "url": "https://cdnbbsr.s3waas.gov.in/s3169779d3852b32ce8b1a1724dbf5217d/uploads/2024/06/20240619792610196.pdf"
+    },
+    "nsso-75-health.json": {
+      "checksum": "37da83c65ebf2b426d7a7d9eb31c204dd64a47991273b626466466690a631baf",
+      "fetchedAt": null,
+      "id": "nsso-75-health",
+      "name": "NSS 75th Round, Household Social Consumption: Health (Key Indicators)",
+      "publisher": "National Statistical Office, Ministry of Statistics and Programme Implementation",
+      "supplies": "the level, the band and the component split",
+      "url": "https://www.mospi.gov.in/sites/default/files/publication_reports/KI_Health_75th_Final.pdf"
+    }
+  },
+  "split": {
+    "basis": "NSS Statement 3.17, private hospitals, by sector. The bundled `package` component -- 40% of the urban private bill -- is not itemised by the survey and is redistributed across the itemised components in their own proportions.",
+    "shares": {
+      "rural": {
+        "associated": 0.2577717706120873,
+        "icu": 0.0,
+        "implant": 0.0,
+        "independent": 0.5792141340027033,
+        "non_payable": 0.0,
+        "outside_window": 0.0,
+        "room": 0.1630140953852095
+      },
+      "urban": {
+        "associated": 0.26806586468731336,
+        "icu": 0.0,
+        "implant": 0.0,
+        "independent": 0.5537923385376674,
+        "non_payable": 0.0,
+        "outside_window": 0.0,
+        "room": 0.17814179677501918
+      }
+    }
+  },
+  "surveyPeriod": "2017-07-01 to 2018-06-30",
+  "trainedOn": "2026-09-18"
+}

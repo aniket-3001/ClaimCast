@@ -1,0 +1,94 @@
+"""
+The HTTP surface: that it answers, that it refuses, and that it stays in contract.
+
+The contract is `ForecastResponseSchema` in packages/contracts, and the two sides
+are in different languages, so nothing but a test keeps them agreeing. The field
+list here is checked against that file by hand whenever it changes.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+from fastapi.testclient import TestClient
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from app import app  # noqa: E402
+
+#: Every key `ForecastResponseSchema` requires. A response missing one would be
+#: rejected by the API's Zod parse, and a response carrying an extra one would be
+#: silently stripped -- which is how the caveats nearly got lost.
+RESPONSE_KEYS = {
+    "p10", "p50", "p90", "anchor", "split",
+    "modelVersion", "trainedOn", "basis", "caveats",
+}
+ANCHOR_KEYS = {"scheme", "amount", "sourceId", "code", "detail"}
+LINE_KINDS = {
+    "room", "associated", "icu", "independent",
+    "implant", "outside_window", "non_payable",
+}
+
+
+@pytest.fixture(scope="module")
+def client():
+    return TestClient(app)
+
+
+def test_health_reports_version_and_provenance(client):
+    r = client.get("/health")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["status"] == "ok"
+    assert body["modelVersion"] and body["trainedOn"]
+    assert body["surveyPeriod"] == "2017-07-01 to 2018-06-30"
+    # A forecast has to be traceable to the documents behind it, so every source
+    # the artifact was built from reports a checksum here.
+    assert set(body["sources"]) >= {
+        "nsso-75-health.json", "cpi-health.json", "nha-hbp-2022.json", "cghs-rates.json",
+    }
+    for name, src in body["sources"].items():
+        assert src["checksum"], name + " reports no checksum."
+
+
+def test_forecast_matches_the_contract(client):
+    r = client.post("/forecast", json={
+        "procedureId": "p-spine-fusion", "cityTier": "X", "nabh": True,
+        "roomClass": "semi_private", "days": 5, "icuDays": 0,
+    })
+    assert r.status_code == 200
+    body = r.json()
+    assert set(body) == RESPONSE_KEYS
+    assert set(body["anchor"]) == ANCHOR_KEYS
+    assert set(body["split"]) == LINE_KINDS
+    assert body["p10"] < body["p50"] < body["p90"]
+    assert sum(body["split"].values()) == body["p50"]
+    assert body["anchor"]["scheme"] == "PMJAY"
+    assert body["caveats"]
+
+
+def test_unknown_procedure_is_a_refusal_with_a_reason(client):
+    r = client.post("/forecast", json={
+        "procedureId": "p-teleportation", "cityTier": "X", "nabh": True,
+        "roomClass": "general", "days": 1, "icuDays": 0,
+    })
+    assert r.status_code == 422
+    assert "judgement" in r.json()["detail"]
+
+
+def test_icu_days_beyond_the_stay_is_a_refusal(client):
+    r = client.post("/forecast", json={
+        "procedureId": "p-sepsis", "cityTier": "X", "nabh": True,
+        "roomClass": "icu", "days": 2, "icuDays": 6,
+    })
+    assert r.status_code == 422
+
+
+def test_a_bad_city_tier_never_reaches_the_model(client):
+    r = client.post("/forecast", json={
+        "procedureId": "p-chole", "cityTier": "Q", "nabh": True,
+        "roomClass": "general", "days": 2, "icuDays": 0,
+    })
+    assert r.status_code == 422

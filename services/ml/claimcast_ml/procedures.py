@@ -41,12 +41,30 @@ def procedures() -> dict[str, dict]:
         block = text[pos:end]
         name = re.search(r'\bname:\s*"([^"]+)"', block)
         stay = re.search(r"\bmedianStayDays:\s*(\d+)", block)
+        low = re.search(r"\bprivateLow:\s*r\((\d+)\)", block)
+        high = re.search(r"\bprivateHigh:\s*r\((\d+)\)", block)
+        implants = re.findall(
+            r"\blabel:\s*\"([^\"]+)\",\s*amount:\s*r\((\d+)\)", block
+        )
         if not name or not stay:
             raise SystemExit(
                 "procedure " + pid + " in " + str(SOURCE) + " has no name or no "
                 "medianStayDays where this parser expects them."
             )
-        out[pid] = {"name": name.group(1), "medianStayDays": int(stay.group(1))}
+        out[pid] = {
+            "name": name.group(1),
+            "medianStayDays": int(stay.group(1)),
+            # The app's own simulated private range, in paise. Not a source --
+            # it is the modelled spread slide 5 declares as simulated -- but it
+            # is the only per-procedure private range in the project, so it is
+            # what the forecast is sanity-checked against.
+            "privateLow": int(low.group(1)) * 100 if low else None,
+            "privateHigh": int(high.group(1)) * 100 if high else None,
+            # The implant options as the engine publishes them. The forecast
+            # cannot know which one a patient will be given, so it prices the
+            # midpoint and says so; the engine prices the actual choice.
+            "implantOptions": [(l, int(a) * 100) for l, a in implants],
+        }
     return out
 
 

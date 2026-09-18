@@ -21,6 +21,7 @@ import { evaluate, repair, setRegistry, type Registry } from "@claimcast/engine"
 import {
   CaseInputSchema,
   ForecastRequestSchema,
+  ForecastResponseSchema,
   SaveCaseSchema,
   type ReferenceBundle,
 } from "@claimcast/contracts";
@@ -213,10 +214,31 @@ app.post("/api/forecast", async (req, reply) => {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(parsed.data),
   });
+  if (res.status === 422) {
+    // The model refuses rather than guesses: an unknown procedure, an ailment
+    // category nobody has coded, a procedure no scheme publishes a rate for. The
+    // reason is the useful part and it is the caller's, not a log line.
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    return reply.code(422).send({
+      error: "no forecast for this admission",
+      detail: body.detail ?? "The cost model declined to estimate this admission.",
+    });
+  }
   if (!res.ok) {
     return reply.code(502).send({ error: "cost model failed", status: res.status });
   }
-  return res.json();
+  // The model is a separate service in another language, so nothing but this
+  // parse keeps it inside the contract. A drift here would otherwise surface as
+  // a missing caveat or a silently stripped field in the UI.
+  const forecast = ForecastResponseSchema.safeParse(await res.json());
+  if (!forecast.success) {
+    req.log.error({ issues: forecast.error.issues }, "cost model broke the contract");
+    return reply.code(502).send({
+      error: "cost model failed",
+      detail: "The cost model returned a response outside the agreed contract.",
+    });
+  }
+  return forecast.data;
 });
 
 /** Phase 5. Kept as a declared route so the shape is agreed before it is built. */

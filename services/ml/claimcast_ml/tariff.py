@@ -43,7 +43,8 @@ import re
 from dataclasses import dataclass
 from functools import lru_cache
 
-from .coding import CODING, CHILDBIRTH
+from .categories import LOOSE, SPECIALTIES, UNMAPPED
+from .coding import CODING
 from .paths import ETL_OUT, REPO
 
 #: Which PM-JAY bed category a ClaimCast room class is billed against. The room
@@ -206,33 +207,105 @@ def anchor_for(
     )
 
 
+def category_tariff_mean(category: str, tier: str) -> tuple[float, int, str]:
+    """
+    What PM-JAY pays for a typical admission in an ailment category.
+
+    The mean flat package price across every package in the specialties mapped to
+    the category. Bed-day and prose-priced packages are left out: a bed-day grid
+    is a rate rather than a price, and averaging one into a list of prices would
+    compare a day with an episode.
+    """
+    hbp, _cghs, _h, _c = _tables()
+    prefixes = SPECIALTIES.get(category)
+    if not prefixes:
+        return 0.0, 0, UNMAPPED.get(category, "no specialty mapped")
+    key = tier.lower()
+    prices = [
+        p["pricing"]["tiers"][key]
+        for p in hbp["packages"]
+        if p["specialtyCode"] in prefixes and p["pricing"]["kind"] == "flat"
+    ]
+    if not prices:
+        return 0.0, 0, "no flat-priced packages in " + "/".join(prefixes)
+    note = "mean of " + str(len(prices)) + " packages in " + "/".join(prefixes)
+    if category in LOOSE:
+        note += ", loosely mapped: " + LOOSE[category]
+    return sum(prices) / len(prices), len(prices), note
+
+
+def _peer_mean(category: str, tier: str, nabh: bool, room_class: str) -> tuple[float, str]:
+    """The fallback denominator: the ClaimCast procedures coded into the category."""
+    from .procedures import median_stay_days
+
+    amounts = []
+    for peer, coding in CODING.items():
+        if coding.category != category:
+            continue
+        try:
+            amounts.append(
+                anchor_for(peer, tier, nabh, room_class, median_stay_days(peer), 0).amount
+            )
+        except SystemExit:
+            continue
+    if not amounts:
+        return 0.0, "no priced procedure in this category"
+    return sum(amounts) / len(amounts), (
+        "mean tariff of the " + str(len(amounts)) + " ClaimCast procedure(s) coded as "
+        + category + ", because " + UNMAPPED.get(category, "no specialty is mapped to it")
+    )
+
+
 def shape_factor(
     procedure_id: str, tier: str, nabh: bool, room_class: str, days: int, icu_days: int
 ) -> tuple[float, str]:
     """
-    How this procedure sits against the average of its ailment category.
+    How this procedure sits against a typical admission in its ailment category.
 
-    The comparison is made at the same tier, NABH status and room class for every
-    procedure in the category, and at each procedure's own median stay, so the
-    only thing left in the ratio is the procedure.
+    The numerator is this admission's tariff, stay and all. The denominator is
+    the category's mean package price at the same city tier, so the tier cancels
+    and what is left is the procedure.
+
+    Six of the nine categories contain exactly one ClaimCast procedure, so a
+    denominator taken over the app's own list would be that same procedure and
+    the factor would be 1 by construction -- which would have priced a single
+    dialysis session at the survey's mean for every kidney admission in India.
+    The denominator is therefore the published catalogue, not the app's subset.
     """
-    from .procedures import median_stay_days
-
     category = CODING[procedure_id].category
-    peers = [p for p, c in CODING.items() if c.category == category]
-    amounts = []
-    for peer in peers:
-        try:
-            stay = median_stay_days(peer)
-            amounts.append(anchor_for(peer, tier, nabh, room_class, stay, 0).amount)
-        except SystemExit:
-            continue  # a peer with no published tariff cannot inform the average
     mine = anchor_for(procedure_id, tier, nabh, room_class, days, icu_days).amount
-    if not amounts:
-        return 1.0, "no priced peers in this category, so no within-category adjustment"
-    mean = sum(amounts) / len(amounts)
-    label = CHILDBIRTH if category == CHILDBIRTH else category
-    return mine / mean, (
-        "tariff for this procedure against the mean tariff of the "
-        + str(len(amounts)) + " procedure(s) ClaimCast codes as " + label
-    )
+    mean, _n, note = category_tariff_mean(category, tier)
+    if mean <= 0:
+        mean, note = _peer_mean(category, tier, nabh, room_class)
+    if mean <= 0:
+        return 1.0, "no denominator for this category, so no within-category adjustment"
+    return mine / mean, "this admission's tariff against the " + note
+
+
+def implant_allowance(procedure_id: str) -> tuple[int, str] | None:
+    """
+    What PM-JAY allows for the implant, where the package master states one.
+
+    349 of the 1,949 packages carry an implant line -- "Implant for Total Knee
+    Replacement - 55000" and the like -- which is an allowance paid on top of the
+    package price rather than inside it. It is not what a private hospital
+    charges, and the forecast does not price the implant from it. It is here
+    because it is the only published figure for the same object, so it is worth
+    reporting beside the private one and worth asserting against in the tests:
+    a private implant price below the government's own allowance would be wrong.
+
+    Where a line names more than one device -- a bare-metal and a drug-eluting
+    stent on the same row -- the larger is taken, because that is the one the
+    engine's implant options describe.
+    """
+    hbp, _cghs, hbp_codes, _c = _tables()
+    code = hbp_codes.get(procedure_id)
+    if not code:
+        return None
+    pkg = next((p for p in hbp["packages"] if p["code"] == code), None)
+    if pkg is None or not pkg.get("implant"):
+        return None
+    figures = [int(n) for n in re.findall(r"\d+", pkg["implant"])]
+    if not figures:
+        return None
+    return max(figures) * 100, pkg["implant"]
