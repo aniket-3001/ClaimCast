@@ -399,7 +399,20 @@ async function main() {
       };
       await tx.admission.upsert({ where: { id: a.id }, create: { id: a.id, ...row }, update: row });
     }
-  });
+  },
+  // Prisma gives an interactive transaction five seconds by default, which is
+  // ample against a database on the same machine and nowhere near enough
+  // against one reached over a tunnel: this seed writes a few thousand rows one
+  // statement at a time, and a round trip to us-central1 turns that into
+  // minutes. The failure is also badly disguised -- the transaction is rolled
+  // back and reported as "Transaction not found ... refers to an old closed
+  // transaction", which reads like a Prisma bug rather than a deadline.
+  //
+  // It stays one transaction on purpose. Every priced row points at a Source,
+  // so a seed that dies half way through with the sources written and the
+  // tariffs not would leave a database that looks populated and adjudicates
+  // wrongly, which is worse than one that plainly failed.
+  { timeout: 10 * 60_000, maxWait: 60_000 });
 
   const counts: Array<[string, number]> = [
     ["sources", await db.source.count()],
