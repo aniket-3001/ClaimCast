@@ -13,6 +13,11 @@
  * it. Comparing against the actual bytes does stop it, every time, because the
  * text either is in the file or it is not.
  *
+ * It is also what makes a cheaper model safe to use. `models.ts` picks between
+ * Gemini, Claude and Groq on whichever key is present, and the weaker the model
+ * the more work this pass does -- but the failure it has to catch is the same
+ * one in every case, and it catches it by looking rather than by trusting.
+ *
  * **The extraction is never the answer.** It populates a form the user confirms.
  * `Intake.tsx` holds that gate and nothing here bypasses it -- no extracted
  * value reaches the engine, the database or a figure on screen until a person
@@ -26,100 +31,14 @@
  * waiting period has expired. Guessing it would move a real person's claim.
  */
 
-import Anthropic from "@anthropic-ai/sdk";
-import { EXTRACTED_FIELDS, ExtractionSchema, type Extraction } from "@claimcast/contracts";
+import {
+  EXTRACTED_FIELDS,
+  ExtractionSchema,
+  type ExtractedField,
+  type Extraction,
+} from "@claimcast/contracts";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
-
-/**
- * Sonnet 5 rather than the largest model available. This is transcription with a
- * citation requirement, not reasoning, and the verification pass below catches
- * the failure mode a bigger model would reduce but not remove. Override with
- * EXTRACTION_MODEL if a schedule turns up that it cannot read.
- */
-const MODEL = process.env.EXTRACTION_MODEL ?? "claude-sonnet-5";
-
-const FIELD_NOTES: Record<string, string> = {
-  insurer: "The insurance company's name, as printed.",
-  product: "The product or plan name.",
-  sumInsured: "Sum insured for the policy year, in paise. Rs 5,00,000 is 50000000.",
-  roomCapPerDay: "Room rent limit per day in paise, or null if the limit is only a percentage.",
-  roomCapPctOfSI:
-    "Room rent limit as a fraction of sum insured -- 1% is 0.01 -- or null if stated in rupees only.",
-  icuCapPerDay: "ICU limit per day in paise, or null if only a percentage is given.",
-  icuCapPctOfSI: "ICU limit as a fraction of sum insured, or null if stated in rupees only.",
-  proportionateDeduction:
-    "true if the policy applies proportionate deduction when the room taken exceeds the limit.",
-  copayPct: "Co-payment as a fraction -- 20% is 0.2, none is 0.",
-  implantSubLimit: "Implant or prosthesis sub-limit in paise, or null if there is none.",
-  preHospDays: "Days of pre-hospitalisation expenses covered.",
-  postHospDays: "Days of post-hospitalisation expenses covered.",
-  dayCareCovered: "true if day-care procedures are covered without the minimum stay.",
-  monthsInForce:
-    "How many months the cover has been continuously in force. A schedule states the current " +
-    "policy year, which is a different thing, so this is almost always null. Do not compute it " +
-    "from the period of insurance.",
-  pedWaitingMonths: "Pre-existing disease waiting period, in months.",
-  moratoriumMonths: "Moratorium period, in months.",
-};
-
-const TOOL = {
-  name: "record_policy",
-  description:
-    "Record each field of the policy schedule together with the verbatim text it was read from.",
-  input_schema: {
-    type: "object" as const,
-    properties: Object.fromEntries(
-      EXTRACTED_FIELDS.map((f) => [
-        f,
-        {
-          type: "object",
-          description: FIELD_NOTES[f],
-          properties: {
-            value: {
-              description:
-                FIELD_NOTES[f] + " Null if the document does not state it. Never infer or compute.",
-            },
-            span: {
-              type: ["object", "null"],
-              description:
-                "The exact text this was read from, copied character for character from the " +
-                "document, and the page it is on. Null when the value is null.",
-              properties: {
-                text: { type: "string" },
-                page: { type: "integer" },
-              },
-              required: ["text", "page"],
-            },
-            absent: {
-              type: ["string", "null"],
-              description:
-                "When the value is null, one sentence saying what the document does say instead. " +
-                "Null when there is a value.",
-            },
-          },
-          required: ["value", "span", "absent"],
-        },
-      ]),
-    ),
-    required: [...EXTRACTED_FIELDS],
-  },
-};
-
-const PROMPT = `You are reading an Indian health insurance policy schedule so that a claim can be
-adjudicated against it. Record every field using the record_policy tool.
-
-Two rules matter more than completeness.
-
-First, quote rather than paraphrase. The span you give for a field must be text that appears in
-the document exactly as you write it -- the same words, the same digits, the same punctuation.
-It is checked against the document afterwards, and a span that cannot be found is shown to the
-reader as a failure. A short exact quote is better than a long approximate one.
-
-Second, do not supply what the document does not. If a field is not stated, set its value to null
-and say in "absent" what the document says instead. Do not compute a figure from other figures,
-do not carry a market convention across, and do not round a number into a tidier one. A wrong
-value that looks plausible is worse here than an honest gap, because a person will be shown this
-and asked to confirm it.`;
+import { FIELD_TYPES, read } from "./models.js";
 
 /**
  * Is this quote actually in the document?
@@ -165,13 +84,62 @@ export async function pageText(pdf: Buffer): Promise<string[]> {
 
 /**
  * Whitespace is where an honest quote and the document disagree for no reason.
- * A PDF's text layer breaks lines wherever the layout did, so "Rs 5,000 per day"
- * can arrive as "Rs  5,000\nper  day". Collapsing runs of space closes that gap
- * without letting a different sentence through: every character that carries
- * meaning still has to match.
+ * A PDF's text layer breaks lines wherever the layout did, so a rupee figure and
+ * the words "per day" can arrive with a line break and double spaces between
+ * them. Collapsing runs of space closes that gap without letting a different
+ * sentence through: every character that carries meaning still has to match.
  */
 function normalise(s: string): string {
   return s.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Make the value the type the engine prices with, or refuse it.
+ *
+ * Two of the three providers answer in free-form JSON, where a quoted number or
+ * a figure still carrying its rupee sign and thousands separators is an ordinary
+ * answer for a field that has to be numeric. The contract accepts a string for
+ * `value`, so nothing downstream would have rejected either one -- the engine
+ * would have been handed a string and priced something wrong, quietly. This is
+ * the one place that cannot happen.
+ *
+ * A value that will not convert becomes null rather than a guess. It then
+ * travels to the screen as an unanswered field with a reason, which is a person
+ * typing one number, instead of a wrong number nobody was asked about.
+ */
+function coerce(
+  field: ExtractedField,
+  value: unknown,
+): { value: number | boolean | string | null; bad: boolean } {
+  if (value === null || value === undefined) return { value: null, bad: false };
+  const want = FIELD_TYPES[field];
+
+  if (want === "string") {
+    const s = typeof value === "string" ? value.trim() : String(value);
+    return s ? { value: s, bad: false } : { value: null, bad: false };
+  }
+
+  if (want === "boolean") {
+    if (typeof value === "boolean") return { value, bad: false };
+    if (typeof value === "string") {
+      const s = value.trim().toLowerCase();
+      if (s === "true" || s === "yes") return { value: true, bad: false };
+      if (s === "false" || s === "no") return { value: false, bad: false };
+    }
+    return { value: null, bad: true };
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? { value, bad: false } : { value: null, bad: true };
+  }
+  if (typeof value === "string") {
+    // Currency marks, thousands separators and a stray "Rs" are formatting, not
+    // information. Anything left over that is not a number is not a number.
+    const cleaned = value.replace(/(?:rs\.?|inr)/gi, "").replace(/[₹,\s]/g, "");
+    const n = Number(cleaned);
+    if (cleaned !== "" && Number.isFinite(n)) return { value: n, bad: false };
+  }
+  return { value: null, bad: true };
 }
 
 export interface ExtractionResult {
@@ -185,39 +153,9 @@ export async function extractPolicy(
   filename: string,
   documentId: string,
 ): Promise<ExtractionResult> {
-  const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) {
-    throw Object.assign(new Error("ANTHROPIC_API_KEY is not set."), { status: 503 });
-  }
-
   const pages = await pageText(pdf);
-  const client = new Anthropic({ apiKey: key });
+  const { raw, used } = await read(pdf, pages);
 
-  const res = await client.messages.create({
-    model: MODEL,
-    max_tokens: 4096,
-    tools: [TOOL],
-    tool_choice: { type: "tool", name: TOOL.name },
-    messages: [
-      {
-        role: "user",
-        content: [
-          {
-            type: "document",
-            source: { type: "base64", media_type: "application/pdf", data: pdf.toString("base64") },
-          },
-          { type: "text", text: PROMPT },
-        ],
-      },
-    ],
-  });
-
-  const use = res.content.find((b) => b.type === "tool_use");
-  if (!use || use.type !== "tool_use") {
-    throw Object.assign(new Error("The model returned no extraction."), { status: 502 });
-  }
-
-  const raw = use.input as Record<string, { value: unknown; span: unknown; absent: unknown }>;
   const fields: Record<string, unknown> = {};
   const unverified: string[] = [];
 
@@ -236,11 +174,19 @@ export async function extractPolicy(
 
     if (text !== null && !verified) unverified.push(f);
 
+    const { value, bad } = coerce(f, got?.value);
+    const absent = typeof got?.absent === "string" ? got.absent : null;
+
     fields[f] = {
-      value: got?.value ?? null,
-      span: text !== null && page !== null ? { text, page } : null,
-      absent: typeof got?.absent === "string" ? got.absent : null,
-      verified,
+      value,
+      // A span is a citation for a value. Once the value has been dropped there
+      // is nothing left for it to cite, and keeping it would put a quote beside
+      // an empty field as though the two agreed.
+      span: !bad && text !== null && page !== null ? { text, page } : null,
+      absent: bad
+        ? "The model answered with something this field cannot hold, so it was dropped rather than guessed at."
+        : absent,
+      verified: bad ? false : verified,
     };
   }
 
@@ -250,7 +196,10 @@ export async function extractPolicy(
       documentId,
       filename,
       pages: pages.length,
-      model: MODEL,
+      // Which model, not just which company. A figure on screen should be
+      // traceable to the thing that read it, including on the day that thing
+      // was the text-only fallback.
+      model: `${used.provider}/${used.model}`,
       extractedAt: new Date().toISOString(),
       fields,
       unverified,
