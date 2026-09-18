@@ -80,18 +80,28 @@ of where the repository is checked out.
 
 ## The prototype
 
-npm workspaces. `packages/engine` holds the adjudication core and `apps/web` renders it;
-the engine is imported directly by the client rather than reached over a network, because
-the journey screen re-adjudicates the whole claim on every branch click and a round trip
-per click would destroy the interaction.
+npm workspaces. `packages/engine` holds the adjudication core, `apps/api` serves the
+reference data out of Postgres and `apps/web` renders it. The engine is imported directly
+by both sides rather than reached over a network, because the journey screen
+re-adjudicates the whole claim on every branch click and a round trip per click would
+destroy the interaction. The client fetches the reference set once at boot and prices
+locally from then on; the API recomputes with the same code and is what anything saved is
+taken from, so the two cannot disagree about a rupee.
+
+The client has no bundled copy of that data. If the API is unreachable it says so and
+stops rather than falling back to a sample set, because a figure on screen has to have
+come from the database the screen says it came from.
 
 ```powershell
 npm install
 npm run db:up        # Postgres 16 on localhost:5434
 npm run db:migrate
 npm run db:seed
-npm run dev          # http://localhost:5174
+npm run api          # http://localhost:3101
+npm run dev          # http://localhost:5174, /api proxied to the API
 ```
+
+Two processes, in two terminals. The web app will not render without the API.
 
 Still synthetic data at this stage: no real hospital, insurer, patient or bill appears
 anywhere in it. Every priced row in the database points at the source it came from, and

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { rupees, evaluate, repair, type CaseInput } from "@claimcast/engine";
+import { rupees, evaluate, registry, repair, stayDays, type CaseInput } from "@claimcast/engine";
 import { Intake } from "./components/Intake";
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
@@ -16,26 +16,40 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "database", label: "Database" },
 ];
 
-/** The reference admission from the deck: RC-2401, before it happened. */
-const START: CaseInput = {
-  hospitalId: "h-meridian",
-  procedureId: "p-spine-fusion",
-  policyId: "pol-classic",
-  roomClass: "private",
-  route: "cashless",
-  days: 5,
-  icuDays: 0,
-  siUsed: rupees(0),
-  implantId: "imported",
-  admittedInpatient: true,
-  age: 45,
-  hasPmjayCard: false,
-  govtEmployeeOrPensioner: false,
-};
+/**
+ * The reference admission from the deck: RC-2401, before it happened.
+ *
+ * Read back out of the reference set rather than written down here, so the app
+ * opens on an admission the database actually holds. What it rebuilds is the
+ * input — what the family would have known on the way in — not the settled
+ * bill. The last few fields have no equivalent on a settled admission because
+ * they are intake facts rather than billing ones, and they start where the
+ * deck's case starts.
+ */
+function start(): CaseInput {
+  const { admissions } = registry();
+  const a = admissions.find((x) => x.ref === "RC-2401") ?? admissions[0];
+  if (!a) throw new Error("The reference set has no admissions to open on.");
+  return repair({
+    hospitalId: a.hospitalId,
+    procedureId: a.procedureId,
+    policyId: a.policyId,
+    roomClass: a.roomClass,
+    route: a.route,
+    days: stayDays(a),
+    icuDays: a.lines.find((l) => l.kind === "icu")?.days ?? 0,
+    siUsed: a.siUsed ?? rupees(0),
+    implantId: "imported",
+    admittedInpatient: true,
+    age: 45,
+    hasPmjayCard: false,
+    govtEmployeeOrPensioner: false,
+  });
+}
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("start");
-  const [input, setInput] = useState<CaseInput>(repair(START));
+  const [input, setInput] = useState<CaseInput>(start);
   const [name, setName] = useState("");
   const [policyholder, setPolicyholder] = useState("");
   const e = useMemo(() => evaluate(input), [input]);

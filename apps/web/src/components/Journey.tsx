@@ -12,7 +12,7 @@ import {
   type CaseInput,
   type Evaluated,
   type Stage,
-  CLAUSES,
+  registry,
 } from "@claimcast/engine";
 
 /**
@@ -25,6 +25,7 @@ import {
  * adjustment — so choosing is a matter of reading two numbers.
  */
 export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput) => void }) {
+  const { clauses: CLAUSES } = registry();
   const g = gate(e);
   const f = forecast(e);
   const fixed = fixedRegardless(e);
@@ -147,6 +148,7 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
  * every case would be a tab in disguise.
  */
 function GovtFork({ e }: { e: Evaluated }) {
+  const { clauses: CLAUSES } = registry();
   const ways = schemeOptions(e).filter((s) => s.id === "private" || s.eligible);
   if (ways.length < 2) return null;
 
@@ -193,6 +195,7 @@ function GovtFork({ e }: { e: Evaluated }) {
 function StageBlock({ stage, onPick }: { stage: Stage; onPick: (next: CaseInput) => void }) {
   // Where every branch settles for the same money, the figures are noise and
   // the difference is timing. Say that instead of printing it four times.
+  const { clauses: CLAUSES } = registry();
   const sameMoney = new Set(stage.branches.map((b) => b.patientPays)).size === 1;
 
   return (

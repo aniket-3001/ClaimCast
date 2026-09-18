@@ -14,6 +14,8 @@
  */
 
 import { PrismaClient, type Prisma } from "@prisma/client";
+// The fixtures, by name. This is the one place in the application that is
+// meant to read them: everything downstream reads the database this writes.
 import {
   ADMISSIONS,
   CLAUSES,
@@ -22,7 +24,7 @@ import {
   LIST_I,
   POLICIES,
   PROCEDURES,
-} from "@claimcast/engine";
+} from "@claimcast/engine/fixtures";
 import { CLAUSE_SOURCE, SOURCES } from "../src/sources.js";
 
 const db = new PrismaClient();

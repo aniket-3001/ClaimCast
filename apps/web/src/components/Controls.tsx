@@ -1,4 +1,4 @@
-import { rupees, type CaseInput, PROCEDURES, POLICIES } from "@claimcast/engine";
+import { rupees, registry, type CaseInput } from "@claimcast/engine";
 
 /**
  * The givens.
@@ -19,6 +19,7 @@ export function Controls({
   value: CaseInput;
   onChange: (next: CaseInput) => void;
 }) {
+  const { procedures: PROCEDURES, policies: POLICIES } = registry();
   const set = (patch: Partial<CaseInput>) => onChange({ ...value, ...patch });
 
   return (

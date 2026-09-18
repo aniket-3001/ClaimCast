@@ -1273,3 +1273,33 @@ footer.foot {
     transition: none !important;
   }
 }
+
+/* The screen shown when the reference data could not be fetched. Plain and
+   legible rather than styled like a toast: this is a stop, not a notice. */
+.boot-error {
+  max-width: 34rem;
+  margin: 18vh auto;
+  padding: 0 1.5rem;
+}
+
+.boot-error h1 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.75rem;
+}
+
+.boot-error p {
+  margin: 0 0 0.75rem;
+  line-height: 1.6;
+}
+
+.boot-error .detail {
+  font-size: 0.85rem;
+  color: var(--muted, #6b7280);
+}
+
+.boot-error code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+}

@@ -1,4 +1,4 @@
-import { fmt, pct, type LineKind, type Evaluated, CLAUSES } from "@claimcast/engine";
+import { fmt, pct, type LineKind, type Evaluated, registry } from "@claimcast/engine";
 
 const KIND: Record<LineKind, { label: string; tone: string }> = {
   room: { label: "room", tone: "" },
@@ -18,6 +18,7 @@ const KIND: Record<LineKind, { label: string; tone: string }> = {
  * marked "not room-linked" can check the settlement letter against it.
  */
 export function BillView({ e }: { e: Evaluated }) {
+  const { clauses: CLAUSES } = registry();
   const r = e.result;
   const byLine = new Map<string, { amount: number; clause: string; reason: string }[]>();
   for (const d of r.deductions) {

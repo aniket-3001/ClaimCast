@@ -287,13 +287,3 @@ export const ADMISSIONS: Admission[] = SPECS.map((s) => ({
     includeOutsideWindow: s.outsideWindow,
   }),
 }));
-
-export const admission = (id: string): Admission => ADMISSIONS.find((a) => a.id === id)!;
-
-/** Days of stay, read back off the bill rather than stored twice. */
-export const stayDays = (a: Admission): number => {
-  const d = a.lines
-    .filter((l) => l.kind === "room" || l.kind === "icu")
-    .reduce((t, l) => t + (l.days ?? 0), 0);
-  return d || 1;
-};

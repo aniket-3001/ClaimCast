@@ -17,17 +17,15 @@
  *   npm run check --workspace @claimcast/api
  */
 
+import { adjudicate, fmt, rupees as r } from "@claimcast/engine";
 import {
-  adjudicate,
-  fmt,
-  rupees as r,
   ADMISSIONS,
   CLAUSES,
   HOSPITALS,
   LIST_I,
   POLICIES,
   PROCEDURES,
-} from "@claimcast/engine";
+} from "@claimcast/engine/fixtures";
 import * as ref from "../src/reference.js";
 
 let failures = 0;

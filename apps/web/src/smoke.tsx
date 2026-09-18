@@ -7,21 +7,25 @@
  * markup rather than an exception. Run by `npm run check` alongside selfcheck.
  */
 import { renderToString } from "react-dom/server";
+import { evaluate, setRegistry, stayDays, type CaseInput } from "@claimcast/engine";
 import {
-  evaluate,
-  type CaseInput,
   ADMISSIONS,
-  stayDays,
+  FIXTURES,
   HOSPITALS,
-  PROCEDURES,
   POLICIES,
-} from "@claimcast/engine";
+  PROCEDURES,
+} from "@claimcast/engine/fixtures";
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Intake } from "./components/Intake";
 import { Database } from "./components/Database";
+
+// The components render whatever registry is installed. In the running app
+// that is what the API returned; here it is the hand-written set, so that
+// `npm run check` stays a check rather than something needing a database up.
+setRegistry(FIXTURES);
 
 const noop = () => {};
 let n = 0;

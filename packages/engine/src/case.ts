@@ -2,9 +2,7 @@ import type { BillLine, Hospital, Policy, Procedure, RoomClass, Route } from "./
 import { adjudicate, type Adjudication } from "./engine";
 import { buildBill, ROOM_LABEL, tariff } from "./bill";
 import { fmt, rupees, type Paise } from "./money";
-import { hospital, HOSPITALS } from "./data/hospitals";
-import { procedure } from "./data/procedures";
-import { policy } from "./data/policies";
+import { hospital, policy, procedure, registry } from "./registry";
 
 /** Below this, a deduction is true but not worth a decision. */
 export const MATERIALITY: Paise = rupees(10000);
@@ -217,7 +215,7 @@ export function roomOptions(e: Evaluated): Option[] {
 export function hospitalOptions(e: Evaluated): Option[] {
   const here = e.result.patientPays;
   const want = tariff(e.hospital, e.input.roomClass) ?? 0;
-  return HOSPITALS.map((h) => {
+  return registry().hospitals.map((h) => {
     const classes = h.rooms.filter((r) => r.cls !== "icu");
     if (!classes.length) return null;
     const match =

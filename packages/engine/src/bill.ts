@@ -1,4 +1,4 @@
-import type { BillLine, Hospital, Procedure, RoomClass } from "./types";
+import type { Admission, BillLine, Hospital, Procedure, RoomClass } from "./types";
 import type { Paise } from "./money";
 
 export const ROOM_LABEL: Record<RoomClass, string> = {
@@ -160,3 +160,11 @@ export function buildBill(args: {
 
   return lines;
 }
+
+/** Days of stay, read back off the bill rather than stored twice. */
+export const stayDays = (a: Admission): number => {
+  const d = a.lines
+    .filter((l) => l.kind === "room" || l.kind === "icu")
+    .reduce((t, l) => t + (l.days ?? 0), 0);
+  return d || 1;
+};

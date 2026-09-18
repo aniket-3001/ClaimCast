@@ -5,18 +5,12 @@ import {
   adjudicate,
   ROOM_LABEL,
   type CaseInput,
-  HOSPITALS,
   hospital,
-  PROCEDURES,
   procedure,
-  POLICIES,
   policy,
-  ADMISSIONS,
   stayDays,
-  LIST_I,
-  LIST_FRAMEWORK,
-  LIST_I_TOTAL,
-  CLAUSES,
+  listITotal,
+  registry,
 } from "@claimcast/engine";
 
 type View = "admissions" | "hospitals" | "procedures" | "policies" | "lists" | "clauses";
@@ -62,6 +56,7 @@ export function Database({ onOpen }: { onOpen: (c: CaseInput) => void }) {
 }
 
 function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
+  const { admissions: ADMISSIONS } = registry();
   const rows = useMemo(
     () =>
       ADMISSIONS.map((a) => {
@@ -155,6 +150,7 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
 }
 
 function Hospitals() {
+  const { hospitals: HOSPITALS } = registry();
   return (
     <>
       <p className="lede">
@@ -211,6 +207,7 @@ function Hospitals() {
 }
 
 function Procedures() {
+  const { procedures: PROCEDURES } = registry();
   return (
     <>
       <p className="lede">
@@ -261,6 +258,7 @@ function Procedures() {
 }
 
 function Policies() {
+  const { policies: POLICIES } = registry();
   return (
     <>
       <p className="lede">
@@ -320,6 +318,7 @@ const cap = (abs: number | null, pctOfSI: number | null) => {
 };
 
 function Lists() {
+  const { listI: LIST_I, listFramework: LIST_FRAMEWORK } = registry();
   return (
     <>
       <p className="lede">
@@ -340,7 +339,7 @@ function Lists() {
         <div className="section-head">
           <h2>List I, as billed</h2>
           <span className="aside">
-            {LIST_I.length} items · {fmt(LIST_I_TOTAL)} on a five-day metro admission
+            {LIST_I.length} items · {fmt(listITotal())} on a five-day metro admission
           </span>
         </div>
         <div className="scroll">
@@ -374,6 +373,7 @@ function Lists() {
 }
 
 function Clauses() {
+  const { clauses: CLAUSES } = registry();
   return (
     <>
       <p className="lede">

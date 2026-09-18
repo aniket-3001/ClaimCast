@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fmt, pct, type CaseInput, type Policy, POLICIES } from "@claimcast/engine";
+import { fmt, pct, registry, type CaseInput, type Policy } from "@claimcast/engine";
 
 /**
  * The front door, not the engine.
@@ -27,6 +27,7 @@ export function Intake({
   onPolicyholder: (v: string) => void;
   onContinue: () => void;
 }) {
+  const { policies: POLICIES } = registry();
   const policy = POLICIES.find((p) => p.id === input.policyId)!;
   const [stage, setStage] = useState<"upload" | "extracting" | "confirmed">("upload");
   const set = (patch: Partial<CaseInput>) => onChange({ ...input, ...patch });

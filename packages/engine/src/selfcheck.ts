@@ -9,9 +9,12 @@
  */
 import { adjudicate } from "./engine";
 import { fmt, rupees as r } from "./money";
-import { ADMISSIONS, admission } from "./data/admissions";
-import { policy } from "./data/policies";
-import { HOSPITALS } from "./data/hospitals";
+import { admission, policy, setRegistry } from "./registry";
+import { ADMISSIONS, FIXTURES, HOSPITALS } from "./fixtures";
+
+// The engine has no data until something gives it some. These checks are the
+// one place that is allowed to hand it the hand-written set.
+setRegistry(FIXTURES);
 import { evaluate, fixedRegardless, repair, schemeOptions, bestGovtScheme, type CaseInput } from "./case";
 
 let failures = 0;

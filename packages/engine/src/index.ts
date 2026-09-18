@@ -7,9 +7,11 @@
  * and the server run the same adjudication and be unable to disagree about a
  * rupee: there is one implementation, imported twice, not a copy on each side.
  *
- * The reference data under ./data is still hand-written. It is the engine's
- * fixture set and the only reason selfcheck.ts can run without a database;
- * Phase 1 replaces it as the app's source of truth and keeps it as fixtures.
+ * What is deliberately not exported here is the reference data. The engine
+ * reads whatever registry was installed — from the database, in the running
+ * application — and the hand-written set now lives behind a separate import,
+ * `@claimcast/engine/fixtures`, which only the self-checks reach for. A screen
+ * that shows a figure has to have fetched it.
  */
 
 export * from "./money";
@@ -17,10 +19,4 @@ export * from "./types";
 export * from "./bill";
 export * from "./engine";
 export * from "./case";
-
-export { ADMISSIONS, admission, stayDays } from "./data/admissions";
-export { CLAUSES, clause } from "./data/clauses";
-export { HOSPITALS, hospital } from "./data/hospitals";
-export { POLICIES, policy } from "./data/policies";
-export { PROCEDURES, procedure } from "./data/procedures";
-export { LIST_FRAMEWORK, LIST_I, LIST_I_TOTAL, type ListItem } from "./data/lists";
+export * from "./registry";

@@ -1,12 +1,5 @@
 import { rupees as r } from "../money";
-import type { Paise } from "../money";
-
-export interface ListItem {
-  item: string;
-  group: string;
-  /** Illustrative amount on a five-day admission at a metro hospital. */
-  typical: Paise;
-}
+import type { ListItem } from "../registry";
 
 /**
  * IRDAI keeps four lists. Only the first costs the patient money directly, and
