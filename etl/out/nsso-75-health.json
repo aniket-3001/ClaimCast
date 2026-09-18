@@ -6,7 +6,7 @@
     "url": "https://www.mospi.gov.in/sites/default/files/publication_reports/KI_Health_75th_Final.pdf",
     "checksum": "37da83c65ebf2b426d7a7d9eb31c204dd64a47991273b626466466690a631baf",
     "caveat": "A household survey, not a price list, and eight years old. Every figure is an average over a stratum -- a state, a sector, an ailment category -- and the report publishes no quantile of the patient-level distribution, so a band fitted to these cells describes the spread of average cost across strata and not the spread across patients. The public-hospital column is out-of-pocket spending at a government hospital, which is neither the CGHS rate nor the PM-JAY package price. Figures are July 2017 - June 2018 rupees and exclude hospitalisation for childbirth, transport to hospital, and food.",
-    "document": "NSS Report KI(75/25.0), Key Indicators of Social Consumption in India: Health, July 2017 - June 2018. Statements 3.15, 3.16 and 3.17, and Tables A16, A17 and A18 of Appendix A.",
+    "document": "NSS Report KI(75/25.0), Key Indicators of Social Consumption in India: Health, July 2017 - June 2018. Statements 3.15, 3.16 and 3.17, and Tables A16, A17, A18, A29 and A30 of Appendix A.",
     "effectiveFrom": "2018-06-30"
   },
   "note": "Paise, in 2017-18 prices. Multiply by the factor in cpi-health.json to state any of these in December 2025 rupees.",
@@ -444,6 +444,301 @@
       "all": 2647500
     }
   ],
+  "childbirth": {
+    "note": "Childbirth is excluded from every other figure in this file. `medical` is Table A29 and is the comparable one: expenditure on the hospital bill. `withNonMedical` is Table A30, which adds transport, food and lodging and is therefore larger; it is here only because it is the sole published split between normal and caesarean delivery, and should be used for that ratio rather than for a level.",
+    "medical": [
+      {
+        "sector": "rural",
+        "hospitalType": "public",
+        "q1": 110600,
+        "q2": 128300,
+        "q3": 130400,
+        "q4": 147600,
+        "q5": 160600,
+        "all": 132400
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "private",
+        "q1": 1479300,
+        "q2": 1641000,
+        "q3": 1666300,
+        "q4": 1933600,
+        "q5": 2219700,
+        "all": 1877100
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "all",
+        "q1": 292600,
+        "q2": 383800,
+        "q3": 460200,
+        "q4": 644700,
+        "q5": 1009100,
+        "all": 544100
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "public",
+        "q1": 162900,
+        "q2": 197900,
+        "q3": 212400,
+        "q4": 225200,
+        "q5": 209000,
+        "all": 191900
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "private",
+        "q1": 1890500,
+        "q2": 2124200,
+        "q3": 3027600,
+        "q4": 2837500,
+        "q5": 3588000,
+        "all": 2745100
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "all",
+        "q1": 728900,
+        "q2": 922500,
+        "q3": 1634700,
+        "q4": 1920900,
+        "q5": 2920800,
+        "all": 1445500
+      },
+      {
+        "sector": "combined",
+        "hospitalType": "public",
+        "q1": 119800,
+        "q2": 129600,
+        "q3": 146800,
+        "q4": 167700,
+        "q5": 207400,
+        "all": 143300
+      },
+      {
+        "sector": "combined",
+        "hospitalType": "private",
+        "q1": 1602600,
+        "q2": 1646300,
+        "q3": 1900100,
+        "q4": 2119600,
+        "q5": 3049400,
+        "all": 2236400
+      },
+      {
+        "sector": "combined",
+        "hospitalType": "all",
+        "q1": 343200,
+        "q2": 429600,
+        "q3": 635800,
+        "q4": 892700,
+        "q5": 1979700,
+        "all": 773400
+      }
+    ],
+    "withNonMedical": [
+      {
+        "sector": "rural",
+        "hospitalType": "public",
+        "delivery": "all",
+        "q1": 194000,
+        "q2": 224700,
+        "q3": 238500,
+        "q4": 266800,
+        "q5": 315800,
+        "all": 240400
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "public",
+        "delivery": "normal",
+        "q1": 180500,
+        "q2": 197800,
+        "q3": 206400,
+        "q4": 226200,
+        "q5": 262200,
+        "all": 208400
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "public",
+        "delivery": "caesarean",
+        "q1": 466400,
+        "q2": 522600,
+        "q3": 565900,
+        "q4": 552200,
+        "q5": 566000,
+        "all": 542300
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "private",
+        "delivery": "all",
+        "q1": 1649500,
+        "q2": 1797300,
+        "q3": 1890100,
+        "q4": 2121500,
+        "q5": 2452200,
+        "all": 2078800
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "private",
+        "delivery": "normal",
+        "q1": 1023500,
+        "q2": 1016700,
+        "q3": 1179800,
+        "q4": 1304700,
+        "q5": 1618300,
+        "all": 1293100
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "private",
+        "delivery": "caesarean",
+        "q1": 2694900,
+        "q2": 2754600,
+        "q3": 2735600,
+        "q4": 2805800,
+        "q5": 3307800,
+        "all": 2940600
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "all",
+        "delivery": "all",
+        "q1": 389700,
+        "q2": 493900,
+        "q3": 596400,
+        "q4": 791800,
+        "q5": 1206800,
+        "all": 679900
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "all",
+        "delivery": "normal",
+        "q1": 258000,
+        "q2": 286900,
+        "q3": 345100,
+        "q4": 408800,
+        "q5": 675800,
+        "all": 374600
+      },
+      {
+        "sector": "rural",
+        "hospitalType": "all",
+        "delivery": "caesarean",
+        "q1": 1705500,
+        "q2": 1708500,
+        "q3": 1837200,
+        "q4": 2025500,
+        "q5": 2399600,
+        "all": 2020000
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "public",
+        "delivery": "all",
+        "q1": 255800,
+        "q2": 318200,
+        "q3": 353400,
+        "q4": 376000,
+        "q5": 342600,
+        "all": 310600
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "public",
+        "delivery": "normal",
+        "q1": 212400,
+        "q2": 236000,
+        "q3": 292600,
+        "q4": 300300,
+        "q5": 276600,
+        "all": 245900
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "public",
+        "delivery": "caesarean",
+        "q1": 486000,
+        "q2": 646400,
+        "q3": 506800,
+        "q4": 560100,
+        "q5": 569000,
+        "all": 550400
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "private",
+        "delivery": "all",
+        "q1": 2053400,
+        "q2": 2272600,
+        "q3": 3114000,
+        "q4": 3052300,
+        "q5": 3817200,
+        "all": 2910500
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "private",
+        "delivery": "normal",
+        "q1": 1224100,
+        "q2": 1430100,
+        "q3": 1658300,
+        "q4": 1986500,
+        "q5": 2700000,
+        "all": 1796000
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "private",
+        "delivery": "caesarean",
+        "q1": 3044200,
+        "q2": 3249800,
+        "q3": 3412400,
+        "q4": 3865000,
+        "q5": 4740700,
+        "all": 3750800
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "all",
+        "delivery": "all",
+        "q1": 851000,
+        "q2": 1066800,
+        "q3": 1807500,
+        "q4": 2118100,
+        "q5": 3145300,
+        "all": 1609200
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "all",
+        "delivery": "normal",
+        "q1": 456200,
+        "q2": 587600,
+        "q3": 890200,
+        "q4": 1190200,
+        "q5": 1994600,
+        "all": 838200
+      },
+      {
+        "sector": "urban",
+        "hospitalType": "all",
+        "delivery": "caesarean",
+        "q1": 1998400,
+        "q2": 2178900,
+        "q3": 2357200,
+        "q4": 3195300,
+        "q5": 4365000,
+        "all": 2805800
+      }
+    ]
+  },
   "components": [
     {
       "component": "package",

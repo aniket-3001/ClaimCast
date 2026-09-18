@@ -69,6 +69,8 @@ P_QUINTILE = 61  # Table A18, Appendix A.
 # proxy for the spread between two patients who look otherwise alike, and
 # without it any band fitted here would be a band across states and nothing
 # more.
+P_CHILDBIRTH = 72     # Tables A29 and A30 share a page.
+
 SECTORS = ("rural", "urban", "combined")
 
 QUINTILES = [
@@ -127,6 +129,24 @@ COMPONENTS = [
     ("total", "total"),
 ]
 
+# Childbirth is excluded from every figure in Statements 3.15 to 3.17 and from
+# Tables A16 to A18, so the two delivery procedures ClaimCast prices have no
+# level anywhere in the main tables. Tables A29 and A30 are where the report
+# puts it instead, and they are the only reason a caesarean can be forecast at
+# all. The two tables measure different things and that difference is the point:
+# A29 is medical expenditure, which is what appears on a hospital bill, and A30
+# is the same expenditure plus transport, food and lodging, which is not. A29 is
+# therefore the level, and A30 is used only for the delivery-type ratio it is
+# alone in publishing -- and as a check, since A30 must exceed A29 in every cell
+# it shares.
+CB_TYPES = [
+    ("Govt./public hospital", "public"),
+    ("Private hospital", "private"),
+    ("All hospitals", "all"),
+]
+CB_DELIVERY = [("hospital", "all"), ("Normal", "normal"), ("Caesarean", "caesarean")]
+CB_QUINTILES = ["q1", "q2", "q3", "q4", "q5", "all"]
+
 HOSPITAL_TYPES = [
     ("government/public", "public"),
     ("private", "private"),
@@ -144,6 +164,10 @@ EVIDENCE = [
     (P_STATES, "excluding hospitalization for childbirth"),
     (P_AILMENT_SECTOR, "Table A16"),
     (P_AILMENT_SECTOR, "a. Infections 2149 14102 8005"),
+    (P_CHILDBIRTH, "Table A29"),
+    (P_CHILDBIRTH, "excluding abortion"),
+    (P_CHILDBIRTH, "Rural Private hospital 14793 16410 16663 19336 22197 18771"),
+    (P_CHILDBIRTH, "Caesarean delivery 30442 32498 34124 38650 47407 37508"),
     (P_QUINTILE, "Table A18"),
     (P_QUINTILE, "2nd (next 20% of population) 4387 27383 15622"),
 ]
@@ -189,6 +213,62 @@ def find_row(lines: list[str], label: str, count: int) -> list[str]:
         + " figures on it. The table has moved or been re-typeset; "
         + str(len(hits)) + " candidate lines matched the label."
     )
+
+
+def read_childbirth(lines: list[str]) -> list[dict]:
+    """Table A29: childbirth medical expenditure, by sector, hospital type and quintile."""
+    rows = rows_of(section(lines, "Table A29"), 6)
+    if len(rows) != 9:
+        raise SystemExit(
+            "Table A29 should be three sectors of three hospital types but yielded "
+            + str(len(rows)) + " rows of six figures"
+        )
+    out: list[dict] = []
+    for i, (label, vals) in enumerate(rows):
+        word, slug = CB_TYPES[i % 3]
+        if word.lower() not in label.lower():
+            raise SystemExit(
+                "Table A29 row " + str(i) + " reads " + repr(label) + ", which is not "
+                "the " + word + " row this parser expected there."
+            )
+        out.append(
+            {
+                "sector": SECTORS[i // 3],
+                "hospitalType": slug,
+                **dict(zip(CB_QUINTILES, vals)),
+            }
+        )
+    return out
+
+
+def read_childbirth_by_delivery(lines: list[str]) -> list[dict]:
+    """Table A30: the same, split by delivery type, but including non-medical spend."""
+    rows = rows_of(section(lines, "Table A30"), 6)
+    if len(rows) != 18:
+        raise SystemExit(
+            "Table A30 should be two sectors of three hospital types of three delivery "
+            "types but yielded " + str(len(rows)) + " rows of six figures"
+        )
+    out: list[dict] = []
+    for i, (label, vals) in enumerate(rows):
+        within = i % 9
+        type_word, type_slug = CB_TYPES[within // 3]
+        del_word, del_slug = CB_DELIVERY[within % 3]
+        word = type_word if within % 3 == 0 else del_word
+        if word.lower() not in label.lower():
+            raise SystemExit(
+                "Table A30 row " + str(i) + " reads " + repr(label) + ", which is not "
+                "the " + word + " row this parser expected there."
+            )
+        out.append(
+            {
+                "sector": ("rural", "urban")[i // 9],
+                "hospitalType": type_slug,
+                "delivery": del_slug,
+                **dict(zip(CB_QUINTILES, vals)),
+            }
+        )
+    return out
 
 
 def read_states(lines: list[str]) -> list[dict]:
@@ -239,9 +319,9 @@ def section(lines: list[str], table: str) -> list[str]:
     return lines[start:end]
 
 
-def triples(lines: list[str]) -> list[tuple[str, list[int]]]:
+def rows_of(lines: list[str], width: int) -> list[tuple[str, list[int]]]:
     """
-    Every data row on a page, as its last three figures, in printed order.
+    Every data row in a table, as its last `width` figures, in printed order.
 
     Tables A16 and A18 are laid out as stacked sector blocks with the sector
     named once, vertically, beside the middle of its block -- which puts the
@@ -262,14 +342,20 @@ def triples(lines: list[str]) -> list[tuple[str, list[int]]]:
         if "NSS KI" in ln:
             continue
         nums = numbers(ln)
-        if len(nums) >= 3:
-            vals = [money(n) for n in nums[-3:]]
-            label = ln[: ln.rfind(nums[-3])].strip(" .*") if nums[-3] in ln else ""
+        if len(nums) >= width:
+            vals = [money(n) for n in nums[-width:]]
+            first = nums[-width]
+            label = ln[: ln.rfind(first)].strip(" .*:") if first in ln else ""
             out.append(((label or pending), vals))
             pending = ""
         elif not nums and ln.strip():
             pending = ln.strip()
     return out
+
+
+def triples(lines: list[str]) -> list[tuple[str, list[int]]]:
+    """Rows of three figures, which is the shape of Tables A16 and A17."""
+    return rows_of(lines, 3)
 
 
 def read_by_ailment_sector(lines: list[str]) -> list[dict]:
@@ -337,7 +423,14 @@ def main() -> int:
         )
 
     with fitz.open(pdf) as doc:
-        wanted = (P_STATEMENTS, P_COMPONENTS, P_AILMENT_SECTOR, P_STATES, P_QUINTILE)
+        wanted = (
+        P_STATEMENTS,
+        P_COMPONENTS,
+        P_AILMENT_SECTOR,
+        P_STATES,
+        P_QUINTILE,
+        P_CHILDBIRTH,
+    )
         pages = {p: layout_lines(doc[p - 1]) for p in wanted}
         flat = {p: " ".join(ls) for p, ls in pages.items()}
 
@@ -388,8 +481,19 @@ def main() -> int:
     by_state = read_states(pages[P_STATES])
     by_ailment_sector = read_by_ailment_sector(pages[P_AILMENT_SECTOR])
     by_quintile = read_by_quintile(pages[P_QUINTILE])
+    childbirth = read_childbirth(pages[P_CHILDBIRTH])
+    childbirth_delivery = read_childbirth_by_delivery(pages[P_CHILDBIRTH])
 
-    verify(by_type, by_ailment, components, by_state, by_ailment_sector, by_quintile)
+    verify(
+        by_type,
+        by_ailment,
+        components,
+        by_state,
+        by_ailment_sector,
+        by_quintile,
+        childbirth,
+        childbirth_delivery,
+    )
 
     doc_out = {
         "source": {
@@ -412,7 +516,7 @@ def main() -> int:
             "document": (
                 "NSS Report KI(75/25.0), Key Indicators of Social Consumption in India: "
                 "Health, July 2017 - June 2018. Statements 3.15, 3.16 and 3.17, and "
-                "Tables A16, A17 and A18 of Appendix A."
+                "Tables A16, A17, A18, A29 and A30 of Appendix A."
             ),
             "effectiveFrom": "2018-06-30",
         },
@@ -425,6 +529,18 @@ def main() -> int:
         "byAilment": by_ailment,
         "byAilmentAndSector": by_ailment_sector,
         "byQuintile": by_quintile,
+        "childbirth": {
+            "note": (
+                "Childbirth is excluded from every other figure in this file. "
+                "`medical` is Table A29 and is the comparable one: expenditure on the "
+                "hospital bill. `withNonMedical` is Table A30, which adds transport, "
+                "food and lodging and is therefore larger; it is here only because it "
+                "is the sole published split between normal and caesarean delivery, and "
+                "should be used for that ratio rather than for a level."
+            ),
+            "medical": childbirth,
+            "withNonMedical": childbirth_delivery,
+        },
         "components": components,
         "byState": by_state,
     }
@@ -445,13 +561,25 @@ def main() -> int:
     return 0
 
 
-def verify(by_type, by_ailment, components, by_state, by_ailment_sector, by_quintile) -> None:
+def verify(
+    by_type,
+    by_ailment,
+    components,
+    by_state,
+    by_ailment_sector,
+    by_quintile,
+    childbirth,
+    childbirth_delivery,
+) -> None:
     """
     Cross-checks that the report itself makes available.
 
-    These are not assertions about the world. They are four places where the
-    document prints the same quantity twice, so a parser that has drifted onto
-    the wrong column is caught by the document disagreeing with itself.
+    These are not assertions about the world. They are places where the document
+    prints the same quantity twice, so a parser that has drifted onto the wrong
+    column is caught by the document disagreeing with itself. The one exception
+    is the childbirth pair, where the check is a containment rather than an
+    equality: Table A30 measures everything Table A29 measures and then some, so
+    it has to come out larger in every cell the two share.
     """
     fail: list[str] = []
 
@@ -538,6 +666,38 @@ def verify(by_type, by_ailment, components, by_state, by_ailment_sector, by_quin
                     "Table A16 combined " + row["category"] + " " + slug + " is "
                     + str(row[slug] // RUPEE) + " but Statement 3.16 says "
                     + str(printed[slug] // RUPEE)
+                )
+
+    # Table A30 is Table A29 plus transport, food and lodging, so every cell of
+    # A30 must exceed its counterpart in A29. Two tables on one page, measuring
+    # nested things, is the only handle on whether either was read correctly.
+    a29 = {(r["sector"], r["hospitalType"]): r for r in childbirth}
+    for row in childbirth_delivery:
+        if row["delivery"] != "all":
+            continue
+        base = a29[(row["sector"], row["hospitalType"])]
+        for q in CB_QUINTILES:
+            if row[q] < base[q]:
+                fail.append(
+                    "childbirth " + row["sector"] + " " + row["hospitalType"] + " " + q
+                    + ": Table A30 says " + str(row[q] // RUPEE) + " but Table A29 says "
+                    + str(base[q] // RUPEE) + ", and A30 includes everything A29 does"
+                )
+
+    # A caesarean costs more than a normal delivery, and the all-deliveries row
+    # is a mix of the two, so it has to sit between them.
+    mixes = {(r["sector"], r["hospitalType"], r["delivery"]): r for r in childbirth_delivery}
+    for (sector, htype, delivery), row in mixes.items():
+        if delivery != "all":
+            continue
+        low = mixes[(sector, htype, "normal")]
+        high = mixes[(sector, htype, "caesarean")]
+        for q in CB_QUINTILES:
+            if not low[q] <= row[q] <= high[q]:
+                fail.append(
+                    "childbirth " + sector + " " + htype + " " + q + ": all-deliveries "
+                    + str(row[q] // RUPEE) + " does not sit between normal "
+                    + str(low[q] // RUPEE) + " and caesarean " + str(high[q] // RUPEE)
                 )
 
     # Enough states to be the table rather than a fragment of it.
