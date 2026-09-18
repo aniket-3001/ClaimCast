@@ -1,0 +1,16 @@
+{
+  "name": "claimcast",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ClaimCast. What the policy will not pay, worked out before the admission.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace @claimcast/web",
+    "build": "npm run build --workspace @claimcast/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "check": "npm run check --workspaces --if-present"
+  }
+}

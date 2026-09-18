@@ -2,9 +2,9 @@ import type { BillLine, Hospital, Policy, Procedure, RoomClass, Route } from "./
 import { adjudicate, type Adjudication } from "./engine";
 import { buildBill, ROOM_LABEL, tariff } from "./bill";
 import { fmt, rupees, type Paise } from "./money";
-import { hospital, HOSPITALS } from "../data/hospitals";
-import { procedure } from "../data/procedures";
-import { policy } from "../data/policies";
+import { hospital, HOSPITALS } from "./data/hospitals";
+import { procedure } from "./data/procedures";
+import { policy } from "./data/policies";
 
 /** Below this, a deduction is true but not worth a decision. */
 export const MATERIALITY: Paise = rupees(10000);

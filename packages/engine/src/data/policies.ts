@@ -1,5 +1,5 @@
-import type { Policy } from "../lib/types";
-import { rupees as r } from "../lib/money";
+import type { Policy } from "../types";
+import { rupees as r } from "../money";
 
 /**
  * Six synthetic policies. Insurer and product names are invented.

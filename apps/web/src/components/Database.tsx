@@ -1,14 +1,23 @@
 import { useMemo, useState } from "react";
-import { fmt, pct } from "../lib/money";
-import { adjudicate } from "../lib/engine";
-import { ROOM_LABEL } from "../lib/bill";
-import type { CaseInput } from "../lib/case";
-import { HOSPITALS, hospital } from "../data/hospitals";
-import { PROCEDURES, procedure } from "../data/procedures";
-import { POLICIES, policy } from "../data/policies";
-import { ADMISSIONS, stayDays } from "../data/admissions";
-import { LIST_I, LIST_FRAMEWORK, LIST_I_TOTAL } from "../data/lists";
-import { CLAUSES } from "../data/clauses";
+import {
+  fmt,
+  pct,
+  adjudicate,
+  ROOM_LABEL,
+  type CaseInput,
+  HOSPITALS,
+  hospital,
+  PROCEDURES,
+  procedure,
+  POLICIES,
+  policy,
+  ADMISSIONS,
+  stayDays,
+  LIST_I,
+  LIST_FRAMEWORK,
+  LIST_I_TOTAL,
+  CLAUSES,
+} from "@claimcast/engine";
 
 type View = "admissions" | "hospitals" | "procedures" | "policies" | "lists" | "clauses";
 

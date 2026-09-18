@@ -1,5 +1,5 @@
-import type { Hospital } from "../lib/types";
-import { rupees as r } from "../lib/money";
+import type { Hospital } from "../types";
+import { rupees as r } from "../money";
 
 /**
  * Ten synthetic hospitals. No real institution is described.

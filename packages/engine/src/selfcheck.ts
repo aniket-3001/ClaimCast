@@ -9,9 +9,9 @@
  */
 import { adjudicate } from "./engine";
 import { fmt, rupees as r } from "./money";
-import { ADMISSIONS, admission } from "../data/admissions";
-import { policy } from "../data/policies";
-import { HOSPITALS } from "../data/hospitals";
+import { ADMISSIONS, admission } from "./data/admissions";
+import { policy } from "./data/policies";
+import { HOSPITALS } from "./data/hospitals";
 import { evaluate, fixedRegardless, repair, schemeOptions, bestGovtScheme, type CaseInput } from "./case";
 
 let failures = 0;
@@ -167,5 +167,4 @@ console.log("\nThe claim the tree makes");
 }
 
 console.log(failures ? `\n${failures} failed` : "\nall checks passed");
-declare const process: { exit(code: number): never };
 if (failures) process.exit(1);

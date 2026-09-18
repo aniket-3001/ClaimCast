@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { rupees } from "./lib/money";
-import { evaluate, repair, type CaseInput } from "./lib/case";
+import { rupees, evaluate, repair, type CaseInput } from "@claimcast/engine";
 import { Intake } from "./components/Intake";
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";

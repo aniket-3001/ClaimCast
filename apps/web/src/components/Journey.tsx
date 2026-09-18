@@ -1,6 +1,7 @@
 import { Fragment } from "react";
-import { fmt, signed } from "../lib/money";
 import {
+  fmt,
+  signed,
   fixedRegardless,
   forecast,
   gate,
@@ -11,8 +12,8 @@ import {
   type CaseInput,
   type Evaluated,
   type Stage,
-} from "../lib/case";
-import { CLAUSES } from "../data/clauses";
+  CLAUSES,
+} from "@claimcast/engine";
 
 /**
  * The admission as a path, not a form.

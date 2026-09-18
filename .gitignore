@@ -13,6 +13,19 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
-# ClaimCast PoC (web/)
-web/node_modules/
-web/dist/
+# ClaimCast application. npm workspaces, so node_modules appears at the root
+# and inside any workspace that needs its own copy. The root lockfile IS
+# tracked — it is the only record of what the build actually resolved.
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+
+# Python services and ETL
+.venv/
+venv/
+
+# Raw public datasets pulled by the ETL. Large, re-downloadable, and their
+# checksums are tracked in the manifest instead.
+etl/raw/

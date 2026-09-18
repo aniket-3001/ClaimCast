@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true,
+
+    // Node, not DOM. selfcheck.ts is a command-line script, and the engine
+    // itself must never reach for a browser global — keeping DOM out of lib
+    // is what makes that a compile error rather than a code review.
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"]
+}

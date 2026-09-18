@@ -1,6 +1,6 @@
-import type { Admission, RoomClass, Route } from "../lib/types";
-import { buildBill } from "../lib/bill";
-import { rupees as r } from "../lib/money";
+import type { Admission, RoomClass, Route } from "../types";
+import { buildBill } from "../bill";
+import { rupees as r } from "../money";
 import { hospital } from "./hospitals";
 import { procedure } from "./procedures";
 

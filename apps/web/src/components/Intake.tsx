@@ -1,8 +1,5 @@
 import { useState } from "react";
-import { fmt, pct } from "../lib/money";
-import type { CaseInput } from "../lib/case";
-import type { Policy } from "../lib/types";
-import { POLICIES } from "../data/policies";
+import { fmt, pct, type CaseInput, type Policy, POLICIES } from "@claimcast/engine";
 
 /**
  * The front door, not the engine.

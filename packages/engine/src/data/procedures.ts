@@ -1,5 +1,5 @@
-import type { Procedure } from "../lib/types";
-import { rupees as r } from "../lib/money";
+import type { Procedure } from "../types";
+import { rupees as r } from "../money";
 
 /**
  * Fourteen synthetic procedures, with enough of a cost model to rebuild a bill.

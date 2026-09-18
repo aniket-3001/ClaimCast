@@ -1,4 +1,4 @@
-import type { Clause } from "../lib/types";
+import type { Clause } from "../types";
 
 /**
  * Every deduction the engine makes names one of these.

@@ -1,5 +1,5 @@
-import { rupees as r } from "../lib/money";
-import type { Paise } from "../lib/money";
+import { rupees as r } from "../money";
+import type { Paise } from "../money";
 
 export interface ListItem {
   item: string;

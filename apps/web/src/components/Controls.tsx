@@ -1,7 +1,4 @@
-import { rupees } from "../lib/money";
-import type { CaseInput } from "../lib/case";
-import { PROCEDURES } from "../data/procedures";
-import { POLICIES } from "../data/policies";
+import { rupees, type CaseInput, PROCEDURES, POLICIES } from "@claimcast/engine";
 
 /**
  * The givens.

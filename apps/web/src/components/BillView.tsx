@@ -1,7 +1,4 @@
-import { fmt, pct } from "../lib/money";
-import type { LineKind } from "../lib/types";
-import type { Evaluated } from "../lib/case";
-import { CLAUSES } from "../data/clauses";
+import { fmt, pct, type LineKind, type Evaluated, CLAUSES } from "@claimcast/engine";
 
 const KIND: Record<LineKind, { label: string; tone: string }> = {
   room: { label: "room", tone: "" },

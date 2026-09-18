@@ -7,17 +7,21 @@
  * markup rather than an exception. Run by `npm run check` alongside selfcheck.
  */
 import { renderToString } from "react-dom/server";
-import { evaluate, type CaseInput } from "./lib/case";
+import {
+  evaluate,
+  type CaseInput,
+  ADMISSIONS,
+  stayDays,
+  HOSPITALS,
+  PROCEDURES,
+  POLICIES,
+} from "@claimcast/engine";
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Intake } from "./components/Intake";
 import { Database } from "./components/Database";
-import { ADMISSIONS, stayDays } from "./data/admissions";
-import { HOSPITALS } from "./data/hospitals";
-import { PROCEDURES } from "./data/procedures";
-import { POLICIES } from "./data/policies";
 
 const noop = () => {};
 let n = 0;

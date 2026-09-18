@@ -1,12 +1,13 @@
-import { fmt, signed } from "../lib/money";
 import {
+  fmt,
+  signed,
   hospitalOptions,
   implantOptions,
   roomOptions,
   type CaseInput,
   type Evaluated,
   type Option,
-} from "../lib/case";
+} from "@claimcast/engine";
 
 /**
  * The same admission, counted again under every choice still available.
