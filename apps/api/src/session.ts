@@ -57,6 +57,15 @@ const KEYLEN = 32;
  */
 const PRODUCTION = process.env.NODE_ENV === "production";
 
+/**
+ * Whether the app is served from an origin other than this one.
+ *
+ * Empty is the normal case and the deployed one: the container serves the
+ * bundle, so there is no second origin. A value here is an operator stating
+ * otherwise, and it is the only thing that loosens the cookie.
+ */
+const CROSS_ORIGIN = (process.env.WEB_ORIGIN ?? "").trim().length > 0;
+
 function secret(): string {
   const s = process.env.SESSION_SECRET;
   if (!s || s.length < 32) {
@@ -100,13 +109,32 @@ export async function verify(password: string, stored: string): Promise<boolean>
   return actual.length === expected.length && timingSafeEqual(actual, expected);
 }
 
+/**
+ * `SameSite=Lax`, and only `None` if someone deliberately hosts the app apart.
+ *
+ * This used to be `None` in production unconditionally, because the plan then
+ * had the bundle on static hosting and the API elsewhere, and a cross-site
+ * cookie has no other option. The app is now served by this same process, so
+ * every request carrying this cookie is first-party and `Lax` is simply correct.
+ *
+ * The difference is not cosmetic. `None` means the browser attaches the session
+ * to requests originating from any other site, which is the precondition for
+ * CSRF: a form on a page the user happens to have open can POST to /api/cases as
+ * them. `Lax` withholds the cookie from exactly those cross-site writes while
+ * still sending it on ordinary navigation, and costs nothing here.
+ *
+ * `WEB_ORIGIN` being set is the one honest reason to go back to `None` -- it is
+ * how an operator says the app really is on another origin. Read the static
+ * block in server.ts before doing that; third-party cookie blocking then applies
+ * and the failure is silent.
+ */
 function setCookie(reply: FastifyReply, userId: string): void {
   reply.setCookie(COOKIE, userId, {
     path: "/",
     httpOnly: true,
     signed: true,
     secure: PRODUCTION,
-    sameSite: PRODUCTION ? "none" : "lax",
+    sameSite: PRODUCTION && CROSS_ORIGIN ? "none" : "lax",
     maxAge: MAX_AGE,
   });
 }
