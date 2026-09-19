@@ -17,7 +17,6 @@ import { PrismaClient, type Prisma } from "@prisma/client";
 // The fixtures, by name. This is the one place in the application that is
 // meant to read them: everything downstream reads the database this writes.
 import {
-  ADMISSIONS,
   CLAUSES,
   HOSPITALS,
   LIST_FRAMEWORK,
@@ -382,23 +381,24 @@ async function main() {
       })),
     });
 
-    for (const a of ADMISSIONS) {
-      const row = {
-        ref: a.ref,
-        date: new Date(a.date + "T00:00:00Z"),
-        hospitalId: a.hospitalId,
-        procedureId: a.procedureId,
-        policyId: a.policyId,
-        roomClass: a.roomClass,
-        route: a.route,
-        lines: a.lines as unknown as Prisma.InputJsonValue,
-        edgeCase: a.edgeCase,
-        siUsed: a.siUsed ?? null,
-        repudiatedReason: a.repudiated?.reason ?? null,
-        repudiatedClause: a.repudiated?.clause ?? null,
-      };
-      await tx.admission.upsert({ where: { id: a.id }, create: { id: a.id, ...row }, update: row });
-    }
+    // No settled admission is written here, and any previously seeded one is
+    // taken back out.
+    //
+    // Sixteen of them live in `@claimcast/engine`'s fixtures and stay there:
+    // they are what selfcheck.ts adjudicates and what verify.ts prices the
+    // reference case out of, and in that role they are worked examples that get
+    // checked. Writing them into a deployment's own database gave them a second
+    // role they cannot honestly hold. Every other synthetic row here is a
+    // *reference* row -- a tariff, a policy term, a hospital's rate card -- and
+    // a reader can take it as a stand-in for the real one we have not been
+    // given. An admission is not a stand-in for anything. It is a claim that a
+    // named person was admitted to a named hospital on a named date and that
+    // this is what it cost, and sixteen of those on a screen headed "settled
+    // admissions" read as a record of what the system has seen.
+    //
+    // A deployment's admissions table holds the admissions that deployment saw.
+    // Until it has seen one it is empty, and the screen says so.
+    await tx.admission.deleteMany({});
   },
   // Prisma gives an interactive transaction five seconds by default, which is
   // ample against a database on the same machine and nowhere near enough

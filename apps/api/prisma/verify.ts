@@ -171,7 +171,16 @@ async function main() {
     pass("PM-JAY SV004A: CABG at its published reference price, ₹1,29,910");
   }
 
-  same("admissions", dbAdmissions, byId(ADMISSIONS));
+  // The fixtures are no longer seeded, so the assertion is the opposite one:
+  // none of them should be in a deployment's database. Phrased against the
+  // fixture ids rather than against the row count, so that a deployment which
+  // has genuinely settled an admission still passes.
+  const seeded = dbAdmissions.filter((a) => ADMISSIONS.some((f) => f.id === a.id));
+  if (seeded.length) {
+    fail("no fixture admission reached the database", seeded.length + " of them did");
+  } else {
+    pass("admissions: no fixture in the database, only what this deployment settled itself");
+  }
   same(
     "List I",
     [...dbListI].sort((x, y) => (x.item < y.item ? -1 : 1)),
@@ -186,21 +195,27 @@ async function main() {
   const caveated = srcs.filter((s) => s.caveat !== null).length;
   pass(caveated + " of " + srcs.length + " sources carry a caveat and must be labelled on screen");
 
-  // Adjudicated out of the database alone: the bill lines, the policy terms and
-  // the sum insured already consumed all come from Postgres, and only the
-  // arithmetic comes from the engine.
-  console.log("Reference admission RC-2401, adjudicated from the database");
-  const a2401 = dbAdmissions.find((a) => a.id === "a-2401");
-  const a2402 = dbAdmissions.find((a) => a.id === "a-2402");
+  // The policy terms come from Postgres and the arithmetic from the engine; the
+  // bill lines now come from the fixture, because the database no longer holds
+  // this admission. That is weaker than it was and it is worth naming: this
+  // used to price a bill the database held against a policy the database held.
+  // What survives is the half that actually drifts. Bill lines are inert data
+  // that the seed copies across unchanged, whereas the policy row is assembled
+  // from Arogya Sanjeevani's wording and the synthetic set and is where a
+  // mis-seeded room cap or co-pay would hide. A wrong policy term still moves
+  // these three figures, which is what the check is for.
+  console.log("Reference admission RC-2401, priced against the database's policy terms");
+  const a2401 = ADMISSIONS.find((a) => a.id === "a-2401");
+  const a2402 = ADMISSIONS.find((a) => a.id === "a-2402");
   if (!a2401 || !a2402) {
-    fail("reference admissions present", "a-2401 or a-2402 missing from the database");
+    fail("reference admissions present", "a-2401 or a-2402 missing from the fixtures");
   } else {
     const pol = (id: string) => {
       const p = dbPolicies.find((x) => x.id === id);
       if (!p) throw new Error("policy " + id + " missing from the database");
       return p;
     };
-    const run = (a: (typeof dbAdmissions)[number]) =>
+    const run = (a: (typeof ADMISSIONS)[number]) =>
       adjudicate({
         lines: a.lines,
         policy: pol(a.policyId),

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import Account from "./components/Account";
-import { rupees, evaluate, registry, repair, stayDays, type CaseInput } from "@claimcast/engine";
+import { rupees, evaluate, registry, repair, type CaseInput } from "@claimcast/engine";
 import { Intake } from "./components/Intake";
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
@@ -32,28 +32,36 @@ const TABS: { id: Tab; label: string }[] = [
 const CHOICE_FIELDS = ["hospitalId", "procedureId", "roomClass", "route"] as const;
 
 /**
- * The reference admission from the deck: RC-2401, before it happened.
+ * Where the app opens: the deck's reference case, as it stood on the way in.
  *
- * Read back out of the reference set rather than written down here, so the app
- * opens on an admission the database actually holds. What it rebuilds is the
- * input — what the family would have known on the way in — not the settled
- * bill. The last few fields have no equivalent on a settled admission because
- * they are intake facts rather than billing ones, and they start where the
- * deck's case starts.
+ * Written down here rather than recovered from a settled admission, because a
+ * deployment no longer ships with one. That was always a slightly strange place
+ * to read these from — every field below is an intake fact, something a family
+ * knows before the admission rather than after the bill, and the last five had
+ * no equivalent in a settled record at all.
+ *
+ * The three ids are checked against the reference set rather than trusted. A
+ * hospital renamed or retired in the database would otherwise open the app on a
+ * combination that cannot be priced, and the first screen a judge sees is the
+ * worst place to find that out.
  */
 function start(): CaseInput {
-  const { admissions } = registry();
-  const a = admissions.find((x) => x.ref === "RC-2401") ?? admissions[0];
-  if (!a) throw new Error("The reference set has no admissions to open on.");
+  const { hospitals, procedures, policies } = registry();
+  const known = <T extends { id: string }>(xs: readonly T[], want: string, what: string) => {
+    if (xs.some((x) => x.id === want)) return want;
+    const first = xs[0];
+    if (!first) throw new Error("The reference set has no " + what + " to open on.");
+    return first.id;
+  };
   return repair({
-    hospitalId: a.hospitalId,
-    procedureId: a.procedureId,
-    policyId: a.policyId,
-    roomClass: a.roomClass,
-    route: a.route,
-    days: stayDays(a),
-    icuDays: a.lines.find((l) => l.kind === "icu")?.days ?? 0,
-    siUsed: a.siUsed ?? rupees(0),
+    hospitalId: known(hospitals, "h-meridian", "hospitals"),
+    procedureId: known(procedures, "p-spine-fusion", "procedures"),
+    policyId: known(policies, "pol-classic", "policies"),
+    roomClass: "private",
+    route: "cashless",
+    days: 5,
+    icuDays: 0,
+    siUsed: rupees(0),
     implantId: "imported",
     admittedInpatient: true,
     age: 45,

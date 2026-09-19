@@ -72,11 +72,23 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
     [],
   );
 
+  if (rows.length === 0) {
+    return (
+      <p className="lede">
+        No settled admissions. This deployment has not adjudicated one, and none ship with
+        it &mdash; a row here would be a claim that somebody was admitted somewhere on a
+        given day and that this is what it cost, which is not a thing worth inventing to
+        fill a table. The engine's sixteen worked cases still exist, in its test fixtures,
+        where they are checked on every build rather than displayed as history.
+      </p>
+    );
+  }
+
   return (
     <>
       <p className="lede">
-        Sixteen settled admissions, each here for what it breaks. Open any row to carry it into
-        the forecast.
+        {rows.length} settled {rows.length === 1 ? "admission" : "admissions"}, adjudicated
+        from what this deployment holds. Open any row to carry it into the forecast.
       </p>
       <div className="scroll">
         <table>
