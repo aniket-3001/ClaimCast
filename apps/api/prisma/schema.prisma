@@ -13,7 +13,7 @@
 // lets the engine read these values as plain JS numbers without conversion.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   // "native" is whatever machine runs `prisma generate` — a laptop, usually.
   // The second target is Cloud Run's runtime, and it has to be named explicitly
   // because Prisma detects the platform of the machine generating, not the one
@@ -45,11 +45,11 @@ model Source {
   /// queryable rather than a thing someone has to remember.
   caveat    String?
 
-  hospitals    Hospital[]
-  tariffRates  TariffRate[]
-  nonPayables  NonPayableItem[]
-  policies     Policy[]
-  clauses      Clause[]
+  hospitals   Hospital[]
+  tariffRates TariffRate[]
+  nonPayables NonPayableItem[]
+  policies    Policy[]
+  clauses     Clause[]
 
   @@map("sources")
 }
@@ -142,11 +142,11 @@ model HospitalTariff {
 }
 
 model Procedure {
-  id        String  @id
-  name      String
+  id             String  @id
+  name           String
   /// PM-JAY Health Benefit Package code, where one exists.
-  hbpCode   String?
-  specialty String
+  hbpCode        String?
+  specialty      String
   /// True where the procedure sits on the policy's day-care list, so the
   /// 24-hour in-patient rule does not apply.
   dayCare        Boolean
@@ -160,16 +160,16 @@ model Procedure {
   // Enough to rebuild a bill line by line. Flattened from CostModel, because
   // a JSON blob here would not be queryable and these are the columns the ML
   // service in Phase 4 needs to predict against.
-  surgical          Int
-  nursingPerDay     Int
-  icuPerDay         Int?
-  diagnostics       Int
-  pharmacyPerDay    Int
-  implant           Int?
-  otherIndependent  Int
-  nonPayableFixed   Int
-  nonPayablePerDay  Int
-  outsideWindow     Int
+  surgical         Int
+  nursingPerDay    Int
+  icuPerDay        Int?
+  diagnostics      Int
+  pharmacyPerDay   Int
+  implant          Int?
+  otherIndependent Int
+  nonPayableFixed  Int
+  nonPayablePerDay Int
+  outsideWindow    Int
 
   implantOptions ImplantOption[]
   tariffRates    TariffRate[]
@@ -202,8 +202,8 @@ model TariffRate {
 
   /// Null on a national figure that no city tier qualifies, which is what
   /// PM-JAY's National Reference Price is.
-  cityTier    CityTier?
-  nabh        Boolean?
+  cityTier CityTier?
+  nabh     Boolean?
 
   /// Whether `amount` buys the whole episode or one day of it.
   ///
@@ -212,14 +212,14 @@ model TariffRate {
   /// 1,949 packages in HBP 2022 carry no episode price at all, only a per-day
   /// grid. Collapsing those into one number would mean either dropping the
   /// published rate or multiplying it by a stay length nobody published.
-  basis       TariffBasis @default(PACKAGE)
+  basis TariffBasis @default(PACKAGE)
 
   /// Which bed the per-day rate is for: `routine-ward`, `high-dependency`,
   /// `icu-no-ventilator` or `icu-ventilator`. Null on a PACKAGE row.
   bedCategory String?
 
   /// Paise. The whole episode on a PACKAGE row, one day on a PER_DAY row.
-  amount      Int
+  amount        Int
   effectiveFrom DateTime
 
   procedure Procedure @relation(fields: [procedureId], references: [id], onDelete: Cascade)
@@ -273,9 +273,9 @@ model Policy {
 
 /// A clause that can be cited as the cause of a deduction.
 model Clause {
-  id   String @id
-  cite String
-  text String
+  id         String  @id
+  cite       String
+  text       String
   /// The engine's own one-line attribution, e.g. "IRDAI circular, 11 June 2020".
   /// Kept verbatim beside the Source relation rather than derived from it, so a
   /// round trip through the database returns the identical Clause object.
@@ -358,9 +358,9 @@ model Admission {
   lines Json
 
   /// What made this record worth keeping in the reference set.
-  edgeCase String?
+  edgeCase         String?
   /// Sum insured already consumed this policy year, before this admission.
-  siUsed   Int?
+  siUsed           Int?
   /// Set where the claim was refused outright rather than reduced.
   repudiatedReason String?
   repudiatedClause String?
@@ -370,6 +370,161 @@ model Admission {
   policy    Policy    @relation(fields: [policyId], references: [id])
 
   @@map("admissions")
+}
+
+// ── Learning ──────────────────────────────────────────────────────────────
+
+// Three places in this application reality answers back, and each one is a
+// chance to be less wrong next time:
+//
+//   1. A person corrects a figure the reader got out of their schedule.
+//   2. A bill finally settles, and we can see where in our own band it fell.
+//   3. Someone clicks a branch, which says what decisions people actually face.
+//
+// All three update on arrival. There is no training run, no retrained artifact
+// to ship, and nothing here waits for a batch job: an observation written by one
+// request changes what the next request does. That is the whole point — a model
+// fitted once is a snapshot of the day it was fitted, and this problem does not
+// hold still. Room rent sub-limits move, hospitals reprice, and schedules get
+// redesigned by the insurers who issue them.
+//
+// What the tables may keep is deliberately uneven. Counters carry no
+// information about any person and are always written. The verbatim text of
+// someone's policy schedule is kept only where they have said it may be, and
+// the shape of these models is what enforces that: the columns that could
+// identify a document are nullable, and the aggregate that drives the product
+// never reads them.
+
+/// One human judgment on one extracted field.
+///
+/// Written when a person accepts or corrects what the reader pulled out of
+/// their schedule. The row that always exists is the verdict — this field, this
+/// model, was it changed — because that is what the reliability table is built
+/// from and it says nothing about anybody.
+///
+/// `readValue`, `confirmedValue` and `spanText` are the person's own policy
+/// terms, and they are null unless that person ticked the box. They exist to be
+/// shown back to the reader as worked examples, which is the one use consent
+/// was asked for.
+model FieldObservation {
+  id         String @id @default(cuid())
+  documentId String
+  /// The contracts field name, e.g. "roomCapPerDay".
+  field      String
+  /// provider/model as recorded on the extraction, e.g. "vertex/gemini-2.5-pro".
+  model      String
+
+  /// Whether the model's citation was found in the PDF's own text.
+  verified  Boolean
+  /// Whether the person changed the value before confirming it.
+  corrected Boolean
+
+  /// Null unless consent was given. See the note on this section.
+  readValue      String?
+  confirmedValue String?
+  spanText       String?
+
+  createdAt DateTime @default(now())
+
+  document PolicyDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([field, model])
+  @@index([documentId])
+  @@map("field_observations")
+}
+
+/// How far each field can be trusted, as of the last document read.
+///
+/// A running tally rather than a computed view, because it is read on every
+/// extraction and counting a growing table each time would make the read cost
+/// grow with use. Updated in the same transaction as the confirmation, so it is
+/// never ahead of or behind the observations it summarises.
+///
+/// The product effect is immediate and visible: a field that people keep
+/// correcting is flagged on the next person's screen before they have read it.
+/// That is the honest use of this number — it does not make the reader better,
+/// it tells the human where to look.
+model FieldReliability {
+  field String
+  model String
+
+  /// Confirmations seen for this field.
+  seen       Int @default(0)
+  /// Of those, how many the person changed.
+  corrected  Int @default(0)
+  /// Of those, how many cited a quote that was not in the document.
+  unverified Int @default(0)
+
+  updatedAt DateTime @updatedAt
+
+  @@id([field, model])
+  @@map("field_reliability")
+}
+
+/// A bill that actually settled, against the band we predicted for it.
+///
+/// This is the only row in the system that can say whether the forecast was
+/// any good, and it can only come from a person telling us what they ended up
+/// paying. It is therefore rare and voluntary, and the honest description of
+/// this table on any given day is its row count.
+///
+/// Amounts are paise, like everywhere else. The prediction is stored beside the
+/// outcome rather than recomputed, because the point of the row is to record
+/// what this system said at the time, not what it would say now.
+model ForecastOutcome {
+  id     String  @id @default(cuid())
+  userId String?
+
+  /// The forecast request that produced the band, as sent.
+  request Json
+
+  p10 Int
+  p50 Int
+  p90 Int
+
+  /// What the admission actually came to.
+  actualTotal Int
+  /// The published tariff the band was anchored on, so the ratio this row
+  /// implies can be recovered without re-reading the tariff table as it is
+  /// today. Null where the forecast had no anchor.
+  anchorTotal Int?
+
+  /// Denormalised from the request so the calibration query does not have to
+  /// dig through JSON on every read.
+  procedureId String
+  cityTier    String
+
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([procedureId, cityTier])
+  @@map("forecast_outcomes")
+}
+
+/// What people actually chose, one row per branch taken.
+///
+/// The weakest of the three signals and the one to be most careful describing:
+/// it tunes what the tree offers first, and it does not make any number more
+/// accurate. Kept anyway because the ordering of a decision tree is itself a
+/// claim about what matters, and guessing at that when the clicks are sitting
+/// right there is a waste.
+///
+/// No owner column. A branch click is not worth attaching to a person, and not
+/// attaching it means this table cannot become a record of what any individual
+/// was contemplating.
+model BranchChoice {
+  id String @id @default(cuid())
+
+  /// The decision point, e.g. "roomClass".
+  stage  String
+  /// The option taken at it, e.g. "twin-sharing".
+  option String
+
+  createdAt DateTime @default(now())
+
+  @@index([stage, option])
+  @@map("branch_choices")
 }
 
 // ── Application state ─────────────────────────────────────────────────────
@@ -392,6 +547,7 @@ model User {
 
   cases     Case[]
   documents PolicyDocument[]
+  outcomes  ForecastOutcome[]
 
   @@map("users")
 }
@@ -419,18 +575,19 @@ model Case {
 /// object storage, never in this table; `confirmedAt` records the moment the
 /// user accepted the extraction, and nothing may reach the engine before it.
 model PolicyDocument {
-  id        String   @id @default(cuid())
-  userId    String?
-  policyId  String?
-  filename  String
-  storageKey String
+  id          String    @id @default(cuid())
+  userId      String?
+  policyId    String?
+  filename    String
+  storageKey  String
   /// Extracted fields, each with the verbatim span it came from.
-  extraction Json?
+  extraction  Json?
   confirmedAt DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  policy Policy? @relation(fields: [policyId], references: [id], onDelete: SetNull)
+  user         User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  policy       Policy?            @relation(fields: [policyId], references: [id], onDelete: SetNull)
+  observations FieldObservation[]
 
   @@index([userId])
   @@map("policy_documents")

@@ -152,9 +152,17 @@ export async function extractPolicy(
   pdf: Buffer,
   filename: string,
   documentId: string,
+  /**
+   * Worked examples out of past corrections, from the caller that has a database
+   * handle. Passed in rather than fetched here because this module is the one
+   * place the reading happens and it stays testable against a fixed prompt --
+   * and because an extraction must still work on a server with no learning
+   * history at all, which is what the default is.
+   */
+  hints = "",
 ): Promise<ExtractionResult> {
   const pages = await pageText(pdf);
-  const { raw, used } = await read(pdf, pages);
+  const { raw, used } = await read(pdf, pages, hints);
 
   const fields: Record<string, unknown> = {};
   const unverified: string[] = [];

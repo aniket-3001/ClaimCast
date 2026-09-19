@@ -269,6 +269,17 @@ export const ForecastResponseSchema = z.object({
   }),
   /** Shares by bill line kind, because the engine adjudicates by kind and a total tells it nothing. */
   split: z.record(LineKind, z.number()),
+  /**
+   * How far the bills people reported moved this forecast, and how many said so.
+   *
+   * `factor` is what the survey-fitted multiplier was multiplied by; exactly 1
+   * when `n` is 0, which is every forecast on a deployment nobody has reported a
+   * settled bill on. Optional because the cost model shipped without it and a
+   * running older revision must not be read as breaking the contract.
+   */
+  calibration: z
+    .object({ n: z.number().int().min(0), factor: z.number().positive() })
+    .optional(),
   modelVersion: z.string(),
   trainedOn: z.string(),
   basis: z.string(),
@@ -393,3 +404,120 @@ export const SavedCaseSchema = z.object({
   createdAt: z.string(),
 });
 export type SavedCase = z.infer<typeof SavedCaseSchema>;
+
+/* ---------------------------------------------------------------------------
+   Learning
+
+   Three signals, and what each request is allowed to say about them. The
+   asymmetry between them is deliberate and is the whole privacy position:
+   confirmations may carry a person's own policy terms and so require consent
+   to keep, outcomes are a figure someone volunteered, and a branch click
+   carries nothing about anybody and is never attached to a session.
+--------------------------------------------------------------------------- */
+
+/**
+ * What a person agreed to, field by field.
+ *
+ * The extraction that produced these values is already on the server, so only
+ * the confirmed values travel back. What the reader originally said is looked
+ * up rather than trusted from the client — a correction is only meaningful
+ * against what was actually read, and a client could otherwise report a
+ * correction that never happened.
+ */
+export const ConfirmSchema = z.object({
+  /**
+   * Field name to the value the person settled on. A field the person left
+   * alone still appears here, carrying the value as read: absence would be
+   * indistinguishable from agreement, and agreement is the observation.
+   */
+  fields: z.record(z.enum(EXTRACTED_FIELDS), z.union([z.number(), z.boolean(), z.string(), z.null()])),
+  /**
+   * Whether the verbatim terms may be kept as a worked example for future
+   * readers. Defaults to false, so the quiet path keeps nothing: consent that
+   * has to be withheld is not consent.
+   */
+  keepExamples: z.boolean().default(false),
+});
+export type ConfirmRequest = z.infer<typeof ConfirmSchema>;
+
+/**
+ * How far a field can be trusted, as of now.
+ *
+ * `seen` is the honest qualifier on the other two and is always shown with
+ * them. A field corrected once out of once is not a field that is always wrong,
+ * and a rate without its denominator invites exactly that reading.
+ */
+export const FieldReliabilitySchema = z.object({
+  field: z.enum(EXTRACTED_FIELDS),
+  model: z.string(),
+  seen: z.number().int().min(0),
+  corrected: z.number().int().min(0),
+  unverified: z.number().int().min(0),
+});
+export type FieldReliability = z.infer<typeof FieldReliabilitySchema>;
+
+/**
+ * What the system has learned so far, as a thing that can be put on screen.
+ *
+ * Deliberately shaped so the counts come with it. "Improves with use" is a
+ * claim, and a claim about a system that has read four documents should look
+ * different from one about a system that has read four thousand.
+ */
+export const LearningStateSchema = z.object({
+  fields: z.array(FieldReliabilitySchema),
+  /** Confirmations recorded, all fields and models together. */
+  confirmations: z.number().int().min(0),
+  /** Settled bills reported against a forecast. */
+  outcomes: z.number().int().min(0),
+  /** Branch choices recorded. */
+  choices: z.number().int().min(0),
+});
+export type LearningState = z.infer<typeof LearningStateSchema>;
+
+/**
+ * A bill that actually settled.
+ *
+ * The rarest and most valuable row in the system: it is the only thing that
+ * can say whether a forecast was any good. It has to be volunteered, so the
+ * shape is kept as small as a person can reasonably be asked to fill in.
+ */
+export const OutcomeSchema = z.object({
+  /** The forecast request this is the outcome of, echoed back. */
+  request: ForecastRequestSchema,
+  p10: Paise,
+  p50: Paise,
+  p90: Paise,
+  anchorTotal: Paise.nullable(),
+  /** What the admission actually came to, in paise. */
+  actualTotal: Paise,
+});
+export type OutcomeRequest = z.infer<typeof OutcomeSchema>;
+
+/**
+ * One branch taken in the journey.
+ *
+ * Fire and forget, and never attached to a session. The reply carries nothing
+ * because there is nothing a caller should wait for.
+ */
+export const BranchChoiceSchema = z.object({
+  stage: z.string().min(1).max(60),
+  option: z.string().min(1).max(60),
+});
+export type BranchChoiceRequest = z.infer<typeof BranchChoiceSchema>;
+
+/**
+ * A field the reader keeps getting wrong, sent back with the next extraction.
+ *
+ * The product effect of the correction loop, and the honest limit of it. It does
+ * not make the reader better at its job -- the reader is a hosted model nobody
+ * here fits -- it tells the person in front of it where to look first. The count
+ * travels with the correction so the warning can be weighed rather than obeyed:
+ * two out of four is a different sentence from two hundred out of four hundred,
+ * and the screen should be able to say which one it means.
+ */
+export const ShakyFieldSchema = z.object({
+  field: z.enum(EXTRACTED_FIELDS),
+  seen: z.number().int().min(0),
+  corrected: z.number().int().min(0),
+});
+export type ShakyField = z.infer<typeof ShakyFieldSchema>;

@@ -294,14 +294,14 @@ async function accessToken(): Promise<string> {
  * prepay balance that Cloud credit does not fund -- the practical effect being
  * that every AI Studio model answers 429 on this account and Vertex answers 200.
  */
-async function viaVertex(model: string, pdf: Buffer): Promise<Raw> {
+async function viaVertex(model: string, pdf: Buffer, prompt: string): Promise<Raw> {
   const project = (process.env.VERTEX_PROJECT ?? "").trim();
   const location = (process.env.VERTEX_LOCATION ?? "us-central1").trim();
   const url =
     `https://${location}-aiplatform.googleapis.com/v1/projects/${project}` +
     `/locations/${location}/publishers/google/models/${model}:generateContent`;
 
-  return viaGemini(model, pdf, {
+  return viaGemini(model, pdf, prompt, {
     url,
     headers: { authorization: `Bearer ${await accessToken()}` },
     name: "Vertex",
@@ -311,6 +311,7 @@ async function viaVertex(model: string, pdf: Buffer): Promise<Raw> {
 async function viaGemini(
   model: string,
   pdf: Buffer,
+  prompt: string,
   // Absent for the AI Studio API; supplied by viaVertex, which speaks the same
   // protocol to a different host with a different credential.
   endpoint?: { url: string; headers: Record<string, string>; name: string },
@@ -332,7 +333,7 @@ async function viaGemini(
           role: "user",
           parts: [
             { inline_data: { mime_type: "application/pdf", data: pdf.toString("base64") } },
-            { text: PROMPT + "\n\n" + jsonHint() },
+            { text: prompt + "\n\n" + jsonHint() },
           ],
         },
       ],
@@ -379,7 +380,7 @@ async function viaGemini(
   return parseJson(text);
 }
 
-async function viaGroq(model: string, pages: string[]): Promise<Raw> {
+async function viaGroq(model: string, pages: string[], prompt: string): Promise<Raw> {
   const key = process.env.GROQ_API_KEY!;
 
   // Text only, and said so on the page it produces: the reader is told which
@@ -395,7 +396,7 @@ async function viaGroq(model: string, pages: string[]): Promise<Raw> {
       max_tokens: 8192,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: PROMPT + "\n\n" + jsonHint() },
+        { role: "system", content: prompt + "\n\n" + jsonHint() },
         { role: "user", content: document },
       ],
     }),
@@ -416,7 +417,7 @@ async function viaGroq(model: string, pages: string[]): Promise<Raw> {
   return parseJson(text);
 }
 
-async function viaAnthropic(model: string, pdf: Buffer): Promise<Raw> {
+async function viaAnthropic(model: string, pdf: Buffer, prompt: string): Promise<Raw> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
   const spec = tool();
 
@@ -433,7 +434,7 @@ async function viaAnthropic(model: string, pdf: Buffer): Promise<Raw> {
             type: "document",
             source: { type: "base64", media_type: "application/pdf", data: pdf.toString("base64") },
           },
-          { type: "text", text: PROMPT },
+          { type: "text", text: prompt },
         ],
       },
     ],
@@ -453,7 +454,21 @@ async function viaAnthropic(model: string, pdf: Buffer): Promise<Raw> {
  * caller has already extracted it for the verification pass, and handing it over
  * costs nothing.
  */
-export async function read(pdf: Buffer, pages: string[]): Promise<{ raw: Raw; used: Chosen }> {
+export async function read(
+  pdf: Buffer,
+  pages: string[],
+  /**
+   * Worked examples out of past corrections, appended to the instructions.
+   *
+   * Empty on a deployment nobody has corrected anything on, which is the
+   * ordinary state on day one and reads as the prompt this file has always
+   * sent. It is a parameter rather than something this module fetches for
+   * itself so that the reader stays a pure function of what it is handed --
+   * the same PDF and the same hints must produce the same reading, or the
+   * temperature-zero promise above means nothing.
+   */
+  hints = "",
+): Promise<{ raw: Raw; used: Chosen }> {
   const pick = chosen();
   if (!pick) {
     throw Object.assign(
@@ -465,14 +480,16 @@ export async function read(pdf: Buffer, pages: string[]): Promise<{ raw: Raw; us
     );
   }
 
+  const prompt = PROMPT + hints;
+
   const raw =
     pick.provider === "vertex"
-      ? await viaVertex(pick.model, pdf)
+      ? await viaVertex(pick.model, pdf, prompt)
       : pick.provider === "gemini"
-        ? await viaGemini(pick.model, pdf)
+        ? await viaGemini(pick.model, pdf, prompt)
         : pick.provider === "anthropic"
-          ? await viaAnthropic(pick.model, pdf)
-          : await viaGroq(pick.model, pages);
+          ? await viaAnthropic(pick.model, pdf, prompt)
+          : await viaGroq(pick.model, pages, prompt);
 
   return { raw, used: pick };
 }

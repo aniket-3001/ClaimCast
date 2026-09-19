@@ -25,16 +25,29 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { evaluate, repair, setRegistry, type Registry } from "@claimcast/engine";
 import {
+  BranchChoiceSchema,
   CaseInputSchema,
+  ConfirmSchema,
   CredentialsSchema,
+  EXTRACTED_FIELDS,
+  ExtractionSchema,
   ForecastRequestSchema,
   ForecastResponseSchema,
+  OutcomeSchema,
   SaveCaseSchema,
   type ReferenceBundle,
 } from "@claimcast/contracts";
 import * as ref from "./reference.js";
 import * as vault from "./vault.js";
 import { extractPolicy } from "./extract.js";
+import {
+  learningState,
+  promptHints,
+  recordConfirmation,
+  settledBills,
+  shakyFields,
+} from "./learning.js";
+import { chosen } from "./models.js";
 import * as session from "./session.js";
 import { attempt } from "./throttle.js";
 
@@ -307,10 +320,24 @@ app.post("/api/forecast", async (req, reply) => {
         "there is deliberately no fallback estimate.",
     });
   }
+  // Every bill anybody has reported, handed to the model with the request.
+  //
+  // Not filtered to this procedure on purpose. The fitted quantity is a single
+  // private-to-tariff multiplier applied to every procedure in the catalogue, so
+  // every settled bill is an observation of the same number, and narrowing to one
+  // procedure would throw away most of the evidence for a specificity the model
+  // does not have. The model shrinks them against the survey prior; this service
+  // only carries them.
+  //
+  // Two integers per row and nothing else -- no owner, no hospital, no policy.
+  // A failure to read them degrades to the forecast this service has always
+  // given rather than to no forecast.
+  const observed = await settledBills(ref.db).catch(() => []);
+
   const res = await fetch(ML_SERVICE_URL + "/forecast", {
     method: "POST",
     headers: { "content-type": "application/json", ...(await mlAuthHeader()) },
-    body: JSON.stringify(parsed.data),
+    body: JSON.stringify({ ...parsed.data, observed }),
   });
   if (res.status === 401 || res.status === 403) {
     // Worth separating from a generic 502. This one is never the model's fault
@@ -398,9 +425,24 @@ app.post("/api/policies/extract", async (req, reply) => {
   const doc = await ref.db.policyDocument.create({ data: { filename, storageKey, userId } });
 
   try {
-    const { extraction } = await extractPolicy(bytes, filename, doc.id);
+    // Corrections other people made, handed to the reader before it reads. The
+    // model chosen here is the one `read()` will pick, so the hints are the ones
+    // that apply to it; a failure to gather them degrades to the prompt this
+    // server has always sent rather than to no extraction.
+    const pick = chosen();
+    const hints = pick
+      ? await promptHints(ref.db, `${pick.provider}/${pick.model}`).catch(() => "")
+      : "";
+    const { extraction } = await extractPolicy(bytes, filename, doc.id, hints);
     await ref.db.policyDocument.update({ where: { id: doc.id }, data: { extraction } });
-    return { documentId: doc.id, extraction };
+
+    // What every previous reader of this model got wrong often enough to be
+    // worth saying out loud. This is the correction loop closing: nothing was
+    // retrained between that person's confirmation and this one, and the
+    // warning is on screen regardless. A failure to compute it costs the caller
+    // an extraction they can still read, so it degrades to no warning at all.
+    const shaky = await shakyFields(ref.db, extraction.model).catch(() => []);
+    return { documentId: doc.id, extraction, shaky };
   } catch (e) {
     // A document that produced nothing is a document there is no reason to keep.
     await vault.drop(storageKey);
@@ -439,7 +481,122 @@ app.post("/api/policies/:id/confirm", async (req, reply) => {
     data: { confirmedAt: new Date() },
   });
   if (hit.count === 0) return reply.code(404).send({ error: "no such document" });
-  return { documentId: id, confirmedAt: new Date().toISOString() };
+
+  // Everything below is the learning signal, and none of it is allowed to cost
+  // the caller their confirmation. The gate above has already closed; failing to
+  // record what it taught us is this server's problem, not the person's, and it
+  // must not turn a confirmed policy into an error on their screen.
+  let learned: { corrected: number; seen: number } | null = null;
+  try {
+    const body = ConfirmSchema.safeParse(req.body ?? {});
+    const doc = await ref.db.policyDocument.findUnique({ where: { id } });
+    const extraction = ExtractionSchema.safeParse(doc?.extraction);
+
+    if (body.success && extraction.success) {
+      const read: Parameters<typeof recordConfirmation>[1]["read"] = {};
+      const confirmed: Parameters<typeof recordConfirmation>[1]["confirmed"] = {};
+
+      for (const field of EXTRACTED_FIELDS) {
+        const got = extraction.data.fields[field];
+        if (!got) continue;
+        read[field] = { value: got.value, verified: got.verified, span: got.span?.text ?? null };
+        // A client that sends no value for a field has not corrected it, and
+        // that is agreement -- an observation worth as much as a correction,
+        // because a reader being right is half of what is being measured here.
+        confirmed[field] = field in body.data.fields ? body.data.fields[field]! : got.value;
+      }
+
+      learned = await recordConfirmation(ref.db, {
+        documentId: id,
+        model: extraction.data.model,
+        read,
+        confirmed,
+        keepExamples: body.data.keepExamples,
+      });
+    }
+  } catch {
+    // Deliberately silent, and deliberately unlogged: the only things that could
+    // usefully be said about this failure are field names and values out of
+    // somebody's policy schedule.
+    learned = null;
+  }
+
+  return { documentId: id, confirmedAt: new Date().toISOString(), learned };
+});
+
+/**
+ * What the system has learned, with the denominators attached.
+ *
+ * Open, because every number in it is a count of field names and model names and
+ * there is nothing here about any person. The counts travel with the rates on
+ * purpose: "improves with use" is a claim, and a claim made by something that
+ * has read four documents should not read like the same claim from something
+ * that has read four thousand. Showing the denominator is what keeps that honest
+ * without anyone having to remember to say it out loud.
+ */
+app.get("/api/learning", async () => learningState(ref.db));
+
+/**
+ * A bill that actually settled.
+ *
+ * The only evidence in this system that can say whether a forecast was any good,
+ * and the scarcest, because it has to be volunteered weeks after the admission.
+ * Scoped to the session that reports it so a person can be shown their own, and
+ * read by the cost model as a direct observation of the ratio its multiplier
+ * estimates.
+ *
+ * The band is stored as sent rather than recomputed: the point of the row is to
+ * record what this system said at the time, not what it would say now. A caller
+ * who misreports it corrupts one row, and the ratio that row implies then sits
+ * alongside every other one in an average rather than replacing anything.
+ */
+app.post("/api/outcomes", async (req, reply) => {
+  const userId = await session.current(req, reply);
+  const parsed = OutcomeSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return reply.code(400).send({ error: "bad outcome", detail: parsed.error.flatten() });
+  }
+
+  const { request, p10, p50, p90, anchorTotal, actualTotal } = parsed.data;
+  const row = await ref.db.forecastOutcome.create({
+    data: {
+      userId,
+      request,
+      p10,
+      p50,
+      p90,
+      anchorTotal,
+      actualTotal,
+      // Lifted out of the request so the calibration query does not have to dig
+      // through JSON on every read.
+      procedureId: request.procedureId,
+      cityTier: request.cityTier,
+    },
+  });
+
+  // Where the reported bill fell against the band we gave. Returned because
+  // somebody who has just told us something true about their own admission is
+  // owed an answer about what it meant, and because "inside the band" is the
+  // claim this table exists to test.
+  return reply.code(201).send({ id: row.id, within: actualTotal >= p10 && actualTotal <= p90 });
+});
+
+/**
+ * One branch taken in the journey.
+ *
+ * The weakest of the three signals, and labelled that way wherever it is used:
+ * it orders what the tree offers first and makes no number more accurate. Not
+ * scoped to a session and carrying no owner column, because a record of which
+ * illnesses and room classes a particular person was contemplating is not a
+ * thing worth keeping in order to sort a menu.
+ *
+ * Answers 204 and nothing else, including when the body is junk. A client should
+ * not be waiting on this, and a malformed click is not worth an error page.
+ */
+app.post("/api/journey/choice", async (req, reply) => {
+  const parsed = BranchChoiceSchema.safeParse(req.body);
+  if (parsed.success) await ref.db.branchChoice.create({ data: parsed.data }).catch(() => {});
+  return reply.code(204).send();
 });
 
 /**

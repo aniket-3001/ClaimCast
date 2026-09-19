@@ -22,12 +22,16 @@
 
 import { useEffect, useState } from "react";
 import { fmt, type Evaluated } from "@claimcast/engine";
-import type { ForecastResponse } from "@claimcast/contracts";
-import { getForecast } from "../api";
+import type { ForecastRequest, ForecastResponse } from "@claimcast/contracts";
+import { getForecast, reportOutcome } from "../api";
 
 export type ModelState =
   | { status: "loading" }
-  | { status: "ok"; forecast: ForecastResponse }
+  // The request travels with the answer so that a bill reported against this
+  // band can say which admission it was a band for. Recomputing it at the point
+  // of reporting would risk describing a different admission from the one on
+  // screen, which is the one thing an outcome row must never do.
+  | { status: "ok"; forecast: ForecastResponse; request: ForecastRequest }
   | { status: "none"; reason: string };
 
 /** The band as multiples of the centre, or nothing while it is in flight. */
@@ -60,7 +64,11 @@ export function useCostModel(e: Evaluated): ModelState {
     getForecast(JSON.parse(key))
       .then((r) => {
         if (!live) return;
-        setState(r.ok ? { status: "ok", forecast: r.forecast } : { status: "none", reason: r.reason });
+        setState(
+          r.ok
+            ? { status: "ok", forecast: r.forecast, request: JSON.parse(key) }
+            : { status: "none", reason: r.reason },
+        );
       })
       .catch(() => {
         if (live) setState({ status: "none", reason: "The cost model is not reachable." });
@@ -118,6 +126,15 @@ export function CostModelNote({ m }: { m: ModelState }) {
         hospital record, so the rate is read at NABH.
       </div>
 
+      {f.calibration && f.calibration.n > 0 && (
+        <div className="model-learned">
+          Adjusted <strong>{f.calibration.factor.toFixed(2)}&times;</strong> on{" "}
+          {f.calibration.n} settled {f.calibration.n === 1 ? "bill" : "bills"} reported against
+          earlier forecasts. Each one counted from the moment it was sent &mdash; the model behind
+          this band is the same version it was before, and nothing was retrained.
+        </div>
+      )}
+
       <ul className="model-split">
         {SPLIT_LABEL.map(([kind, label]) => {
           // The contract types the split as a partial record over LineKind, so a kind
@@ -144,7 +161,100 @@ export function CostModelNote({ m }: { m: ModelState }) {
           ))}
         </ul>
       </details>
+
+      <ReportOutcome forecast={f} request={m.request} />
     </div>
+  );
+}
+
+/**
+ * What the admission actually cost.
+ *
+ * The scarcest thing this application can be given and the only one that can
+ * say whether the band above was any good. The multiplier behind that band is
+ * fitted from national survey expenditure -- 2017-18, every state, nothing about
+ * any particular hospital -- and one real settled bill is a direct observation
+ * of the quantity that survey is a proxy for. A few hundred of them would move
+ * the model further than anything else available.
+ *
+ * Folded away by default, because it is asking somebody who came here to plan an
+ * admission to tell us about one that already happened. Opened, it asks for one
+ * number, and it answers with what that number meant rather than a thank-you.
+ */
+function ReportOutcome({
+  forecast,
+  request,
+}: {
+  forecast: ForecastResponse;
+  request: ForecastRequest;
+}) {
+  const [rupees, setRupees] = useState("");
+  const [sent, setSent] = useState<null | { within: boolean }>(null);
+  const [failed, setFailed] = useState(false);
+
+  const paise = Math.round((Number(rupees) || 0) * 100);
+  const usable = paise > 0 && Number.isFinite(paise);
+
+  async function send() {
+    setFailed(false);
+    const r = await reportOutcome({
+      request,
+      p10: forecast.p10,
+      p50: forecast.p50,
+      p90: forecast.p90,
+      anchorTotal: forecast.anchor.amount,
+      actualTotal: paise,
+    });
+    if (r.ok) setSent({ within: r.within });
+    else setFailed(true);
+  }
+
+  if (sent) {
+    return (
+      <div className="model-outcome">
+        <p className="model-why">
+          Recorded &mdash; thank you. {fmt(paise)} fell{" "}
+          <strong>{sent.within ? "inside" : "outside"}</strong> the band above. It is now one of
+          the settled bills this model reads, and it counted from the moment you sent it: nothing
+          was retrained, and nothing had to be.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <details className="model-outcome">
+      <summary>Already had this admission? Tell us what it came to</summary>
+      <p className="model-why">
+        One number, and it improves the band for the next person asking about this procedure in
+        this kind of city. It is stored against this forecast and nothing else &mdash; not your
+        name, not your hospital, not your policy.
+      </p>
+      <div className="outcome-ask">
+        <label htmlFor="o-actual">What the admission actually came to</label>
+        <div className="row-edit">
+          <input
+            id="o-actual"
+            type="number"
+            inputMode="decimal"
+            min={0}
+            placeholder="0"
+            value={rupees}
+            onChange={(ev) => setRupees(ev.target.value)}
+          />
+          <span className="unit">&#8377;</span>
+        </div>
+        <button type="button" disabled={!usable} onClick={() => void send()}>
+          Report it
+        </button>
+      </div>
+      {failed && (
+        <p className="model-why warn-line">
+          That did not reach the server. Nothing was recorded, and nothing else on this screen is
+          affected.
+        </p>
+      )}
+    </details>
   );
 }
 

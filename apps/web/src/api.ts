@@ -18,15 +18,20 @@ import { setRegistry, type Registry } from "@claimcast/engine";
 import {
   ExtractionSchema,
   ForecastResponseSchema,
+  LearningStateSchema,
   ReferenceBundleSchema,
   SavedCaseSchema,
   SessionSchema,
+  ShakyFieldSchema,
+  type ExtractedField,
   type Extraction,
   type ForecastRequest,
   type ForecastResponse,
+  type LearningState,
   type ReferenceBundle,
   type SavedCase,
   type Session,
+  type ShakyField,
 } from "@claimcast/contracts";
 
 /**
@@ -144,7 +149,8 @@ export async function getForecast(
 export async function extractPolicy(
   file: File,
 ): Promise<
-  { ok: true; documentId: string; extraction: Extraction } | { ok: false; reason: string }
+  | { ok: true; documentId: string; extraction: Extraction; shaky: ShakyField[] }
+  | { ok: false; reason: string }
 > {
   const form = new FormData();
   form.append("file", file);
@@ -157,26 +163,108 @@ export async function extractPolicy(
     const body = (await res.json().catch(() => ({}))) as { detail?: string };
     return { ok: false, reason: body.detail ?? "The schedule could not be read." };
   }
-  const body = (await res.json()) as { documentId: string; extraction: unknown };
+  const body = (await res.json()) as {
+    documentId: string;
+    extraction: unknown;
+    shaky?: unknown;
+  };
   return {
     ok: true,
     documentId: body.documentId,
     extraction: ExtractionSchema.parse(body.extraction),
+    // Advisory, so it is parsed leniently: a server that has not been taught to
+    // send this yet, or sends something unexpected, should cost the caller a
+    // warning rather than the reading it came with.
+    shaky: ShakyFieldSchema.array().safeParse(body.shaky).data ?? [],
   };
 }
 
 /**
- * Record that a person looked at the extraction and agreed to it.
+ * Record that a person looked at the extraction and what they settled on.
+ *
+ * The values travel, not just the fact of the click. Sending only the id --
+ * which is what this did until the learning loop existed -- threw away the one
+ * corpus the application produces for free: true labels on real schedules,
+ * made by the person best placed to make them, at a step that had to happen
+ * anyway. Every field goes, including the ones left alone, because a reader
+ * being right is as much an observation as a reader being wrong and a rate
+ * built only from corrections has no denominator.
+ *
+ * `keepExamples` is the person's own answer about the verbatim text of their
+ * schedule, and it is passed through rather than defaulted: the counters do not
+ * need it and do not get it.
  *
  * Failure is swallowed. The confirmation that governs the app has already
  * happened in the browser, and this is the server's note of it; losing the note
  * is not a reason to stop someone walking their own claim.
  */
-export async function confirmDocument(id: string): Promise<void> {
+export async function confirmDocument(
+  id: string,
+  fields: Partial<Record<ExtractedField, number | boolean | string | null>> = {},
+  keepExamples = false,
+): Promise<void> {
   await fetch(BASE + "/api/policies/" + encodeURIComponent(id) + "/confirm", {
     method: "POST",
     credentials: CREDS,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ fields, keepExamples }),
   }).catch(() => {});
+}
+
+/**
+ * Tell the server which branch was taken.
+ *
+ * Fire and forget in the strictest sense: not awaited, never surfaced, and the
+ * reply carries nothing. It is on the click path of the one interaction the
+ * whole demo rests on, so it is not allowed to cost that click a millisecond.
+ */
+export function recordChoice(stage: string, option: string): void {
+  void fetch(BASE + "/api/journey/choice", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ stage, option }),
+  }).catch(() => {});
+}
+
+/**
+ * Report what the admission actually cost, against the band we gave for it.
+ *
+ * The scarcest signal in the system and the only one that can say whether the
+ * forecast was any good, which is why the reply comes back rather than being
+ * swallowed: somebody who has just volunteered a real number weeks after the
+ * fact is owed an answer about what it meant.
+ */
+export async function reportOutcome(body: {
+  request: ForecastRequest;
+  p10: number;
+  p50: number;
+  p90: number;
+  anchorTotal: number | null;
+  actualTotal: number;
+}): Promise<{ ok: true; within: boolean } | { ok: false }> {
+  const res = await fetch(BASE + "/api/outcomes", {
+    method: "POST",
+    credentials: CREDS,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  }).catch(() => null);
+  if (!res || !res.ok) return { ok: false };
+  const got = (await res.json().catch(() => ({}))) as { within?: boolean };
+  return { ok: true, within: got.within === true };
+}
+
+/**
+ * What the system has learned so far.
+ *
+ * Read by the screen that has to make the "improves with use" claim, and it is
+ * given the denominators so it can make that claim proportionately. An empty
+ * state is a real answer -- a system nobody has corrected yet has learned
+ * nothing, and saying so is better than an empty panel that looks broken.
+ */
+export async function learningState(): Promise<LearningState | null> {
+  const res = await fetch(BASE + "/api/learning", { credentials: CREDS }).catch(() => null);
+  if (!res || !res.ok) return null;
+  return LearningStateSchema.safeParse(await res.json().catch(() => null)).data ?? null;
 }
 
 /**

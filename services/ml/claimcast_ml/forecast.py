@@ -32,6 +32,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from . import calibration as calibration_mod
 from . import split as split_mod
 from . import tariff
 from .coding import coding_for
@@ -62,6 +63,8 @@ class Forecast:
     trained_on: str
     basis: str
     caveats: list[str]
+    #: How far settled bills moved this forecast, and how many said so.
+    calibration: dict
 
 
 def _bed_rates(procedure_id: str, tier: str, nabh: bool, days: int, icu_days: int) -> tuple[int, int]:
@@ -82,6 +85,14 @@ def forecast(
     room_class: str,
     days: int,
     icu_days: int,
+    # Forecasts this model already gave, as (p50, actual) in paise, for
+    # admissions whose bills have since been reported. Supplied by the caller
+    # because the outcomes live in the application's database and this service
+    # deliberately holds none: it stays a pure function of an artifact and a
+    # request, which is what makes a forecast reproducible from its model
+    # version months later. Empty on a deployment nobody has reported a bill
+    # on, and empty is the survey estimate exactly as fitted.
+    observed: list[tuple[int, int]] | None = None,
 ) -> Forecast:
     if icu_days > days:
         raise ValueError(
@@ -93,7 +104,12 @@ def forecast(
     sector = sector_for(city_tier)
     anchor = tariff.anchor_for(procedure_id, city_tier, nabh, room_class, days, icu_days)
 
-    centre = anchor.amount * model.multiplier
+    # The survey's multiplier, corrected by the bills people have reported since.
+    # Nothing is refitted here and the model version does not move -- the version
+    # names the documents the artifact was built from, and those have not changed.
+    # This is arithmetic on rows that exist at the moment of the request.
+    cal = calibration_mod.from_outcomes(observed or [])
+    centre = anchor.amount * model.multiplier * cal.factor
     band = model.quantiles[sector]
     options = model.implant_options.get(procedure_id, [])
     implant_low = options[0] if options else 0
@@ -113,6 +129,8 @@ def forecast(
         "A city tier is not the survey's rural/urban split. Tiers X and Y are read as "
         "urban and tier Z as rural, which is the coarsest join in the model.",
     ]
+    if cal.note:
+        caveats.append(cal.note)
     if coding.note:
         caveats.append(coding.note)
     if coding.weak:
@@ -155,6 +173,7 @@ def forecast(
             "detail": anchor.detail,
         },
         split=lines,
+        calibration={"n": cal.n, "factor": round(cal.factor, 4)},
         model_version=model.version,
         trained_on=model.trained_on,
         basis=(
@@ -162,6 +181,15 @@ def forecast(
             + " category. Anchored on the " + anchor.scheme + " rate of Rs "
             + format(anchor.amount // 100, ",") + " (" + anchor.code + ", "
             + anchor.detail + "). " + model.basis()
+            + (
+                ""
+                if cal.n == 0
+                else (
+                    " Corrected by " + format(cal.factor, ".3f") + "x against "
+                    + str(cal.n) + (" bill " if cal.n == 1 else " bills ")
+                    + "settled after we forecast them."
+                )
+            )
         ),
         caveats=caveats,
     )

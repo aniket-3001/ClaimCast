@@ -1467,6 +1467,168 @@ footer.foot {
   color: var(--warn);
 }
 
+/* Every read row is now a control, because the confirmation gate is only a gate
+   if the answer can be no. The box is sized to the widest figure anybody types
+   into it rather than to the column, so a row with a short answer does not grow
+   an editing field wide enough to look like the point of the row. */
+.row-edit {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+}
+
+.row-edit input,
+.row-edit select {
+  width: 148px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 14px;
+  text-align: right;
+}
+
+.row-edit select {
+  text-align: left;
+}
+
+.row-edit .unit {
+  min-width: 42px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+/* The three learning signals, side by side so their sizes can be compared at a
+   glance. That comparison is the point: branch clicks will always be the big
+   number and settled bills will always be the small one, and a layout that let
+   the big number stand alone would be telling a flattering lie. */
+.signals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.signal {
+  padding: 14px 15px;
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  background-color: var(--surface);
+}
+
+.signal-n {
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+  font-size: 30px;
+  line-height: 1.1;
+}
+
+.signal-k {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+.signal-why {
+  margin: 8px 0 0;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+/* The line that says the band in front of you was moved by bills other people
+   reported. Tinted rather than plain, because it is the only part of the panel
+   that was not true when the artifact was built. */
+.model-learned {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+  background-color: var(--accent-wash);
+  color: var(--ink-3);
+  font-size: 12.5px;
+  line-height: 1.55;
+}
+
+.model-learned strong {
+  color: var(--ink);
+  font-family: var(--num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The settled-bill ask, under the forecast it is an outcome of. Set apart by a
+   rule rather than a panel of its own: it belongs to the band above it, and a
+   box would read as a second subject. */
+.model-outcome {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hair);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.model-outcome > summary {
+  cursor: pointer;
+  color: var(--accent);
+}
+
+.outcome-ask {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.outcome-ask label {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.outcome-ask button {
+  min-height: 32px;
+  padding: 0 14px;
+  font-size: 13.5px;
+}
+
+.outcome-ask button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* A row the person in front of it has overwritten. Accented rather than warned:
+   a correction is the system working, not a fault in it. */
+.cite-edited {
+  color: var(--accent);
+}
+
+/* A field other people keep correcting. Distinct from `.cite-bad`, which says
+   the citation could not be found in this document -- this one says nothing
+   about this document at all, only about the reader's record on this field. */
+.cite-warn {
+  color: var(--warn);
+}
+
+/* The consent line. Given the room to be read rather than tucked under the
+   button, because it is asking for something and a request nobody can see is
+   not one that has been made. */
+.consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 14px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.consent input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+}
+
 .warn-line {
   margin: 10px 0 0;
   padding: 9px 11px;

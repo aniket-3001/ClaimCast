@@ -7,15 +7,29 @@ import { Journey } from "./components/Journey";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Database } from "./components/Database";
+import { Learning } from "./components/Learning";
+import { recordChoice } from "./api";
 
-type Tab = "start" | "journey" | "working" | "database";
+type Tab = "start" | "journey" | "working" | "database" | "learning";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "start", label: "Start" },
   { id: "journey", label: "The path" },
   { id: "working", label: "The working" },
   { id: "database", label: "Database" },
+  { id: "learning", label: "What it has learned" },
 ];
+
+/**
+ * The fields a branch click actually moves, and the only ones recorded.
+ *
+ * Deliberately short. Age, the PM-JAY card and central government service are
+ * left out because they are facts about a person rather than choices in a tree,
+ * and length of stay is left out because it is a clinical fact rather than a
+ * decision anybody makes at a fork. What remains is the four the journey screen
+ * actually branches on, and none of them says anything about who was clicking.
+ */
+const CHOICE_FIELDS = ["hospitalId", "procedureId", "roomClass", "route"] as const;
 
 /**
  * The reference admission from the deck: RC-2401, before it happened.
@@ -58,7 +72,21 @@ export default function App() {
   // One entry point for every change, so no unreachable combination is ever
   // put on screen — a hospital that has no private room, a cashless route at a
   // hospital outside the network.
-  const pick = (c: CaseInput) => setInput(repair(c));
+  //
+  // It is also the one place every branch click passes through, which is why the
+  // journey signal is recorded here rather than in the components that render
+  // the forks. A component that draws a fork can forget to report it; a diff
+  // taken at the single point where the case changes cannot. `repair` runs
+  // first, so what is recorded is the branch the app actually took rather than
+  // the one that was asked for — those differ whenever a choice is impossible
+  // at the selected hospital.
+  const pick = (c: CaseInput) => {
+    const next = repair(c);
+    for (const k of CHOICE_FIELDS) {
+      if (input[k] !== next[k]) recordChoice(k, String(next[k]));
+    }
+    setInput(next);
+  };
   const open = (c: CaseInput) => {
     pick(c);
     setTab("journey");
@@ -103,7 +131,9 @@ export default function App() {
         ))}
       </nav>
 
-      {tab !== "start" && tab !== "database" && <Controls value={input} onChange={pick} />}
+      {tab !== "start" && tab !== "database" && tab !== "learning" && (
+        <Controls value={input} onChange={pick} />
+      )}
 
       {tab === "start" && (
         <Intake
@@ -127,6 +157,7 @@ export default function App() {
         </>
       )}
       {tab === "database" && <Database onOpen={open} />}
+      {tab === "learning" && <Learning />}
 
       <footer className="foot">
         <span>Team Rocket · IIIT-Delhi · GE HealthCare Precision Care Challenge 2026</span>

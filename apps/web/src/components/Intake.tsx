@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fmt, pct, registry, setRegistry, type CaseInput, type Policy } from "@claimcast/engine";
-import type { Extraction, ExtractedField } from "@claimcast/contracts";
+import type { Extraction, ExtractedField, ShakyField } from "@claimcast/contracts";
 import { confirmDocument, extractPolicy } from "../api";
 
 /**
@@ -41,7 +41,7 @@ export function Intake({
     }));
     setUp(
       r.ok
-        ? { stage: "read", documentId: r.documentId, extraction: r.extraction }
+        ? { stage: "read", documentId: r.documentId, extraction: r.extraction, shaky: r.shaky }
         : { stage: "refused", reason: r.reason },
     );
   }
@@ -206,9 +206,14 @@ export function Intake({
           <ExtractionPanel
             extraction={up.extraction}
             fallback={policy}
-            onConfirm={(confirmed) => {
-              adoptPolicy(confirmed);
-              void confirmDocument(up.documentId);
+            shaky={up.shaky}
+            onConfirm={(p, fields, keepExamples) => {
+              adoptPolicy(p);
+              // Not awaited, and its failure is swallowed inside. The
+              // confirmation that governs this app happened in the browser a
+              // line ago; the server's note of it, and the correction it
+              // carries, must not hold anybody at the door.
+              void confirmDocument(up.documentId, fields, keepExamples);
               onContinue();
             }}
           />
@@ -216,7 +221,8 @@ export function Intake({
       </section>
 
       <p className="note" style={{ marginTop: 16 }}>
-        The reader only extracts. Every field is confirmed by you before it can move a rupee.
+        The reader only extracts. Every field is confirmed by you before it can move a rupee, and
+        every correction you make is what teaches it which fields to stop being confident about.
       </p>
     </>
   );
@@ -304,31 +310,88 @@ const clamp = (raw: string, lo: number, hi: number) =>
 type Upload =
   | { stage: "idle" }
   | { stage: "reading"; filename: string }
-  | { stage: "read"; documentId: string; extraction: Extraction }
+  | { stage: "read"; documentId: string; extraction: Extraction; shaky: ShakyField[] }
   | { stage: "refused"; reason: string };
 
-/** How each extracted field is named and shown, in the order a schedule reads. */
-const READ_ROWS: { field: ExtractedField; label: string; show: (v: unknown) => string }[] = [
-  { field: "insurer", label: "Insurer", show: String },
-  { field: "product", label: "Product", show: String },
-  { field: "sumInsured", label: "Sum insured", show: (v) => fmt(Number(v)) },
-  { field: "roomCapPerDay", label: "Room rent limit", show: (v) => fmt(Number(v)) + " per day" },
-  { field: "roomCapPctOfSI", label: "Room limit as % of sum insured", show: (v) => pct(Number(v)) },
-  { field: "icuCapPerDay", label: "ICU limit", show: (v) => fmt(Number(v)) + " per day" },
-  { field: "icuCapPctOfSI", label: "ICU limit as % of sum insured", show: (v) => pct(Number(v)) },
-  {
-    field: "proportionateDeduction",
-    label: "Proportionate deduction",
-    show: (v) => (v ? "Applies" : "Does not apply"),
-  },
-  { field: "copayPct", label: "Co-payment", show: (v) => (v ? pct(Number(v)) : "None") },
-  { field: "implantSubLimit", label: "Implant sub-limit", show: (v) => fmt(Number(v)) },
-  { field: "preHospDays", label: "Pre-hospitalisation window", show: (v) => `${v} days` },
-  { field: "postHospDays", label: "Post-hospitalisation window", show: (v) => `${v} days` },
-  { field: "dayCareCovered", label: "Day-care procedures", show: (v) => (v ? "Covered" : "Not covered") },
-  { field: "pedWaitingMonths", label: "Pre-existing disease waiting", show: (v) => `${v} months` },
-  { field: "moratoriumMonths", label: "Moratorium", show: (v) => `${v} months` },
+/**
+ * A field's value as it travels: the same union the extraction uses.
+ */
+type Value = number | boolean | string | null;
+
+/**
+ * How a field is edited, which is not always how it is stored.
+ *
+ * Money is paise everywhere behind this screen and rupees on it, and a ratio is
+ * a fraction behind it and a percentage on it. Asking somebody to confirm their
+ * room rent limit by typing 500000 would be a way of guaranteeing a correction
+ * that corrects nothing, so the conversion happens here and the round trip is
+ * exact in both directions.
+ */
+type Kind = "text" | "money" | "pct" | "count" | "bool";
+
+/** How each extracted field is named, shown and edited, in the order a schedule reads. */
+const READ_ROWS: { field: ExtractedField; label: string; kind: Kind; unit?: string }[] = [
+  { field: "insurer", label: "Insurer", kind: "text" },
+  { field: "product", label: "Product", kind: "text" },
+  { field: "sumInsured", label: "Sum insured", kind: "money", unit: "\u20b9" },
+  { field: "roomCapPerDay", label: "Room rent limit", kind: "money", unit: "\u20b9 / day" },
+  { field: "roomCapPctOfSI", label: "Room limit as % of sum insured", kind: "pct", unit: "%" },
+  { field: "icuCapPerDay", label: "ICU limit", kind: "money", unit: "\u20b9 / day" },
+  { field: "icuCapPctOfSI", label: "ICU limit as % of sum insured", kind: "pct", unit: "%" },
+  { field: "proportionateDeduction", label: "Proportionate deduction", kind: "bool" },
+  { field: "copayPct", label: "Co-payment", kind: "pct", unit: "%" },
+  { field: "implantSubLimit", label: "Implant sub-limit", kind: "money", unit: "\u20b9" },
+  { field: "preHospDays", label: "Pre-hospitalisation window", kind: "count", unit: "days" },
+  { field: "postHospDays", label: "Post-hospitalisation window", kind: "count", unit: "days" },
+  { field: "dayCareCovered", label: "Day-care procedures", kind: "bool" },
+  { field: "pedWaitingMonths", label: "Pre-existing disease waiting", kind: "count", unit: "months" },
+  { field: "moratoriumMonths", label: "Moratorium", kind: "count", unit: "months" },
 ];
+
+/**
+ * The stored value, in the units a person types.
+ *
+ * Deliberately lossless: paise divide by exactly a hundred and a fraction
+ * multiplies by exactly a hundred, so a field nobody touches converts out and
+ * back to the number it started as. A rounding step here would manufacture
+ * corrections out of untouched fields and quietly poison every rate on the
+ * learning screen -- the `toPrecision` is there for that reason, because
+ * 0.1 * 100 is not 10 in binary floating point.
+ */
+function toDraft(kind: Kind, v: Value): string {
+  if (v === null) return "";
+  if (kind === "bool") return v ? "yes" : "no";
+  if (kind === "money") return String(Number(v) / 100);
+  if (kind === "pct") return String(Number((Number(v) * 100).toPrecision(12)));
+  return String(v);
+}
+
+/** And back into the units the engine and the schema use. */
+function fromDraft(kind: Kind, raw: string, was: Value): Value {
+  const t = raw.trim();
+  if (kind === "bool") return t === "yes";
+  // An emptied field is the document saying nothing, which the engine reads as
+  // "no limit" -- a real answer, and often the right one.
+  if (t === "") return null;
+  if (kind === "text") return t;
+  const n = Number(t);
+  // Mid-edit junk keeps the value it had rather than blanking the row under the
+  // person's cursor. Nothing is confirmed until the button, so a half-typed
+  // number is never a value anybody is committed to.
+  if (!Number.isFinite(n)) return was;
+  if (kind === "money") return Math.round(n * 100);
+  if (kind === "pct") return n / 100;
+  return Math.round(n);
+}
+
+/** Display form, for the fields that are read rather than edited. */
+function show(kind: Kind, v: Value): string {
+  if (v === null) return "Not stated";
+  if (kind === "bool") return v ? "Yes" : "No";
+  if (kind === "money") return fmt(Number(v));
+  if (kind === "pct") return pct(Number(v));
+  return String(v);
+}
 
 /**
  * What was read, what it was read from, and whether that quote is really there.
@@ -341,16 +404,29 @@ const READ_ROWS: { field: ExtractedField; label: string; show: (v: unknown) => s
  * as unfound rather than dropped, because a reader who is being asked to confirm
  * a number is entitled to know the citation behind it did not check out.
  *
+ * Every row is editable, and that is not a convenience. The confirmation gate
+ * is the architectural promise this application makes -- no extracted value
+ * prices anything until a person has agreed to it -- and a gate whose only
+ * answer is yes is not a gate. It is also the only place the system is ever
+ * handed a true label on a real schedule by the one person who can see both the
+ * reading and the document, which is what the correction loop is built out of.
+ *
  * Nothing here has touched the engine. The button below is where that happens.
  */
 function ExtractionPanel({
   extraction,
   fallback,
+  shaky,
   onConfirm,
 }: {
   extraction: Extraction;
   fallback: Policy;
-  onConfirm: (p: Policy) => void;
+  shaky: ShakyField[];
+  onConfirm: (
+    p: Policy,
+    fields: Partial<Record<ExtractedField, Value>>,
+    keepExamples: boolean,
+  ) => void;
 }) {
   // Not on a schedule, and not derivable from one: a policy renewed for eight
   // years and one bought in January carry the same period of insurance. It
@@ -359,8 +435,41 @@ function ExtractionPanel({
   // never silently zero.
   const [months, setMonths] = useState(String(fallback.monthsInForce));
 
-  const val = (f: ExtractedField) => extraction.fields[f]?.value ?? null;
+  // What the person has typed, keyed by field, and empty until they type. The
+  // reading itself is never mutated: the row the server sent has to survive
+  // intact to the end, because a correction is only meaningful as a difference
+  // from what was actually read.
+  const [draft, setDraft] = useState<Partial<Record<ExtractedField, string>>>({});
+
+  // Off unless it is switched on, and switched on by the person whose schedule
+  // it is. Consent that has to be withheld is not consent.
+  const [keepExamples, setKeepExamples] = useState(false);
+
   const unverified = extraction.unverified.length;
+  const warned = new Map(shaky.map((w) => [w.field, w]));
+
+  // Only fields the reader actually produced. A field it said nothing about was
+  // not read, and putting an empty box on screen would invite somebody to fill
+  // in a term their schedule may not contain.
+  const rows = READ_ROWS.filter((r) => {
+    const got = extraction.fields[r.field];
+    return got !== undefined && got.value !== null;
+  });
+
+  const rawOf = (f: ExtractedField, kind: Kind) =>
+    draft[f] ?? toDraft(kind, extraction.fields[f]?.value ?? null);
+
+  const confirmed: Partial<Record<ExtractedField, Value>> = {};
+  for (const r of rows) {
+    confirmed[r.field] = fromDraft(r.kind, rawOf(r.field, r.kind), extraction.fields[r.field]!.value);
+  }
+
+  // Compared as strings, exactly as the server compares them, so the count on
+  // screen is the count that gets written down.
+  const norm = (v: Value | undefined) => (v === null || v === undefined ? "" : String(v));
+  const edited = rows.filter(
+    (r) => norm(confirmed[r.field]) !== norm(extraction.fields[r.field]!.value),
+  ).length;
 
   return (
     <div className="tnode fixed">
@@ -378,14 +487,14 @@ function ExtractionPanel({
       )}
 
       <ul className="rows">
-        {READ_ROWS.map((r) => {
-          const got = extraction.fields[r.field];
-          const v = val(r.field);
-          if (!got || v === null) return null;
+        {rows.map((r) => {
+          const got = extraction.fields[r.field]!;
+          const warn = warned.get(r.field);
+          const id = "x-" + r.field;
           return (
             <li className="row read-row" key={r.field}>
               <span className="row-l">
-                <span>{r.label}</span>
+                <label htmlFor={id}>{r.label}</label>
                 {got.span ? (
                   <span className={got.verified ? "cite" : "cite cite-bad"}>
                     “{got.span.text}” — page {got.span.page}
@@ -394,8 +503,48 @@ function ExtractionPanel({
                 ) : (
                   <span className="cite cite-bad">cited nothing</span>
                 )}
+                {/* What the reader had said, kept on screen beside the
+                    change. A person who has just overwritten a figure is owed a
+                    view of what they overwrote -- and it is the difference, not
+                    the new value, that is about to be recorded. */}
+                {norm(confirmed[r.field]) !== norm(got.value) && (
+                  <span className="cite cite-edited">
+                    read as {show(r.kind, got.value)} &mdash; you changed it
+                  </span>
+                )}
+                {/* The correction loop, closing. Nothing was retrained
+                    between the reading that produced this count and the one on
+                    screen; the count is what everybody before saw fit to
+                    change, and it travels with its denominator so it can be
+                    weighed rather than obeyed. */}
+                {warn && (
+                  <span className="cite cite-warn">
+                    readers corrected this field {warn.corrected} times in {warn.seen} readings
+                    &mdash; worth checking against your own copy
+                  </span>
+                )}
               </span>
-              <span className="row-amt">{r.show(v)}</span>
+              <span className="row-edit">
+                {r.kind === "bool" ? (
+                  <select
+                    id={id}
+                    value={rawOf(r.field, r.kind)}
+                    onChange={(ev) => setDraft({ ...draft, [r.field]: ev.target.value })}
+                  >
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                ) : (
+                  <input
+                    id={id}
+                    type={r.kind === "text" ? "text" : "number"}
+                    inputMode={r.kind === "text" ? undefined : "decimal"}
+                    value={rawOf(r.field, r.kind)}
+                    onChange={(ev) => setDraft({ ...draft, [r.field]: ev.target.value })}
+                  />
+                )}
+                {r.unit && <span className="unit">{r.unit}</span>}
+              </span>
             </li>
           );
         })}
@@ -417,12 +566,41 @@ function ExtractionPanel({
         cover has been continuously in force. The reader is told not to guess it, so you say it.
       </p>
 
+      {/* Asked here rather than in a settings screen nobody opens, and asked
+          about one specific thing rather than as a blanket permission. What is
+          being requested is narrow enough to describe in a sentence, which is
+          the test of whether it should be requested at all. */}
+      <label className="consent">
+        <input
+          type="checkbox"
+          checked={keepExamples}
+          onChange={(ev) => setKeepExamples(ev.target.checked)}
+        />
+        <span>
+          Keep the wording of the fields I corrected, so the reader can be shown them as worked
+          examples. Only the fields you changed, and only the sentence quoted beside them.
+        </span>
+      </label>
+      <p className="note" style={{ marginTop: 6 }}>
+        Leave it unticked and nothing from your schedule is kept. What is recorded either way is a
+        count &mdash; which field, which reader, changed or not &mdash; and that carries nothing
+        about you or your policy.
+      </p>
+
       <button
         type="button"
         style={{ marginTop: 14 }}
-        onClick={() => onConfirm(asPolicy(extraction, fallback, clamp(months, 0, 600)))}
+        onClick={() =>
+          onConfirm(
+            asPolicy(confirmed, extraction, fallback, clamp(months, 0, 600)),
+            confirmed,
+            keepExamples,
+          )
+        }
       >
-        Confirm and continue
+        {edited === 0
+          ? "Confirm and continue"
+          : `Correct ${edited} ${edited === 1 ? "field" : "fields"} and continue`}
       </button>
     </div>
   );
@@ -438,17 +616,27 @@ function ExtractionPanel({
  * period, the sample policy's value stands in, and it is visible on screen that
  * it did.
  */
-function asPolicy(e: Extraction, fallback: Policy, monthsInForce: number): Policy {
+function asPolicy(
+  /**
+   * What the person settled on, not what the reader proposed. The extraction is
+   * still passed in, but only for the provenance line: the figures below come
+   * from the panel, because the panel is where a human looked at them.
+   */
+  confirmed: Partial<Record<ExtractedField, Value>>,
+  e: Extraction,
+  fallback: Policy,
+  monthsInForce: number,
+): Policy {
   const num = (f: ExtractedField): number | null => {
-    const v = e.fields[f]?.value;
+    const v = confirmed[f];
     return typeof v === "number" ? v : null;
   };
   const str = (f: ExtractedField, or: string): string => {
-    const v = e.fields[f]?.value;
+    const v = confirmed[f];
     return typeof v === "string" && v.trim() ? v : or;
   };
   const bool = (f: ExtractedField, or: boolean): boolean => {
-    const v = e.fields[f]?.value;
+    const v = confirmed[f];
     return typeof v === "boolean" ? v : or;
   };
 

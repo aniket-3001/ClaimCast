@@ -23,7 +23,7 @@ from claimcast_ml import model as model_mod, paths  # noqa: E402
 #: rejected by the API's Zod parse, and a response carrying an extra one would be
 #: silently stripped -- which is how the caveats nearly got lost.
 RESPONSE_KEYS = {
-    "p10", "p50", "p90", "anchor", "split",
+    "p10", "p50", "p90", "anchor", "split", "calibration",
     "modelVersion", "trainedOn", "basis", "caveats",
 }
 ANCHOR_KEYS = {"scheme", "amount", "sourceId", "code", "detail"}
@@ -117,3 +117,67 @@ def test_the_artifact_is_self_contained():
         "the model is reading " + str(paths.ROOT) + " rather than the snapshot at "
         + str(data) + "."
     )
+
+
+def test_a_forecast_with_no_outcomes_is_the_survey_estimate_untouched(client):
+    """
+    The default has to be the model as fitted.
+
+    Every deployment starts with nothing reported, and most requests on a live
+    one will still carry nothing for that procedure. If an empty list moved a
+    figure by even a rupee, the number in the deck would not be the number on
+    the screen.
+    """
+    body = {
+        "procedureId": "p-tkr", "cityTier": "Y", "nabh": True,
+        "roomClass": "semi_private", "days": 4, "icuDays": 0,
+    }
+    bare = client.post("/forecast", json=body).json()
+    empty = client.post("/forecast", json={**body, "observed": []}).json()
+
+    assert bare["calibration"] == {"n": 0, "factor": 1.0}
+    assert (bare["p10"], bare["p50"], bare["p90"]) == (empty["p10"], empty["p50"], empty["p90"])
+
+
+def test_settled_bills_move_the_next_forecast(client):
+    """
+    The claim the whole learning story rests on, asserted rather than described.
+
+    Nothing is refitted between these two calls and no artifact is rebuilt -- the
+    model version is identical either side -- and yet the second answer is higher,
+    because bills came in above the band and the request carried them.
+    """
+    body = {
+        "procedureId": "p-tkr", "cityTier": "Y", "nabh": True,
+        "roomClass": "semi_private", "days": 4, "icuDays": 0,
+    }
+    before = client.post("/forecast", json=body).json()
+    high = [{"p50": before["p50"], "actual": round(before["p50"] * 1.5)} for _ in range(10)]
+    after = client.post("/forecast", json={**body, "observed": high}).json()
+
+    assert after["calibration"]["n"] == 10
+    assert 1.15 < after["calibration"]["factor"] < 1.35
+    assert after["p50"] > before["p50"]
+    assert after["modelVersion"] == before["modelVersion"]
+    assert any("settled bills" in c for c in after["caveats"])
+
+    # And symmetrically downward, so the correction is not a one-way ratchet.
+    low = [{"p50": before["p50"], "actual": round(before["p50"] * 0.6)} for _ in range(10)]
+    cheaper = client.post("/forecast", json={**body, "observed": low}).json()
+    assert cheaper["p50"] < before["p50"]
+
+
+def test_a_mis_entered_bill_cannot_move_the_forecast(client):
+    body = {
+        "procedureId": "p-tkr", "cityTier": "Y", "nabh": True,
+        "roomClass": "semi_private", "days": 4, "icuDays": 0,
+    }
+    before = client.post("/forecast", json=body).json()
+    # Rupees typed where paise were asked for, which is the mistake this will
+    # actually see. It is discarded rather than shrunk, and it is said out loud.
+    absurd = [{"p50": before["p50"], "actual": before["p50"] * 100}]
+    after = client.post("/forecast", json={**body, "observed": absurd}).json()
+
+    assert after["calibration"] == {"n": 0, "factor": 1.0}
+    assert after["p50"] == before["p50"]
+    assert any("mis-entered" in c for c in after["caveats"])

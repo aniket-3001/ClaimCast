@@ -29,6 +29,19 @@ app = FastAPI(
 )
 
 
+class Outcome(BaseModel):
+    """
+    One forecast this model gave, and the bill that was settled against it.
+
+    Both figures are as they stood when the forecast was made. There is nothing
+    here that says whose admission it was, and nothing that could: the caller
+    sends two integers per row because two integers are all the correction needs.
+    """
+
+    p50: int = Field(ge=0)
+    actual: int = Field(ge=0)
+
+
 class ForecastRequest(BaseModel):
     """Mirrors `ForecastRequestSchema` in packages/contracts."""
 
@@ -38,6 +51,9 @@ class ForecastRequest(BaseModel):
     roomClass: str
     days: int = Field(ge=0, le=365)
     icuDays: int = Field(ge=0, le=365)
+    #: Settled bills, newest first, capped by the caller. Absent from a caller
+    #: that has none, which is the shape this service shipped with.
+    observed: list[Outcome] = Field(default_factory=list, max_length=500)
 
 
 @app.get("/health")
@@ -62,7 +78,14 @@ def post_forecast(req: ForecastRequest) -> JSONResponse:
     m = model_mod.load()
     try:
         f = forecast(
-            m, req.procedureId, req.cityTier, req.nabh, req.roomClass, req.days, req.icuDays
+            m,
+            req.procedureId,
+            req.cityTier,
+            req.nabh,
+            req.roomClass,
+            req.days,
+            req.icuDays,
+            [(o.p50, o.actual) for o in req.observed],
         )
     except KeyError as exc:
         # An unknown procedure, or one with no ailment coding. Both are refusals
@@ -82,6 +105,7 @@ def post_forecast(req: ForecastRequest) -> JSONResponse:
         "p90": f.p90,
         "anchor": f.anchor,
         "split": f.split,
+        "calibration": f.calibration,
         "modelVersion": f.model_version,
         "trainedOn": f.trained_on,
         "basis": f.basis,
