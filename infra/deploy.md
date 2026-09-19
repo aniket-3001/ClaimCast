@@ -59,6 +59,7 @@ Free-tier resources still require a project with billing enabled.
 gcloud services enable \
   run.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com \
   compute.googleapis.com iap.googleapis.com billingbudgets.googleapis.com \
+  aiplatform.googleapis.com \
   --project=claimcast-2026
 ```
 
@@ -138,14 +139,26 @@ printf %s "$VALUE" | gcloud secrets versions add SESSION_SECRET --data-file=-
 `DATABASE_URL` points at the VM's **internal** address:
 `postgresql://claimcast:<pass>@10.128.0.2:5432/claimcast`.
 
-**One extraction key is what makes upload work.** Without any of
-`GEMINI_API_KEY`, `ANTHROPIC_API_KEY` or `GROQ_API_KEY` the server answers 503
-and the intake screen offers the by-hand path instead, which is a working demo
-missing one feature rather than a broken one. This deployment uses Groq. Gemini
-would be preferred — it is sent the PDF rather than flattened text — but the
-Gemini API bills through AI Studio prepay, which Google Cloud trial credit does
-not fund, and every model answers 429 until that credit is bought. See the note
-in `apps/api/src/models.ts`.
+**Something must be configured for upload to work.** With no provider at all
+the server answers 503 and the intake screen offers the by-hand path instead,
+which is a working demo missing one feature rather than a broken one.
+
+The provider this deployment uses is **Vertex**, which is not in the list above
+because it is not a secret. Vertex reaches Gemini through Google Cloud rather
+than through AI Studio, so it authenticates with the service account and bills
+to this project — no API key to store, rotate or leak, and it is covered by the
+credit the project already has. It is turned on with one environment variable,
+`VERTEX_PROJECT`, and one IAM grant in step 6.
+
+The AI Studio API is a different billing arrangement and Cloud credit does not
+fund it: on this account every model there answers 429 "prepayment credits are
+depleted". `GEMINI_API_KEY` is therefore deliberately not set anywhere.
+
+`GROQ_API_KEY` stays in Secret Manager as the fallback, and is worth keeping for
+a reason beyond redundancy: on the mockup schedule Groq reads the same sixteen
+values correctly in about 4 seconds against Gemini Pro's 26, and quotes one more
+span verbatim. `EXTRACTION_PROVIDER=groq` pins it, which is the flag to reach for
+if a live upload in front of a panel needs to be quick rather than thorough.
 
 ### 5. Migrations and seed, over an IAP tunnel
 
@@ -187,6 +200,9 @@ gcloud iam service-accounts create claimcast-ml
 - `roles/secretmanager.secretAccessor` on **each of the four secrets** for
   `claimcast-api@` — granted per secret, not project-wide.
 - `roles/run.invoker` on `claimcast-ml` for `claimcast-api@`.
+- `roles/aiplatform.user` for `claimcast-api@`, which is the whole of what the
+  Vertex extraction path needs. The token comes from the metadata server at
+  request time and is cached until a minute before it expires.
 - `roles/compute.networkUser` for `claimcast-api@` **and** for the Cloud Run
   service agent
   `service-<PROJECT_NUMBER>@serverless-robot-prod.iam.gserviceaccount.com`.
@@ -234,7 +250,7 @@ gcloud run deploy claimcast-api \
   --memory 1Gi --cpu 1 --max-instances 3 --min-instances 0 \
   --concurrency 40 --timeout 120 \
   --network=default --subnet=default --vpc-egress=private-ranges-only \
-  --set-env-vars "NODE_ENV=production,ML_SERVICE_URL=$ML_URL" \
+  --set-env-vars "NODE_ENV=production,ML_SERVICE_URL=$ML_URL,VERTEX_PROJECT=claimcast-2026" \
   --set-secrets "DATABASE_URL=DATABASE_URL:latest,SESSION_SECRET=SESSION_SECRET:latest,DOCUMENT_ENCRYPTION_KEY=DOCUMENT_ENCRYPTION_KEY:latest,GROQ_API_KEY=GROQ_API_KEY:latest"
 ```
 

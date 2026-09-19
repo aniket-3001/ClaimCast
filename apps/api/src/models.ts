@@ -176,7 +176,7 @@ function tool() {
 }
 
 export interface Chosen {
-  provider: "gemini" | "anthropic" | "groq";
+  provider: "vertex" | "gemini" | "anthropic" | "groq";
   /** Recorded on the extraction, so a figure on screen can be traced to what read it. */
   model: string;
 }
@@ -189,38 +189,33 @@ export interface Chosen {
  */
 export function chosen(): Chosen | null {
   const forced = process.env.EXTRACTION_PROVIDER?.trim().toLowerCase();
+  const vertex = (process.env.VERTEX_PROJECT ?? "").trim();
   const gemini = process.env.GEMINI_API_KEY;
   const anthropic = process.env.ANTHROPIC_API_KEY;
   const groq = process.env.GROQ_API_KEY;
 
-  // Pro, not Flash. This reads a financial document that a person is then asked
-  // to confirm, and the difference in price between the two is under two rupees
-  // per upload -- which is not a reason to use the weaker reader on a page of
-  // sub-limits. GEMINI_MODEL switches to Flash where volume ever matters.
+  // Pro, not Flash, on both Google paths. This reads a financial document that a
+  // person is then asked to confirm, and the difference in price between the two
+  // is under two rupees per upload -- which is not a reason to use the weaker
+  // reader on a page of sub-limits. The *_MODEL variables switch to Flash if
+  // volume ever matters.
   //
-  // The default was gemini-2.5-pro until a key issued in September 2026 returned
-  // 404 on it: "no longer available to new users. Please update your code to use
-  // models/gemini-3.1-pro-preview". Older keys still resolve 2.5, so this is a
-  // per-key cutoff rather than a retirement, and the default has to be a name a
-  // key issued today can actually reach -- a default that 404s on every upload is
-  // not a default. The replacement Google itself names is the one used here.
-  //
-  // Note that this path is unproven end to end. Every model this key can list --
-  // 3.1-pro-preview, 3.5-flash, the later flashes -- answers 429 RESOURCE_EXHAUSTED
-  // with "Your prepayment credits are depleted", because the Gemini API bills
-  // through AI Studio prepay and is not covered by Google Cloud trial credit. The
-  // deployment therefore runs on Groq, which is why GROQ_API_KEY is the key in
-  // Secret Manager and GEMINI_API_KEY is not set there. Buying AI Studio credit is
-  // all that stands between this and a working Gemini path; nothing in the code is
-  // waiting on anything.
+  // Vertex serves gemini-2.5-pro; the AI Studio API no longer does. A key issued
+  // there in September 2026 answers 404 on 2.5 ("no longer available to new
+  // users. Please update your code to use models/gemini-3.1-pro-preview"), so the
+  // two defaults differ on purpose and neither is a typo for the other. Vertex
+  // does not offer the 3.x names at all -- every one of them 404s.
+  const vertexModel = process.env.VERTEX_MODEL ?? "gemini-2.5-pro";
   const geminiModel = process.env.GEMINI_MODEL ?? "gemini-3.1-pro-preview";
   const anthropicModel = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
   const groqModel = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
 
+  if (forced === "vertex" && vertex) return { provider: "vertex", model: vertexModel };
   if (forced === "gemini" && gemini) return { provider: "gemini", model: geminiModel };
   if (forced === "anthropic" && anthropic) return { provider: "anthropic", model: anthropicModel };
   if (forced === "groq" && groq) return { provider: "groq", model: groqModel };
 
+  if (vertex) return { provider: "vertex", model: vertexModel };
   if (gemini) return { provider: "gemini", model: geminiModel };
   if (anthropic) return { provider: "anthropic", model: anthropicModel };
   if (groq) return { provider: "groq", model: groqModel };
@@ -241,15 +236,96 @@ function parseJson(text: string): Raw {
   return JSON.parse(body.slice(start, end + 1)) as Raw;
 }
 
-async function viaGemini(model: string, pdf: Buffer): Promise<Raw> {
-  const key = process.env.GEMINI_API_KEY!;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+/**
+ * An access token for this service, for the Vertex path.
+ *
+ * Vertex authenticates with OAuth rather than an API key, which is most of why
+ * it is preferred: there is no long-lived secret to put in Secret Manager, to
+ * rotate, or to leak. On Cloud Run the metadata server mints a token for the
+ * attached service account, and the only thing that had to be configured is one
+ * IAM grant. Locally there is no metadata server, so GOOGLE_ACCESS_TOKEN is
+ * read first -- `gcloud auth print-access-token` fills it for a development run.
+ *
+ * Cached until a minute before it expires. A token lasts an hour and a request
+ * per upload would otherwise fetch a fresh one every time.
+ */
+let vertexToken: { value: string; until: number } | null = null;
+
+async function accessToken(): Promise<string> {
+  const explicit = (process.env.GOOGLE_ACCESS_TOKEN ?? "").trim();
+  if (explicit) return explicit;
+
+  if (vertexToken && Date.now() < vertexToken.until) return vertexToken.value;
+
+  const res = await fetch(
+    "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+    { headers: { "metadata-flavor": "Google" }, signal: AbortSignal.timeout(3000) },
+  ).catch(() => null);
+
+  if (!res?.ok) {
+    throw Object.assign(
+      new Error(
+        "No Google credentials for Vertex. On Cloud Run this means the metadata " +
+          "server is unreachable; locally, set GOOGLE_ACCESS_TOKEN to the output of " +
+          "`gcloud auth print-access-token`.",
+      ),
+      { status: 503 },
+    );
+  }
+
+  const body = (await res.json()) as { access_token?: string; expires_in?: number };
+  if (!body.access_token) {
+    throw Object.assign(new Error("The metadata server returned no access token."), { status: 503 });
+  }
+  vertexToken = {
+    value: body.access_token,
+    until: Date.now() + Math.max((body.expires_in ?? 3600) - 60, 60) * 1000,
+  };
+  return vertexToken.value;
+}
+
+/**
+ * Gemini through Vertex AI, which is the same model reached a different way.
+ *
+ * The request and the response are shaped identically to the AI Studio one, so
+ * `viaGemini` does the work and this only decides the URL and the credential.
+ * What differs is billing and secrets: Vertex bills to the Google Cloud project,
+ * which is where the credit is, while the AI Studio API bills to a separate
+ * prepay balance that Cloud credit does not fund -- the practical effect being
+ * that every AI Studio model answers 429 on this account and Vertex answers 200.
+ */
+async function viaVertex(model: string, pdf: Buffer): Promise<Raw> {
+  const project = (process.env.VERTEX_PROJECT ?? "").trim();
+  const location = (process.env.VERTEX_LOCATION ?? "us-central1").trim();
+  const url =
+    `https://${location}-aiplatform.googleapis.com/v1/projects/${project}` +
+    `/locations/${location}/publishers/google/models/${model}:generateContent`;
+
+  return viaGemini(model, pdf, {
+    url,
+    headers: { authorization: `Bearer ${await accessToken()}` },
+    name: "Vertex",
+  });
+}
+
+async function viaGemini(
+  model: string,
+  pdf: Buffer,
+  // Absent for the AI Studio API; supplied by viaVertex, which speaks the same
+  // protocol to a different host with a different credential.
+  endpoint?: { url: string; headers: Record<string, string>; name: string },
+): Promise<Raw> {
+  const name = endpoint?.name ?? "Gemini";
+  const url =
+    endpoint?.url ??
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  // The key goes in a header rather than the query string, because a URL ends
+  // up in logs and proxy traces and a query string is part of the URL.
+  const auth = endpoint?.headers ?? { "x-goog-api-key": process.env.GEMINI_API_KEY! };
 
   const res = await fetch(url, {
     method: "POST",
-    // The key goes in a header rather than the query string, because a URL ends
-    // up in logs and proxy traces and a query string is part of the URL.
-    headers: { "content-type": "application/json", "x-goog-api-key": key },
+    headers: { "content-type": "application/json", ...auth },
     body: JSON.stringify({
       contents: [
         {
@@ -281,9 +357,10 @@ async function viaGemini(model: string, pdf: Buffer): Promise<Raw> {
 
   if (!res.ok) {
     const detail = await res.text();
-    throw Object.assign(new Error(`Gemini refused the request: ${res.status} ${detail.slice(0, 300)}`), {
-      status: res.status === 429 ? 429 : 502,
-    });
+    throw Object.assign(
+      new Error(`${name} refused the request: ${res.status} ${detail.slice(0, 300)}`),
+      { status: res.status === 429 ? 429 : 502 },
+    );
   }
 
   const body = (await res.json()) as {
@@ -291,13 +368,13 @@ async function viaGemini(model: string, pdf: Buffer): Promise<Raw> {
   };
   const candidate = body.candidates?.[0];
   if (candidate?.finishReason === "MAX_TOKENS") {
-    throw Object.assign(new Error("Gemini ran out of output budget before finishing."), {
+    throw Object.assign(new Error(`${name} ran out of output budget before finishing.`), {
       status: 502,
     });
   }
   const text = (candidate?.content?.parts ?? []).map((p) => p.text ?? "").join("");
   if (!text.trim()) {
-    throw Object.assign(new Error("Gemini returned an empty answer."), { status: 502 });
+    throw Object.assign(new Error(`${name} returned an empty answer.`), { status: 502 });
   }
   return parseJson(text);
 }
@@ -381,18 +458,21 @@ export async function read(pdf: Buffer, pages: string[]): Promise<{ raw: Raw; us
   if (!pick) {
     throw Object.assign(
       new Error(
-        "No extraction provider is configured. Set GEMINI_API_KEY, ANTHROPIC_API_KEY or GROQ_API_KEY.",
+        "No extraction provider is configured. Set VERTEX_PROJECT, or one of " +
+          "GEMINI_API_KEY, ANTHROPIC_API_KEY or GROQ_API_KEY.",
       ),
       { status: 503 },
     );
   }
 
   const raw =
-    pick.provider === "gemini"
-      ? await viaGemini(pick.model, pdf)
-      : pick.provider === "anthropic"
-        ? await viaAnthropic(pick.model, pdf)
-        : await viaGroq(pick.model, pages);
+    pick.provider === "vertex"
+      ? await viaVertex(pick.model, pdf)
+      : pick.provider === "gemini"
+        ? await viaGemini(pick.model, pdf)
+        : pick.provider === "anthropic"
+          ? await viaAnthropic(pick.model, pdf)
+          : await viaGroq(pick.model, pages);
 
   return { raw, used: pick };
 }
