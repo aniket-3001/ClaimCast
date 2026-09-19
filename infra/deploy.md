@@ -391,6 +391,27 @@ each grant where it makes it.
 To roll back: re-run the workflow on the commit you want, or fall back to the
 two commands under Redeploying with the previous tag.
 
+## Changing data without changing code
+
+The API reads the reference set once, on the first request that needs it, and
+holds it for the life of the process. For data that only ever changes on a
+deploy that is the right call, and it is why the reference screens are instant.
+
+It also means a change made *underneath* a running revision is invisible. Reseed
+the database over the tunnel and `/api/reference` keeps serving what it read at
+boot -- no error, no staleness warning, just the old answer. This is the same
+shape of trap as a stale `ml` image, and it wastes the same half hour.
+
+So a data-only change is two steps, and the second one is not optional:
+
+```bash
+DATABASE_URL="postgresql://claimcast:<pass>@localhost:5433/claimcast" npm run db:seed
+gcloud run deploy claimcast-api --image <the tag it is already running> \
+  --region us-central1        # a new revision, same image, fresh read
+```
+
+`infra/go-live.sh` does both.
+
 ## What is deliberately absent
 
 - **No deploy gate.** A push to `main` that passes the checks ships. The place

@@ -111,6 +111,18 @@ DATABASE_URL="$DB" npm run db:seed
 cleanup
 TUNNEL_PID=""
 
+# The API reads the reference set once and holds it for the life of the
+# process. That is the right call for data that changes on a deploy and never
+# between them -- but it means a change made *underneath* a running revision is
+# invisible until there is a new one. Redeploying the image it is already
+# running is the cheapest way to get one.
+echo ""
+echo "restarting the API so it re-reads the database"
+gcloud run deploy claimcast-api --image "$(gcloud run services describe claimcast-api \
+  --region us-central1 --project "$PROJECT" \
+  --format='value(spec.template.spec.containers[0].image)')" \
+  --region us-central1 --project "$PROJECT" --quiet >/dev/null
+
 
 step "4 of 4 — checking the live site"
 python infra/smoke_deploy.py "$URL"
