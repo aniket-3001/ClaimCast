@@ -49,6 +49,16 @@ bash infra/github-actions-setup.sh
 
 
 step "2 of 4 — deploying main through the pipeline"
+# Skipped when the live revision was already built from this commit, so a
+# re-run after a later step failed does not spend four minutes redeploying the
+# same thing. The images are tagged with the commit, which is what turns this
+# into a question that can be answered rather than guessed at.
+WANT=$(git rev-parse HEAD | cut -c1-12)
+LIVE=$(gcloud run services describe claimcast-api --region us-central1 --project "$PROJECT" \
+        --format='value(spec.template.spec.containers[0].image)' 2>/dev/null | sed 's/.*://')
+if [ "$LIVE" = "$WANT" ]; then
+  echo "already running $WANT -- nothing to deploy, skipping"
+else
 # Give Google's token endpoint a moment to see the pool that was just created.
 sleep 20
 gh workflow run ClaimCast --ref main
@@ -65,6 +75,7 @@ done
 echo "watching run $RUN -- this takes about five minutes"
 gh run watch "$RUN" --exit-status --interval 20 \
   || die "the pipeline failed. Read it with: gh run view $RUN --log-failed"
+fi
 
 
 step "3 of 4 — clearing the seeded admissions from the production database"
@@ -89,7 +100,12 @@ case "$DB" in
   *) die "the database url did not rewrite to the tunnel; nothing was changed" ;;
 esac
 
-npm run db:generate
+# Only when it is actually missing. Regenerating on Windows fails with EPERM:
+# the query engine is a .dll that any running node process holds open, and
+# Prisma generates by writing a .tmp beside it and renaming over the top.
+if [ ! -f node_modules/.prisma/client/default.js ]; then
+  npm run db:generate
+fi
 DATABASE_URL="$DB" npm run db:seed
 
 cleanup
