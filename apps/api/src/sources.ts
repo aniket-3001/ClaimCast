@@ -198,12 +198,19 @@ export const SOURCES: SourceSeed[] = [
     id: "irdai-standard-definitions",
     name: "IRDAI standard definitions of terms used in health insurance",
     publisher: "Insurance Regulatory and Development Authority of India",
-    url: "https://irdai.gov.in/",
-    checksum: null,
-    fetchedAt: ASSEMBLED,
+    url:
+      "https://irdai.gov.in/documents/37343/366029/Master+Circular+on+Standardization+of+" +
+      "Health+Insurance+Products.pdf/40548736-71a8-1b76-e28d-0df899407e1e" +
+      "?version=1.2&t=1665033878433&download=true",
+    checksum: "cdde737a8f562db8ce4749d9a4d34841cf382e813f48546a752cba45902cf2ee",
+    fetchedAt: new Date("2026-09-18T11:22:16Z"),
     caveat:
-      "The prescribed definitions of in-patient care and day-care treatment. Carried from " +
-      "the research dossier; not yet downloaded and checksummed.",
+      "Not a separate document. The prescribed definitions sit in the Annexure to the same " +
+      "Master Circular on Standardization already downloaded and checksummed for the " +
+      "arogya-sanjeevani row: definition 20, Inpatient Care, 'more than 24 hours for a " +
+      "covered event', and definition 9, Day Care Treatment, undertaken in under 24 hours " +
+      "'because of technological advancement' where the alternative would have been a " +
+      "longer admission. DAY_CARE quotes both verbatim, not a paraphrase.",
   },
   {
     id: "nha-vay-vandana",
