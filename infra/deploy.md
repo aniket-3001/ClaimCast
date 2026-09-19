@@ -305,12 +305,58 @@ the public URL:
 A code change is a new tag and one command:
 
 ```bash
-docker build -f infra/api.Dockerfile -t $R/api:v5 . && docker push $R/api:v5
-gcloud run deploy claimcast-api --image $R/api:v5 --region us-central1
+docker build -f infra/api.Dockerfile -t $R/api:v7 . && docker push $R/api:v7
+gcloud run deploy claimcast-api --image $R/api:v7 --region us-central1
 ```
 
 Flags already set on the service are kept. Rolling back is the same command with
-the previous tag.
+the previous tag. Tags in use at the time of writing: `api:v7`, `ml:v2`.
+
+**If the change touches `services/ml`, that image has to go too**, and it is easy
+to forget because nothing fails loudly when it is missed. The API is the only
+caller, the response is parsed with a Zod object rather than a strict one, and a
+field the running model does not return is simply dropped on the way through. So
+a stale model does not error -- it silently answers the older question, and the
+screen shows a forecast that looks fine.
+
+```bash
+docker build -f infra/ml.Dockerfile -t $R/ml:v2 . && docker push $R/ml:v2
+gcloud run deploy claimcast-ml --image $R/ml:v2 --region us-central1
+```
+
+**A migration goes before the API, never after.** The container does not migrate
+on boot, for the reason in step 5, so a revision whose code expects a table that
+is not there answers 500 on the routes that touch it while the rest of the app
+looks healthy. Check first and apply only if something is pending -- over the
+same IAP tunnel, from the laptop:
+
+```bash
+gcloud compute start-iap-tunnel claimcast-db 5432 \
+  --local-host-port=localhost:5433 --zone=us-central1-a    # leave running
+
+DATABASE_URL="postgresql://claimcast:<pass>@localhost:5433/claimcast" \
+  npx prisma migrate status --schema apps/api/prisma/schema.prisma
+DATABASE_URL="postgresql://claimcast:<pass>@localhost:5433/claimcast" \
+  npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+```
+
+The password is in Secret Manager and does not need to be read by eye:
+`gcloud secrets versions access latest --secret=DATABASE_URL`.
+
+Order for a change that touches all three: migrate, then `ml`, then `api`. The
+model tolerates an older API -- `observed` defaults to empty and the forecast is
+the survey estimate untouched -- so `ml` first is safe, and `api` last means the
+new code never runs against a database or a model that is behind it.
+
+Then, from the laptop, against the public URL rather than a dev server:
+
+```bash
+python infra/smoke_learning.py https://claimcast-api-166020697175.us-central1.run.app
+```
+
+It reports a settled bill and asserts the next forecast moved, which is the one
+check that cannot pass unless all three pieces are the versions you just shipped.
+It leaves one row in `forecast_outcomes` and prints its id.
 
 ## What is deliberately absent
 
