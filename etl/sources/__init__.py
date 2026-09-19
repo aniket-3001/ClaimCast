@@ -36,6 +36,24 @@ from etl.fetch import Download
 
 DOWNLOADS: list[Download] = [
     Download(
+        key="cir-151-06-2020",
+        source_id="irdai-cir-151-2020",
+        url=(
+            "https://irdai.gov.in/documents/37343/365525/"
+            "Modified+Guidelines+on+Product+filing+in+Health+Insurance+Business-Norms+on.pdf/"
+            "7b50effc-e553-f0a6-389d-3ca90ab11af5?version=1.0&t=1631531502137&download=true"
+        ),
+        kind="pdf",
+        min_bytes=400_000,
+        note=(
+            "IRDAI/HLT/REG/CIR/151/06/2020, 11 June 2020, two pages. Confirmed verbatim: "
+            "clause 4 excludes pharmacy and consumables, implants and medical devices, and "
+            "diagnostics from 'associate medical expenses' -- the PROPORTIONATE clause's "
+            "exemption list -- and clause 7 forbids proportionate deduction on ICU charges "
+            "outright, which is PROPORTIONATE_ICU. Both were paraphrase before this fetch."
+        ),
+    ),
+    Download(
         key="hbp-2.2-user-guidelines",
         source_id="nha-hbp-2-2",
         url="https://hem.nha.gov.in/HBP.pdf",

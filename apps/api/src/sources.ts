@@ -44,13 +44,19 @@ export const SOURCES: SourceSeed[] = [
     id: "irdai-cir-151-2020",
     name: "Guidelines on standardisation of exclusions and proportionate deduction (IRDAI/HLT/REG/CIR/151/06/2020)",
     publisher: "Insurance Regulatory and Development Authority of India",
-    url: "https://irdai.gov.in/",
-    checksum: null,
-    fetchedAt: ASSEMBLED,
+    url:
+      "https://irdai.gov.in/documents/37343/365525/Modified+Guidelines+on+Product+filing+in+" +
+      "Health+Insurance+Business-Norms+on.pdf/7b50effc-e553-f0a6-389d-3ca90ab11af5" +
+      "?version=1.0&t=1631531502137&download=true",
+    checksum: "8b786b22ae9d0526a66a8748bb169240ad4eaf1dd6d7dd9279c146e0bbe938ec",
+    fetchedAt: new Date("2026-09-19T05:50:04Z"),
     caveat:
-      "The circular reference and the substance of the rule are carried from the research " +
-      "dossier. The PDF itself has not yet been downloaded and checksummed, so the clause " +
-      "text stored here is a faithful paraphrase rather than a verbatim quotation.",
+      "Downloaded, checksummed, and read against both clauses it backs. Clause 4 lists " +
+      "exactly three exclusions from 'associate medical expenses' -- pharmacy and " +
+      "consumables, implants and medical devices, diagnostics -- which is PROPORTIONATE's " +
+      "exemption set verbatim, not a paraphrase of it. Clause 7 forbids proportionate " +
+      "deduction on ICU charges outright, which is PROPORTIONATE_ICU. Two pages, dated 11 " +
+      "June 2020, addressed to CEOs of all general and standalone health insurers.",
   },
   {
     id: "irdai-lists",
