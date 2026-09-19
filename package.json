@@ -12,6 +12,7 @@
     "api": "npm run dev --workspace @claimcast/api",
     "db:up": "docker compose -f infra/docker-compose.yml up -d",
     "db:down": "docker compose -f infra/docker-compose.yml down",
+    "db:generate": "prisma generate --schema apps/api/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema apps/api/prisma/schema.prisma",
     "db:seed": "npm run seed --workspace @claimcast/api",
     "db:studio": "prisma studio --schema apps/api/prisma/schema.prisma",

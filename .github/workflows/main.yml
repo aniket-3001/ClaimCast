@@ -80,8 +80,15 @@ jobs:
           cache: npm
       - run: npm ci
 
+      # `npm ci` does not generate the Prisma client -- there is no postinstall
+      # hook, deliberately, because the image's production stage installs with
+      # --omit=dev and the CLI is not there to run one. Every other environment
+      # gets the client some other way: the Dockerfile generates it explicitly,
+      # and a laptop has one left over from the last `db:migrate`. A clean
+      # checkout has neither, which is what a runner is.
       - name: Schema and reference data
         run: |
+          npm run db:generate
           npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
           npm run db:seed
 
