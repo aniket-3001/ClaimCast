@@ -19,10 +19,15 @@ wording in one page, so the clause text below is quoted from there.
 
 Terms are transcribed and then checked against the PDF, the same way as
 etl/sources/nha_hbp.py: each clause names the page it came from and a phrase
-that must appear there. The one field that is *not* quoted is the pre-existing
-disease waiting period, which the Arogya Sanjeevani section does not restate --
-it inherits the standard Excl01 definition of forty-eight months, and it is
-marked below as inherited rather than quoted.
+that must appear there. The pre-existing disease waiting period looked, at
+first read, like an exception to that -- the generic Excl01 exclusion
+template (page 98) leaves the figure blank for the insurer to fill in, capped
+at forty-eight months by its own explanatory note, and it would be easy to
+stop there and call forty-eight "inherited" rather than quoted. It is
+restated directly, though: the product's own snapshot table on page 142
+gives Arogya Sanjeevani's waiting period as forty-eight months in so many
+words, so this field is quoted like every other one below, not inferred from
+the generic cap.
 
     python -m etl.sources.arogya_sanjeevani    # -> etl/out/arogya-sanjeevani.json
 """
@@ -77,10 +82,11 @@ POLICY = {
     "moratoriumMonths": 60,
     "notes": (
         "Terms prescribed by IRDAI, not set by the insurer. Every figure here is "
-        "quoted from the Master Circular of 22 July 2020 except two. The "
-        "pre-existing waiting period is inherited from standard exclusion Excl01, "
-        "which that section does not restate. The moratorium is 60 months, set by "
-        "the Master Circular of 29 May 2024, which supersedes the 2020 circular; "
+        "quoted from the Master Circular of 22 July 2020, including the "
+        "pre-existing waiting period -- stated directly in the product's own "
+        "snapshot table on page 142, not inferred from the generic Excl01 "
+        "template -- except the moratorium, which is 60 months, set by the "
+        "Master Circular of 29 May 2024. That circular supersedes the 2020 one; "
         "the standard products are expressly carried forward, so the product "
         "stands while the document it was quoted from does not."
     ),
@@ -165,6 +171,16 @@ CLAUSES = [
         ),
         "page": 109,
         "evidence": "systems of medicine shall be covered without any sub-limits",
+    },
+    {
+        "id": "as-ped-waiting",
+        "cite": "Master Circular, Arogya Sanjeevani, Snapshot table, Waiting period 4(a)",
+        "text": (
+            "Pre-Existing Diseases will be covered after a waiting period of forty eight "
+            "(48) months of continuous coverage."
+        ),
+        "page": 142,
+        "evidence": "Pre-Existing Diseases will be covered after a waiting period of forty eight",
     },
     {
         "id": "as-moratorium",

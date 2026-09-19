@@ -172,11 +172,13 @@ export const SOURCES: SourceSeed[] = [
       "checksummed and verified against the page it cites. That circular is listed in " +
       "Annexure-6 of the Master Circular of 29 May 2024 and superseded by it, which " +
       "carries the standard products forward expressly: Arogya Sanjeevani is still the " +
-      "mandated standard product and these are still its prescribed terms. Two figures " +
-      "come from elsewhere. The moratorium is 60 months, set by the 2024 circular, not " +
-      "the eight years this one prints. The pre-existing waiting period is inherited from " +
-      "standard exclusion Excl01 and is the one term here not yet re-verified against the " +
-      "2024 framework. Every other policy in this database is an invented product.",
+      "mandated standard product and these are still its prescribed terms. One figure " +
+      "comes from elsewhere: the moratorium is 60 months, set by the 2024 circular, not " +
+      "the eight years this one prints. The pre-existing waiting period is not inherited " +
+      "from the generic Excl01 template, which leaves the figure blank for the insurer to " +
+      "set -- the product's own terms summary, page 142 of 155, states forty-eight months " +
+      "for this specific product, and that is the number this database carries. Every " +
+      "other policy in this database is an invented product.",
   },
   {
     id: "irdai-master-circular-2024",
