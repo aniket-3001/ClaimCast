@@ -44,13 +44,19 @@ export const SOURCES: SourceSeed[] = [
     id: "irdai-cir-151-2020",
     name: "Guidelines on standardisation of exclusions and proportionate deduction (IRDAI/HLT/REG/CIR/151/06/2020)",
     publisher: "Insurance Regulatory and Development Authority of India",
-    url: "https://irdai.gov.in/",
-    checksum: null,
-    fetchedAt: ASSEMBLED,
+    url:
+      "https://irdai.gov.in/documents/37343/365525/Modified+Guidelines+on+Product+filing+in+" +
+      "Health+Insurance+Business-Norms+on.pdf/7b50effc-e553-f0a6-389d-3ca90ab11af5" +
+      "?version=1.0&t=1631531502137&download=true",
+    checksum: "8b786b22ae9d0526a66a8748bb169240ad4eaf1dd6d7dd9279c146e0bbe938ec",
+    fetchedAt: new Date("2026-09-19T05:50:04Z"),
     caveat:
-      "The circular reference and the substance of the rule are carried from the research " +
-      "dossier. The PDF itself has not yet been downloaded and checksummed, so the clause " +
-      "text stored here is a faithful paraphrase rather than a verbatim quotation.",
+      "Downloaded, checksummed, and read against both clauses it backs. Clause 4 lists " +
+      "exactly three exclusions from 'associate medical expenses' -- pharmacy and " +
+      "consumables, implants and medical devices, diagnostics -- which is PROPORTIONATE's " +
+      "exemption set verbatim, not a paraphrase of it. Clause 7 forbids proportionate " +
+      "deduction on ICU charges outright, which is PROPORTIONATE_ICU. Two pages, dated 11 " +
+      "June 2020, addressed to CEOs of all general and standalone health insurers.",
   },
   {
     id: "irdai-lists",
@@ -192,23 +198,39 @@ export const SOURCES: SourceSeed[] = [
     id: "irdai-standard-definitions",
     name: "IRDAI standard definitions of terms used in health insurance",
     publisher: "Insurance Regulatory and Development Authority of India",
-    url: "https://irdai.gov.in/",
-    checksum: null,
-    fetchedAt: ASSEMBLED,
+    url:
+      "https://irdai.gov.in/documents/37343/366029/Master+Circular+on+Standardization+of+" +
+      "Health+Insurance+Products.pdf/40548736-71a8-1b76-e28d-0df899407e1e" +
+      "?version=1.2&t=1665033878433&download=true",
+    checksum: "cdde737a8f562db8ce4749d9a4d34841cf382e813f48546a752cba45902cf2ee",
+    fetchedAt: new Date("2026-09-18T11:22:16Z"),
     caveat:
-      "The prescribed definitions of in-patient care and day-care treatment. Carried from " +
-      "the research dossier; not yet downloaded and checksummed.",
+      "Not a separate document. The prescribed definitions sit in the Annexure to the same " +
+      "Master Circular on Standardization already downloaded and checksummed for the " +
+      "arogya-sanjeevani row: definition 20, Inpatient Care, 'more than 24 hours for a " +
+      "covered event', and definition 9, Day Care Treatment, undertaken in under 24 hours " +
+      "'because of technological advancement' where the alternative would have been a " +
+      "longer admission. DAY_CARE quotes both verbatim, not a paraphrase.",
   },
   {
     id: "nha-vay-vandana",
     name: "Ayushman Bharat Vay Vandana, cover for citizens aged 70 and above",
-    publisher: "National Health Authority",
-    url: "https://nha.gov.in/PM-JAY",
-    checksum: null,
-    fetchedAt: ASSEMBLED,
+    publisher: "Press Information Bureau, Government of India",
+    url:
+      "https://static.pib.gov.in/WriteReadData/specificdocs/documents/2024/nov/" +
+      "doc20241118436001.pdf",
+    checksum: "b859ea492335b4d6941bbd112281566acfdc7871c1a3e28c510dd1f325fe00d0",
+    fetchedAt: new Date("2026-09-19T06:00:10Z"),
     caveat:
-      "Launched 29 October 2024. Eligibility on age alone, with no means test, is carried " +
-      "from the research dossier; the scheme notification has not been downloaded.",
+      "PIB press note of 17 November 2024, downloaded and checksummed, confirms in the " +
+      "government's own words: launched 29 October 2024, 'universal and there is no " +
+      "income limit, whether poor or middle class or upper class', for age 70 and above. " +
+      "One detail the clause states is not verbatim in this note: that the cover is a " +
+      "separate five lakh on top of an existing family's PM-JAY cover, not shared with " +
+      "it. That is corroborated by policy analysis (Observer Research Foundation, " +
+      "'Universalising Senior Care through PM-JAY', Oct 2025) rather than this primary " +
+      "document, and is flagged as the weaker link in the citation rather than merged " +
+      "into it silently.",
   },
   {
     id: "general-insurance-law",
