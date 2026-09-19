@@ -13,11 +13,25 @@ number sit for a second before you move on — that pause is doing work.
 
 ## Before you start
 
-- Dev server running (`npm run dev` in `web/`, port 5174), page reloaded.
+- **<https://claimcast-api-166020697175.us-central1.run.app>** open in a fresh
+  private window, reloaded. It is always on -- no cold start, nothing to
+  launch -- and it is the same build the judges can open themselves
+  afterwards, which is worth more than a laptop demo. Use the venue Wi-Fi
+  once before you go on, so the first upload is not also the first request.
+- Fallback if the room has no network. Three commands at the repo root, in
+  this order: `npm run db:up`, `npm run api`, `npm run dev`. That last one
+  serves the app on port 5174. Note the package moved in the restructure --
+  it is `apps/web` now, not `web/` -- so an older copy of these notes will
+  send you to a directory that no longer exists.
 - On the "Start" tab, pre-fill (before you start talking): name "Abhishek
   Jha", policyholder "Abhishek Jha", age **45**, policy left on Health
   Shield Classic, PM-JAY card "No", central govt service "No". **Do not**
   click upload yet — that happens live, on screen, while you're talking.
+  One thing to know before doing that in front of anyone: the default reader
+  is Gemini Pro on Vertex, which takes roughly 20–25 seconds on this schedule,
+  and that is a long silence on stage. Groq reads the same sixteen values in
+  about 4 seconds. Set `EXTRACTION_PROVIDER=groq` for a live run and keep
+  Vertex for a reading someone is going to check rather than watch.
 - Know two moves cold: **the upload → confirm sequence**, and **click the
   domestic implant**. Everything else is pointing and reading numbers that
   are already on screen.

@@ -6,7 +6,16 @@ talking, and pause after every big number.**
 
 ## Before you start
 
-- Dev server running (`npm run dev` in `web/`, port 5174), page reloaded.
+- **<https://claimcast-api-166020697175.us-central1.run.app>** open in a fresh
+  private window, reloaded. It is always on -- no cold start, nothing to
+  launch -- and it is the same build the judges can open themselves
+  afterwards, which is worth more than a laptop demo. Use the venue Wi-Fi
+  once before you go on, so the first upload is not also the first request.
+- Fallback if the room has no network. Three commands at the repo root, in
+  this order: `npm run db:up`, `npm run api`, `npm run dev`. That last one
+  serves the app on port 5174. Note the package moved in the restructure --
+  it is `apps/web` now, not `web/` -- so an older copy of these notes will
+  send you to a directory that no longer exists.
 - **Before the clock starts**: on the "Start" tab, type "Abhishek Jha" into
   both name fields, leave the policy on Health Shield Classic, leave age at
   45, click the upload box, wait for extraction, click "Confirm and
