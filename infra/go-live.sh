@@ -56,7 +56,9 @@ echo "waiting for the run to be picked up..."
 RUN=""
 for _ in $(seq 1 20); do
   sleep 5
-  RUN=$(gh run list --workflow=ClaimCast --branch=main --limit 1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)
+  # Filtered to workflow_dispatch so this cannot latch onto an older run
+  # started by a push and watch the wrong one.
+  RUN=$(gh run list --workflow=ClaimCast --branch=main --event=workflow_dispatch --limit 1 --json databaseId -q '.[0].databaseId' 2>/dev/null || true)
   [ -n "$RUN" ] && break
 done
 [ -n "$RUN" ] || die "could not find the workflow run. Check: gh run list"
