@@ -36,6 +36,27 @@ from etl.fetch import Download
 
 DOWNLOADS: list[Download] = [
     Download(
+        key="vay-vandana-milestone-2024-11-17",
+        source_id="nha-vay-vandana",
+        url=(
+            "https://static.pib.gov.in/WriteReadData/specificdocs/documents/2024/nov/"
+            "doc20241118436001.pdf"
+        ),
+        kind="pdf",
+        min_bytes=300_000,
+        note=(
+            "Press Information Bureau, 17 November 2024, 'Ayushman Bharat: Vay Vandana "
+            "Cards achieves Milestone'. Confirms in the Government's own words: launched "
+            "29 October 2024; 'universal and there is no income limit, whether poor or "
+            "middle class or upper class'; age 70 and above. What it does not restate is "
+            "that the cover is a separate five lakh on top of an existing family's PM-JAY "
+            "cover rather than shared with it -- that mechanic is corroborated by policy "
+            "analysis (Observer Research Foundation, 'Universalising Senior Care through "
+            "PMJAY', Oct 2025) rather than found verbatim in this press note, and the "
+            "source row says so rather than presenting it as equally primary."
+        ),
+    ),
+    Download(
         key="cir-151-06-2020",
         source_id="irdai-cir-151-2020",
         url=(

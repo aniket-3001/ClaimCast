@@ -215,13 +215,22 @@ export const SOURCES: SourceSeed[] = [
   {
     id: "nha-vay-vandana",
     name: "Ayushman Bharat Vay Vandana, cover for citizens aged 70 and above",
-    publisher: "National Health Authority",
-    url: "https://nha.gov.in/PM-JAY",
-    checksum: null,
-    fetchedAt: ASSEMBLED,
+    publisher: "Press Information Bureau, Government of India",
+    url:
+      "https://static.pib.gov.in/WriteReadData/specificdocs/documents/2024/nov/" +
+      "doc20241118436001.pdf",
+    checksum: "b859ea492335b4d6941bbd112281566acfdc7871c1a3e28c510dd1f325fe00d0",
+    fetchedAt: new Date("2026-09-19T06:00:10Z"),
     caveat:
-      "Launched 29 October 2024. Eligibility on age alone, with no means test, is carried " +
-      "from the research dossier; the scheme notification has not been downloaded.",
+      "PIB press note of 17 November 2024, downloaded and checksummed, confirms in the " +
+      "government's own words: launched 29 October 2024, 'universal and there is no " +
+      "income limit, whether poor or middle class or upper class', for age 70 and above. " +
+      "One detail the clause states is not verbatim in this note: that the cover is a " +
+      "separate five lakh on top of an existing family's PM-JAY cover, not shared with " +
+      "it. That is corroborated by policy analysis (Observer Research Foundation, " +
+      "'Universalising Senior Care through PM-JAY', Oct 2025) rather than this primary " +
+      "document, and is flagged as the weaker link in the citation rather than merged " +
+      "into it silently.",
   },
   {
     id: "general-insurance-law",
