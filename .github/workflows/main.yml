@@ -1,0 +1,216 @@
+# Every commit is checked. Commits on main are also deployed.
+#
+# The runbook used to say there was no CI, and gave a reason worth keeping in
+# view: a pipeline that deploys on push is a way to break the demo an hour
+# before it is given. What answers that here is not caution about deploying, it
+# is that the gate in front of the deploy is a real one. The checks below run
+# the engine's own selfcheck, adjudicate the reference admission against a real
+# Postgres, and run the cost model's tests, so a commit that would change a
+# figure on screen cannot reach Cloud Run. If any of that fails, nothing ships
+# and the running revision stays exactly where it was.
+#
+# There is no long-lived Google credential anywhere in this repository or in its
+# secrets. The deploy job proves who it is with the OIDC token GitHub mints for
+# the run, which Google exchanges for a short-lived one through Workload
+# Identity Federation. infra/github-actions-setup.sh sets that up and explains
+# each grant; nothing below works until it has been run once.
+
+name: ClaimCast
+
+on:
+  # Every commit on every branch, which is what was asked for. Deliberately no
+  # `pull_request:` beside it: this is a private repository with no forks, so a
+  # pull request's head commit has already been checked by the push that
+  # created it, and adding the trigger would only spend the free-minute
+  # allowance twice on the same tree.
+  push:
+  # A redeploy without a commit -- for rolling forward after a fix made in the
+  # console, or re-running a deploy that failed on a flake.
+  workflow_dispatch:
+
+concurrency:
+  group: claimcast-${{ github.ref }}
+  # A superseded branch build is worth cancelling. A half-finished deploy is
+  # not: it would leave the images pushed and the migration applied with no
+  # revision serving them.
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+env:
+  PROJECT: claimcast-2026
+  PROJECT_NUMBER: "166020697175"
+  REGION: us-central1
+  REGISTRY: us-central1-docker.pkg.dev/claimcast-2026/claimcast
+  PUBLIC_URL: https://claimcast-api-166020697175.us-central1.run.app
+
+jobs:
+  node:
+    name: engine, api, web
+    runs-on: ubuntu-latest
+
+    # A real Postgres rather than a mock. Half of what apps/api's checks assert
+    # is that a second request sees what a first one wrote, and that is not a
+    # claim a fake can answer.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: claimcast
+          POSTGRES_PASSWORD: claimcast
+          POSTGRES_DB: claimcast
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://claimcast:claimcast@localhost:5432/claimcast
+      # Throwaway values for a throwaway database. Both are read at import time
+      # and the process refuses to start without them; neither protects anything
+      # on a runner that is destroyed at the end of the job.
+      SESSION_SECRET: ci-only-not-a-secret-ci-only-not-a-secret
+      DOCUMENT_ENCRYPTION_KEY: Y2ktb25seS1ub3QtYS1zZWNyZXQtY2ktb25seS1ub3Q=
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+
+      - name: Schema and reference data
+        run: |
+          npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+          npm run db:seed
+
+      # Per package rather than `npm run typecheck`, which runs them through
+      # --workspaces and has been seen to exit 0 on a package that failed.
+      - name: Types
+        run: |
+          npx tsc --noEmit -p packages/contracts
+          npx tsc --noEmit -p apps/api
+          npx tsc --noEmit -p apps/web
+
+      # The engine's 76 rendered cases, the deck's figures, the reference
+      # admission adjudicated against the database, the extraction target, the
+      # session rules and the three learning loops.
+      - name: Checks
+        run: npm run check
+
+      - name: Web bundle
+        run: npm run build
+
+  ml:
+    name: cost model
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      # pytest and httpx are not in requirements.txt on purpose -- that file is
+      # what the container installs, and neither is imported by the service.
+      - run: pip install -r services/ml/requirements.txt pytest httpx
+      - run: python -m pytest -q
+        working-directory: services/ml
+
+  deploy:
+    name: deploy
+    needs: [node, ml]
+    # main only. A branch build runs the checks above and stops there.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://claimcast-api-166020697175.us-central1.run.app
+    permissions:
+      contents: read
+      # The OIDC token. Without this the job cannot prove who it is and the
+      # auth step fails with a message that does not mention this line.
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+      # Node for `prisma migrate deploy`, Python for the smoke. Neither is
+      # needed to build the images -- those compile inside Docker -- but both
+      # steps below run on the runner itself.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: claimcast-2026
+          workload_identity_provider: projects/166020697175/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: claimcast-deployer@claimcast-2026.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Registry login
+        run: gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+
+      # Tagged with the commit, not a running number. Every revision can be
+      # traced to the source it was built from, and a rollback is this same
+      # workflow re-run on an earlier commit.
+      - name: Build and push
+        run: |
+          TAG=${GITHUB_SHA::12}
+          docker build -f infra/ml.Dockerfile  -t $REGISTRY/ml:$TAG  .
+          docker build -f infra/api.Dockerfile -t $REGISTRY/api:$TAG .
+          docker push $REGISTRY/ml:$TAG
+          docker push $REGISTRY/api:$TAG
+
+      # Before the API and never after it. Nothing migrates on boot, so a
+      # revision whose code expects a table that is not there answers 500 on the
+      # routes that touch it while the rest of the app looks healthy.
+      #
+      # The database has no public address. This opens the same IAP tunnel a
+      # person would open by hand, and the password is read from Secret Manager
+      # by the job rather than kept as a GitHub secret -- one fewer copy, and it
+      # rotates wherever Secret Manager rotates.
+      - name: Migrate
+        run: |
+          gcloud compute start-iap-tunnel claimcast-db 5432 \
+            --local-host-port=localhost:5433 --zone=$REGION-a --project=$PROJECT &
+          for i in $(seq 1 30); do
+            (echo > /dev/tcp/127.0.0.1/5433) >/dev/null 2>&1 && break
+            sleep 2
+          done
+          DB=$(gcloud secrets versions access latest --secret=DATABASE_URL --project=$PROJECT \
+                | sed 's#@[^/]*/#@localhost:5433/#')
+          case "$DB" in
+            *"@localhost:5433/claimcast"*) ;;
+            *) echo "the database url did not rewrite to the tunnel"; exit 1 ;;
+          esac
+          npm ci
+          DATABASE_URL="$DB" npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+
+      # The model first. It tolerates an older API -- a request without
+      # `observed` is the survey estimate untouched -- so this order is safe in
+      # a way the other one is not.
+      - name: Deploy the cost model
+        run: |
+          gcloud run deploy claimcast-ml \
+            --image $REGISTRY/ml:${GITHUB_SHA::12} \
+            --region $REGION --project $PROJECT --quiet
+
+      - name: Deploy the API
+        run: |
+          gcloud run deploy claimcast-api \
+            --image $REGISTRY/api:${GITHUB_SHA::12} \
+            --region $REGION --project $PROJECT --quiet
+
+      # Read-only on purpose. infra/smoke_learning.py is the stronger check --
+      # it reports a settled bill and proves the next forecast moved -- but it
+      # writes that bill into the production database, and an invented bill left
+      # behind by a deploy is exactly the thing this deployment stopped
+      # shipping. Run that one by hand, against a database you are willing to
+      # tidy afterwards.
+      - name: Smoke
+        run: python infra/smoke_deploy.py "$PUBLIC_URL"

@@ -358,10 +358,45 @@ It reports a settled bill and asserts the next forecast moved, which is the one
 check that cannot pass unless all three pieces are the versions you just shipped.
 It leaves one row in `forecast_outcomes` and prints its id.
 
+## The pipeline
+
+Everything above is what a person does by hand. `.github/workflows/main.yml`
+does it on every commit, and the manual route stays documented because it is
+what you fall back to when the pipeline is the thing that is broken.
+
+Every push, on every branch, runs the checks: the engine's selfcheck and its 76
+rendered cases, the deck's figures, the reference admission adjudicated against
+a real Postgres started as a service container, the extraction target, the
+session rules, the three learning loops, and the cost model's own tests. A push
+to `main` that clears all of that goes on to migrate, build both images tagged
+with the commit, deploy `ml` then `api`, and smoke the public URL.
+
+The smoke it runs is `infra/smoke_deploy.py`, not `smoke_learning.py`. The
+learning one is the stronger check, and it earns that by reporting an invented
+settled bill and proving the next forecast moved -- which writes a row into
+production. A deploy that leaves a fabricated admission behind every time is
+precisely what this deployment stopped shipping, so the automated one only
+asks questions: health and the reference counts, the index, the reference
+admission adjudicated end to end, a forecast that reaches the Python service
+and reconciles, the learning counters, and two refusals. Run the learning smoke
+by hand, and tidy up after it.
+
+There is no Google key in the repository and none in GitHub's secrets. The
+deploy job presents the OIDC token GitHub mints for the run, and Google
+exchanges it for a credential that lasts about an hour -- only for a token that
+says it came from `aniket-3001/ClaimCast`. `infra/github-actions-setup.sh` is
+the one-time setup, run by the project owner; it is idempotent and it explains
+each grant where it makes it.
+
+To roll back: re-run the workflow on the commit you want, or fall back to the
+two commands under Redeploying with the previous tag.
+
 ## What is deliberately absent
 
-- **No CI.** Deploys are two commands run by a person who then checks the page. A
-  pipeline that deploys on push is the wrong thing to build before a demo.
+- **No deploy gate.** A push to `main` that passes the checks ships. The place
+  to add a human is GitHub's `production` environment -- a required reviewer
+  there puts a click between the merge and the deploy, which is worth turning on
+  in the week of a demo and off again afterwards.
 - **No custom domain.** `*.run.app` is HTTPS and fine.
 - **No log sink or alerting.** Cloud Run keeps logs for 30 days by default, and
   there is nobody on call.
