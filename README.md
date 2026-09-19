@@ -104,11 +104,13 @@ npm run dev          # http://localhost:5174, /api proxied to the API
 Two processes, in two terminals. The web app will not render without the API.
 
 Still synthetic data at this stage: no real hospital, insurer, patient or bill appears
-anywhere in it. Every priced row in the database points at the source it came from, and
-every one of those sources currently carries a caveat saying so — `sources.caveat` is a
-queryable column rather than a note in a file, because a figure whose provenance is weak
-has to be labelled wherever it surfaces. Phase 3 drops the caveats one published document
-at a time, as each is downloaded and checksummed.
+anywhere in it. Every priced row in the database points at the source it came from —
+`sources.caveat` is a queryable column rather than a note in a file, because a figure
+whose provenance is weak has to be labelled wherever it surfaces. Phase 3 dropped the
+caveat from every source that is actually a published document, one file at a time, as
+each was downloaded and checksummed; two rows keep theirs permanently rather than
+temporarily, because there is no document behind them to fetch — the synthetic reference
+set, by construction, and the principle of indemnity, which no single circular states.
 
 Four tabs over one shared admission. **Start** is the front door: who is asking, which policy they hold, the three facts that decide whether a government scheme is open to them, and the policy schedule read back field by field for confirmation. **The path** is the decision tree: the admission at the top, the government fork under it where one applies, then the 24-hour gate and the choices in the order they are faced along the care journey — where, which bed, which implant, how the claim is made — and under those the deductions no choice moves and the figure the family ends up paying. Every branch is a full re-adjudication, so the rupee figure under it is what would actually be paid on that path, not an adjustment applied to this one. **The working** is the same admission as arithmetic: the bill line by line with each deduction citing its clause, then every room class and every hospital in full. **Database** is what the system already knows — the ten hospitals, fourteen procedures, six policy structures, sixteen settled admissions, IRDAI Lists I-IV and the clause registry the engine draws on.
 
