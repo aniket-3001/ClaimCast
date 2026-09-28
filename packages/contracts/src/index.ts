@@ -488,6 +488,25 @@ export const LearningStateSchema = z.object({
   outcomes: z.number().int().min(0),
   /** Branch choices recorded. */
   choices: z.number().int().min(0),
+  /**
+   * The cost model's own learning: which booster version is serving, how many
+   * settled bills it was trained on, and how many more until it retrains.
+   * Null when the cost model is not configured or not answering.
+   */
+  costModel: z
+    .object({
+      modelVersion: z.string(),
+      model: z.string(),
+      trainedOn: z.string(),
+      tariffRows: z.number().int().min(0),
+      outcomesTrainedOn: z.number().int().min(0),
+      /** Settled bills in the database the running booster has not learned from yet. */
+      pending: z.number().int().min(0),
+      retrainEvery: z.number().int().min(1),
+      heldOutCoverage: z.record(z.string(), z.number()),
+    })
+    .nullable()
+    .optional(),
 });
 export type LearningState = z.infer<typeof LearningStateSchema>;
 

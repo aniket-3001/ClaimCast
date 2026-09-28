@@ -9,17 +9,38 @@ import { Alternatives } from "./components/Alternatives";
 import { Database } from "./components/Database";
 import { Learning } from "./components/Learning";
 import { ChatDock } from "./components/ChatDock";
+import { Login, type Role } from "./components/Login";
 import { recordChoice } from "./api";
 
 type Tab = "start" | "journey" | "working" | "database" | "learning";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "start", label: "Start" },
-  { id: "journey", label: "The path" },
-  { id: "working", label: "The working" },
-  { id: "database", label: "Database" },
-  { id: "learning", label: "What it has learned" },
-];
+/**
+ * The two sides of ClaimCast. A family sees their admission; the admin sees
+ * the data every figure comes from and what the system has learned from use.
+ */
+const TABS: Record<Role, { id: Tab; label: string }[]> = {
+  user: [
+    { id: "start", label: "Start" },
+    { id: "journey", label: "The path" },
+    { id: "working", label: "The working" },
+  ],
+  admin: [
+    { id: "database", label: "Database" },
+    { id: "learning", label: "What it has learned" },
+  ],
+};
+
+const ROLE_KEY = "claimcast.role";
+
+/** The side last chosen in this browser, so a reload does not bounce back to the login. */
+function rememberedRole(): Role | null {
+  try {
+    const v = window.localStorage.getItem(ROLE_KEY);
+    return v === "user" || v === "admin" ? v : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * The fields a branch click actually moves, and the only ones recorded.
@@ -74,7 +95,8 @@ function start(): CaseInput {
 }
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>("start");
+  const [role, setRoleState] = useState<Role | null>(rememberedRole);
+  const [tab, setTab] = useState<Tab>(() => (rememberedRole() === "admin" ? "database" : "start"));
   const [input, setInput] = useState<CaseInput>(start);
   // The uploaded policy document, once there is one. Held here rather than in
   // Intake so the chatbox on every tab can search it after Intake unmounts.
@@ -101,11 +123,31 @@ export default function App() {
     }
     setInput(next);
   };
+  const setRole = (r: Role | null) => {
+    try {
+      if (r) window.localStorage.setItem(ROLE_KEY, r);
+      else window.localStorage.removeItem(ROLE_KEY);
+    } catch {
+      // Private window or storage blocked: the choice just lasts this page load.
+    }
+    setRoleState(r);
+    if (r) setTab(TABS[r][0].id);
+    window.scrollTo(0, 0);
+  };
+  // From the admin's Database: open a stored admission the way the family sees it.
   const open = (c: CaseInput) => {
     pick(c);
+    setRoleState("user");
+    try {
+      window.localStorage.setItem(ROLE_KEY, "user");
+    } catch {
+      // As above.
+    }
     setTab("journey");
     window.scrollTo(0, 0);
   };
+
+  if (!role) return <Login onPick={setRole} />;
 
   return (
     <div className="wrap">
@@ -116,9 +158,15 @@ export default function App() {
         </div>
         <div className="masthead-right">
           <div className="brand-sub">
-            {name || policyholder ? `For ${name || policyholder}` : "Prototype"} · synthetic data
+            {role === "admin"
+              ? "Admin view"
+              : `User view${name || policyholder ? ` · for ${name || policyholder}` : ""}`}{" "}
+            · synthetic data
           </div>
-          <Account />
+          {role === "user" && <Account />}
+          <button className="switch-view" onClick={() => setRole(null)}>
+            Switch view
+          </button>
         </div>
       </header>
 
@@ -126,7 +174,7 @@ export default function App() {
           are a sequence — who you are, what you can still choose, the
           arithmetic behind it — rather than four unrelated views. */}
       <nav className="tabs" role="tablist">
-        {TABS.map((t, i) => (
+        {TABS[role].map((t, i) => (
           <button
             key={t.id}
             role="tab"
@@ -174,7 +222,7 @@ export default function App() {
       {tab === "database" && <Database onOpen={open} />}
       {tab === "learning" && <Learning />}
 
-      <ChatDock e={e} documentId={documentId} />
+      {role === "user" && <ChatDock e={e} documentId={documentId} />}
 
       <footer className="foot">
         <span>Team Rocket · IIIT-Delhi · GE HealthCare Precision Care Challenge 2026</span>

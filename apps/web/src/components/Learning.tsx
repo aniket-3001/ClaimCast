@@ -7,13 +7,15 @@
  * denominators, because a rate without one is a way of sounding confident about
  * four observations.
  *
- * There is no training run behind any of it. Every number here moved the moment
- * somebody confirmed a field, reported a bill or took a branch, and it was
- * already moving the next request by the time the screen rendered. That is the
- * design, not an implementation detail: the things this application depends on
- * -- how insurers word schedules, what hospitals charge, which sub-limits are
- * in fashion -- do not hold still, and a model fitted once is a photograph of
- * the day it was fitted.
+ * Two speeds. The counters moved the moment somebody confirmed a field, reported
+ * a bill or took a branch, and were already moving the next request by the time
+ * the screen rendered. The cost model is the slow path: its XGBoost booster is
+ * rebuilt on published tariffs plus every settled bill once enough new bills
+ * have arrived, and the section below shows which version is serving and how
+ * close the next retrain is. The things this application depends on -- how
+ * insurers word schedules, what hospitals charge, which sub-limits are in
+ * fashion -- do not hold still, and a model fitted once is a photograph of the
+ * day it was fitted.
  *
  * The three signals are not worth the same and are not presented as though they
  * were. Corrections are true labels on real documents. Settled bills are the
@@ -89,13 +91,13 @@ export function Learning() {
       <section className="section">
         <div className="section-head">
           <h2>What it has learned</h2>
-          <span className="aside">Live &mdash; no training run</span>
+          <span className="aside">Live</span>
         </div>
 
         <p className="note" style={{ marginTop: 0 }}>
           Three things in this application answer back, and each one is written down as it
-          arrives. Nothing here waits for a nightly job and there is no retrained model to ship:
-          an observation recorded by one request is read by the next one.
+          arrives: an observation recorded by one request is read by the next one. Settled bills
+          also go further &mdash; they retrain the cost model itself, below.
         </p>
 
         <div className="signals">
@@ -116,6 +118,8 @@ export function Learning() {
           />
         </div>
       </section>
+
+      <CostModelLearning m={state.costModel ?? null} />
 
       <section className="section">
         <div className="section-head">
@@ -180,5 +184,68 @@ function Signal({ n, k, why }: { n: number; k: string; why: string }) {
       <div className="signal-k">{k}</div>
       <p className="signal-why">{why}</p>
     </div>
+  );
+}
+
+/**
+ * The cost model's own learning loop, as the admin sees it: which booster
+ * version is serving, what it was trained on, and how many settled bills until
+ * it rebuilds itself on the combined pool.
+ */
+function CostModelLearning({ m }: { m: NonNullable<LearningState["costModel"]> | null }) {
+  if (!m) {
+    return (
+      <section className="section">
+        <div className="section-head">
+          <h2>The cost model</h2>
+          <span className="aside">Not reachable</span>
+        </div>
+        <p className="note" style={{ marginTop: 0 }}>
+          The cost model service is not configured or not answering, so its version and retraining
+          state cannot be shown. Every other figure on this screen is unaffected.
+        </p>
+      </section>
+    );
+  }
+  const toNext = Math.max(0, m.retrainEvery - m.pending);
+  const coverage = Object.entries(m.heldOutCoverage)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k} ${Math.round(v * 100)}%`)
+    .join(", ");
+  return (
+    <section className="section">
+      <div className="section-head">
+        <h2>The cost model, retraining itself</h2>
+        <span className="aside">{m.model}</span>
+      </div>
+      <p className="note" style={{ marginTop: 0 }}>
+        The bill forecast is an XGBoost quantile model trained on every published PM-JAY package and
+        CGHS rate. Each settled bill a family reports is logged with its procedure, hospital, city
+        and forecast; once {m.retrainEvery} new ones have arrived, the model is rebuilt on tariffs
+        and bills together and a new version starts serving. Until bills arrive it knows only the
+        survey&rsquo;s spread; the bills are what make it specific.
+      </p>
+      <div className="signals">
+        <Signal
+          n={m.outcomesTrainedOn}
+          k="Settled bills learned from"
+          why={`Version ${m.modelVersion}, built ${m.trainedOn}, on ${m.tariffRows.toLocaleString("en-IN")} tariff rows plus these bills.`}
+        />
+        <Signal
+          n={m.pending}
+          k="Waiting for the next retrain"
+          why={
+            toNext === 0
+              ? "Enough new bills have arrived; the next one reported triggers the rebuild."
+              : `${toNext} more ${toNext === 1 ? "bill" : "bills"} and the model rebuilds itself on the combined pool.`
+          }
+        />
+        <Signal
+          n={Math.round((Object.values(m.heldOutCoverage)[0] ?? 0) * 100)}
+          k="Held-out coverage, %"
+          why={`Share of held-out prices inside the predicted p10–p90 range (${coverage || "not reported"}), against a nominal 80%.`}
+        />
+      </div>
+    </section>
   );
 }

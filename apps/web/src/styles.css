@@ -1931,3 +1931,104 @@ footer.foot {
   opacity: 0.5;
   cursor: default;
 }
+
+/* ── The login: two sides of ClaimCast ───────────────────── */
+
+.login {
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: 72px 24px 48px;
+}
+
+.login-brand {
+  margin-bottom: 40px;
+}
+
+.login-brand .brand {
+  font-size: 44px;
+}
+
+.login-sides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 26px 26px 22px;
+  text-align: left;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--sans);
+  cursor: pointer;
+  transition: border-color 120ms, background 120ms;
+}
+
+.login-card:hover,
+.login-card:focus-visible {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  outline: none;
+}
+
+.login-role {
+  font-family: var(--serif);
+  font-size: 24px;
+}
+
+.login-pitch {
+  color: var(--ink-2);
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.login-tabs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.login-tabs li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.login-go {
+  margin-top: auto;
+  padding-top: 6px;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.login-note {
+  margin-top: 28px;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+
+.switch-view {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: none;
+  color: var(--ink-2);
+  font: 12.5px var(--sans);
+  cursor: pointer;
+}
+
+.switch-view:hover {
+  color: var(--ink);
+  border-color: var(--accent-pale);
+}

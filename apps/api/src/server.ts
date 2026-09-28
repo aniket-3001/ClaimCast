@@ -694,7 +694,43 @@ app.post("/api/chat", async (req, reply) => {
  * that has read four thousand. Showing the denominator is what keeps that honest
  * without anyone having to remember to say it out loud.
  */
-app.get("/api/learning", async () => learningState(ref.db));
+app.get("/api/learning", async () => {
+  const state = await learningState(ref.db);
+  return { ...state, costModel: await costModelState(state.outcomes) };
+});
+
+/** What the cost model says about itself, for the admin's learning screen. */
+async function costModelState(outcomes: number) {
+  if (!ML_SERVICE_URL) return null;
+  try {
+    const res = await fetch(ML_SERVICE_URL + "/health", {
+      headers: await mlAuthHeader(),
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return null;
+    const h = (await res.json()) as {
+      modelVersion: string;
+      model?: string;
+      trainedOn: string;
+      trainingRows?: { tariff?: number } | null;
+      outcomesTrainedOn?: number;
+      heldOutCoverage?: Record<string, number>;
+    };
+    const trained = h.outcomesTrainedOn ?? 0;
+    return {
+      modelVersion: h.modelVersion,
+      model: h.model ?? "unknown",
+      trainedOn: h.trainedOn,
+      tariffRows: h.trainingRows?.tariff ?? 0,
+      outcomesTrainedOn: trained,
+      pending: Math.max(0, outcomes - trained),
+      retrainEvery: RETRAIN_EVERY,
+      heldOutCoverage: h.heldOutCoverage ?? {},
+    };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * A bill that actually settled.

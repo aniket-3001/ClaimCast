@@ -18,6 +18,7 @@ import {
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
 import { ChatDock } from "./components/ChatDock";
+import { Login } from "./components/Login";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Intake } from "./components/Intake";
@@ -70,6 +71,8 @@ for (const h of HOSPITALS)
       esiInsured: n % 3 === 2,
       preExisting: n % 5 === 0,
     });
+
+renderToString(<Login onPick={noop} />);
 
 let rendered = 0;
 for (const c of cases) {
