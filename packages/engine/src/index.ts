@@ -20,3 +20,4 @@ export * from "./bill";
 export * from "./engine";
 export * from "./case";
 export * from "./registry";
+export * from "./facts";

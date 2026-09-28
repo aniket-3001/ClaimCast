@@ -577,3 +577,53 @@ export const PolicyQaAnswerSchema = z.object({
   model: z.string(),
 });
 export type PolicyQaAnswer = z.infer<typeof PolicyQaAnswerSchema>;
+
+// ── The chatbox ───────────────────────────────────────────────────────────
+
+/**
+ * A question from the chatbox, about the admission on screen and, optionally,
+ * the policy document the user uploaded.
+ *
+ * `case` is priced again on the server by the same engine; `policy` travels
+ * only when it is one the user uploaded and confirmed, which exists in their
+ * browser and nowhere else. `history` is the last few turns, so "and in a
+ * general ward?" can be understood -- it is context for phrasing, never a
+ * source of figures.
+ */
+export const ChatRequestSchema = z.object({
+  question: z.string().trim().min(1).max(500),
+  case: CaseInputSchema,
+  policy: PolicySchema.optional(),
+  documentId: z.string().min(1).optional(),
+  history: z
+    .array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(2000) }))
+    .max(6)
+    .default([]),
+});
+export type ChatRequest = z.infer<typeof ChatRequestSchema>;
+
+export const ChatFactSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  clause: z.string().nullable(),
+});
+
+export const ChatAnswerSchema = z.object({
+  answer: z.string(),
+  /** The engine's facts the answer leans on, as the engine wrote them. */
+  facts: z.array(ChatFactSchema),
+  /** Quotes from the uploaded policy, each checked against the document's own text. */
+  citations: z.array(PolicyQaCitationSchema),
+  unverified: z.number().int().min(0),
+  /**
+   * Rupee figures in the answer that appear in no engine fact and no verified
+   * quote. The model is told never to compute one; this is how a reply that did
+   * anyway is caught and labelled rather than trusted.
+   */
+  unsupportedFigures: z.array(z.string()),
+  /** Whether the uploaded document was searched for this answer. */
+  usedDocument: z.boolean(),
+  retrievedPages: z.array(z.number().int().min(1)),
+  model: z.string(),
+});
+export type ChatAnswer = z.infer<typeof ChatAnswerSchema>;

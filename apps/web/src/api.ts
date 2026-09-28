@@ -16,6 +16,9 @@
 
 import { setRegistry, type Registry } from "@claimcast/engine";
 import {
+  ChatAnswerSchema,
+  type ChatAnswer,
+  type ChatRequest,
   ExtractionSchema,
   ForecastResponseSchema,
   LearningStateSchema,
@@ -345,4 +348,29 @@ export async function askAboutPolicyPdf(
     return { ok: false, reason: body.detail ?? "That question could not be answered." };
   }
   return { ok: true, answer: PolicyQaAnswerSchema.parse(await res.json()) };
+}
+
+/**
+ * Ask the chatbox a question about the admission on screen.
+ *
+ * The server prices the case again and answers only from the engine's facts
+ * and, when `documentId` is given, passages from that uploaded policy. Figures
+ * the model produced on its own come back in `unsupportedFigures` and must be
+ * shown as such.
+ */
+export async function askChat(
+  req: ChatRequest,
+): Promise<{ ok: true; answer: ChatAnswer } | { ok: false; reason: string }> {
+  const res = await fetch(BASE + "/api/chat", {
+    method: "POST",
+    credentials: CREDS,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(req),
+  }).catch(() => null);
+  if (!res) return { ok: false, reason: "The server is not reachable." };
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: string; error?: string };
+    return { ok: false, reason: body.detail ?? body.error ?? "That question could not be answered." };
+  }
+  return { ok: true, answer: ChatAnswerSchema.parse(await res.json()) };
 }

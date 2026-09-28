@@ -23,9 +23,10 @@ import fastifyStatic from "@fastify/static";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { evaluate, repair, setRegistry, type Registry } from "@claimcast/engine";
+import { caseFacts, evaluate, repair, setRegistry, withPolicy, type Fact, type Registry } from "@claimcast/engine";
 import {
   AskPdfSchema,
+  ChatRequestSchema,
   BranchChoiceSchema,
   CaseInputSchema,
   ConfirmSchema,
@@ -51,6 +52,7 @@ import {
 } from "./learning.js";
 import { chosen } from "./models.js";
 import { answerFromPolicyPdf } from "./rag.js";
+import { answerChat } from "./chat.js";
 import * as session from "./session.js";
 import { attempt } from "./throttle.js";
 
@@ -622,6 +624,62 @@ app.post<{ Params: { id: string } }>("/api/policies/:id/ask", async (req, reply)
         status === 503
           ? "No model provider is configured on this server."
           : "The question could not be answered.",
+    });
+  }
+});
+
+/**
+ * The chatbox. Questions about the admission on screen and, when one was
+ * uploaded, the policy document behind it. See `chat.ts`.
+ *
+ * The case is priced again here, by the same engine, so the figures the model
+ * is allowed to repeat are the server's own. A confirmed uploaded policy exists
+ * only in the browser, so it travels with the request and is installed for the
+ * length of one synchronous evaluation. The document, when named, is read under
+ * the same ownership check as `/ask`.
+ */
+app.post("/api/chat", async (req, reply) => {
+  const parsed = ChatRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return reply.code(400).send({ error: "invalid question", detail: parsed.error.flatten() });
+  }
+  const { question, history, policy, documentId } = parsed.data;
+
+  if (!bundle) bundle = await loadReference();
+  let facts: Fact[];
+  try {
+    const run = () => caseFacts(evaluate(repair(parsed.data.case)));
+    facts = policy ? withPolicy(policy, run) : run();
+  } catch (e) {
+    return reply.code(404).send({ error: e instanceof Error ? e.message : "unknown reference" });
+  }
+
+  let pages: string[] | null = null;
+  if (documentId) {
+    const userId = await session.current(req, reply);
+    const doc = await ref.db.policyDocument.findFirst({ where: { id: documentId, userId } });
+    if (!doc) return reply.code(404).send({ error: "no such document" });
+    const bytes = await vault.get(doc.storageKey);
+    if (!bytes) {
+      return reply.code(410).send({
+        error: "document expired",
+        detail: `Uploads are kept ${vault.RETENTION} days. Upload the schedule again to ask about it.`,
+      });
+    }
+    pages = await pageText(bytes);
+  }
+
+  try {
+    return await answerChat({ question, history, facts, pages });
+  } catch (e) {
+    const raw = (e as { status?: unknown }).status;
+    const status = typeof raw === "number" ? raw : 502;
+    return reply.code(status).send({
+      error: "could not answer",
+      detail:
+        status === 503
+          ? "No model provider is configured on this server, so the chat cannot answer. Set GEMINI_API_KEY, GROQ_API_KEY or ANTHROPIC_API_KEY."
+          : "The question could not be answered. Try asking it another way.",
     });
   }
 });

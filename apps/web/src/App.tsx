@@ -8,6 +8,7 @@ import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Database } from "./components/Database";
 import { Learning } from "./components/Learning";
+import { ChatDock } from "./components/ChatDock";
 import { recordChoice } from "./api";
 
 type Tab = "start" | "journey" | "working" | "database" | "learning";
@@ -75,6 +76,9 @@ function start(): CaseInput {
 export default function App() {
   const [tab, setTab] = useState<Tab>("start");
   const [input, setInput] = useState<CaseInput>(start);
+  // The uploaded policy document, once there is one. Held here rather than in
+  // Intake so the chatbox on every tab can search it after Intake unmounts.
+  const [documentId, setDocumentId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [policyholder, setPolicyholder] = useState("");
   const e = useMemo(() => evaluate(input), [input]);
@@ -153,6 +157,7 @@ export default function App() {
           onName={setName}
           policyholder={policyholder}
           onPolicyholder={setPolicyholder}
+          onDocument={setDocumentId}
           onContinue={() => {
             setTab("journey");
             window.scrollTo(0, 0);
@@ -168,6 +173,8 @@ export default function App() {
       )}
       {tab === "database" && <Database onOpen={open} />}
       {tab === "learning" && <Learning />}
+
+      <ChatDock e={e} documentId={documentId} />
 
       <footer className="foot">
         <span>Team Rocket · IIIT-Delhi · GE HealthCare Precision Care Challenge 2026</span>

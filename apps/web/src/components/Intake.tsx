@@ -19,6 +19,7 @@ export function Intake({
   onName,
   policyholder,
   onPolicyholder,
+  onDocument,
   onContinue,
 }: {
   input: CaseInput;
@@ -27,6 +28,8 @@ export function Intake({
   onName: (v: string) => void;
   policyholder: string;
   onPolicyholder: (v: string) => void;
+  /** The uploaded document's id once it has been read, for the chatbox to search. */
+  onDocument?: (documentId: string) => void;
   onContinue: () => void;
 }) {
   const { policies: POLICIES } = registry();
@@ -44,6 +47,7 @@ export function Intake({
         ? { stage: "read", documentId: r.documentId, extraction: r.extraction, shaky: r.shaky }
         : { stage: "refused", reason: r.reason },
     );
+    if (r.ok) onDocument?.(r.documentId);
   }
 
   /**

@@ -17,6 +17,7 @@ import {
 } from "@claimcast/engine/fixtures";
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
+import { ChatDock } from "./components/ChatDock";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Intake } from "./components/Intake";
@@ -75,6 +76,7 @@ for (const c of cases) {
   const e = evaluate(c);
   renderToString(<Controls value={c} onChange={noop} />);
   renderToString(<Journey e={e} onPick={noop} />);
+  renderToString(<ChatDock e={e} documentId={null} />);
   renderToString(<BillView e={e} />);
   renderToString(<Alternatives e={e} onPick={noop} />);
   rendered++;
