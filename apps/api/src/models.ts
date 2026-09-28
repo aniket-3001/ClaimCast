@@ -30,6 +30,7 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { EXTRACTED_FIELDS, type ExtractedField } from "@claimcast/contracts";
+import { chunkPages, retrieve, type Chunk } from "./retrieval.js";
 
 /** What a model hands back per field, before anything has been checked. */
 export interface RawField {
@@ -68,6 +69,9 @@ export const FIELD_NOTES: Record<ExtractedField, string> = {
     "from the period of insurance.",
   pedWaitingMonths: "Pre-existing disease waiting period, in months.",
   moratoriumMonths: "Moratorium period, in months.",
+  exclusions:
+    "What the policy excludes or will not pay for, as a semicolon-separated list in the " +
+    "document's own words. The span quotes the heading or opening line of that section.",
 };
 
 /**
@@ -97,7 +101,98 @@ export const FIELD_TYPES: Record<ExtractedField, "string" | "number" | "boolean"
   monthsInForce: "number",
   pedWaitingMonths: "number",
   moratoriumMonths: "number",
+  exclusions: "string",
 };
+
+/**
+ * What to search the document for, per field.
+ *
+ * The retrieval query, not the prompt: these are the words a schedule uses for
+ * each benefit, so that TF-IDF over the uploaded document's own chunks ranks
+ * the passage stating it first. Synonyms are here because insurers do not
+ * agree on vocabulary -- "room rent", "accommodation charges" and "boarding"
+ * are the same limit on three different products.
+ */
+export const FIELD_QUERIES: Record<ExtractedField, string> = {
+  insurer: "insurance company limited insurer name registration",
+  product: "product plan name policy schedule",
+  sumInsured: "sum insured policy year limit cover amount",
+  roomCapPerDay: "room rent accommodation boarding nursing charges per day limit",
+  roomCapPctOfSI: "room rent percentage sum insured per day",
+  icuCapPerDay: "intensive care unit icu iccu charges per day limit",
+  icuCapPctOfSI: "icu intensive care percentage sum insured",
+  proportionateDeduction: "proportionate deduction associated expenses room category ratio",
+  copayPct: "co-payment copayment copay percentage claim deductible",
+  implantSubLimit: "implant prosthesis stent device sub-limit",
+  preHospDays: "pre-hospitalisation hospitalization expenses days before admission",
+  postHospDays: "post-hospitalisation hospitalization expenses days after discharge",
+  dayCareCovered: "day care procedures treatment minimum stay covered",
+  monthsInForce: "continuous cover inception renewal date first policy",
+  pedWaitingMonths: "pre-existing disease waiting period months",
+  moratoriumMonths: "moratorium period months continuous",
+  exclusions: "exclusions excluded not payable non-payable items permanent",
+};
+
+/** Per field, the passages retrieval ranked highest in this document. */
+export type Passages = Record<ExtractedField, Chunk[]>;
+
+/** How many passages each field is grounded in. */
+const PER_FIELD = 3;
+
+/**
+ * Retrieve, for every field, the passages of this document most likely to
+ * state it. Pure: the same pages always retrieve the same passages, so the
+ * temperature-zero promise below survives the retrieval step.
+ */
+export function retrieveForFields(pages: string[]): Passages {
+  const chunks = chunkPages(pages);
+  return Object.fromEntries(
+    EXTRACTED_FIELDS.map((f) => [f, retrieve(chunks, FIELD_QUERIES[f], PER_FIELD).map((s) => s.chunk)]),
+  ) as Passages;
+}
+
+/**
+ * The retrieved passages, written into the prompt.
+ *
+ * This is the augmentation in retrieval-augmented generation: the model is told,
+ * field by field, where in this document retrieval found the likeliest
+ * statement, and quotes from there. A field with nothing retrieved says so,
+ * which is itself a hint that the document may not state it.
+ */
+function grounding(passages: Passages): string {
+  const lines = EXTRACTED_FIELDS.map((f) => {
+    const hits = passages[f];
+    if (!hits.length) return `[${f}] no passage retrieved -- the document may not state this.`;
+    return `[${f}]\n` + hits.map((c) => `  (page ${c.page}) ${c.text}`).join("\n");
+  });
+  return `
+
+Retrieved passages. A search over this document ranked these as the likeliest places each field
+is stated. Read each field from its passages first, and quote from them; look elsewhere in the
+document only if they do not state it.
+
+${lines.join("\n\n")}`;
+}
+
+/**
+ * The passages as a document, for the text-only reader: every chunk any field
+ * retrieved, once each, in page order. Page one always goes in whole, because a
+ * schedule's header -- insurer, product, sum insured -- is where the words least
+ * like any query live.
+ */
+function retrievedDocument(pages: string[], passages: Passages): string {
+  const seen = new Map<string, Chunk>();
+  for (const f of EXTRACTED_FIELDS) for (const c of passages[f]) seen.set(c.id, c);
+  const byPage = new Map<number, string[]>();
+  if (pages[0]) byPage.set(1, [pages[0]]);
+  for (const c of [...seen.values()].sort((a, b) => a.page - b.page || a.id.localeCompare(b.id))) {
+    if (c.page === 1) continue;
+    byPage.set(c.page, [...(byPage.get(c.page) ?? []), c.text]);
+  }
+  return [...byPage.entries()]
+    .map(([page, texts]) => `--- page ${page} (retrieved passages) ---\n${texts.join("\n...\n")}`)
+    .join("\n\n");
+}
 
 export const PROMPT = `You are reading an Indian health insurance policy schedule so that a claim can be
 adjudicated against it.
@@ -380,12 +475,14 @@ async function viaGemini(
   return parseJson(text);
 }
 
-async function viaGroq(model: string, pages: string[], prompt: string): Promise<Raw> {
+async function viaGroq(model: string, pages: string[], passages: Passages, prompt: string): Promise<Raw> {
   const key = process.env.GROQ_API_KEY!;
 
   // Text only, and said so on the page it produces: the reader is told which
-  // model read the schedule, and this one did not see it.
-  const document = pages.map((p, i) => `--- page ${i + 1} ---\n${p}`).join("\n\n");
+  // model read the schedule, and this one did not see it. It is handed the
+  // retrieved passages rather than the whole text, which is what keeps a
+  // forty-page wording inside a text model's context at all.
+  const document = retrievedDocument(pages, passages);
 
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
@@ -450,9 +547,11 @@ async function viaAnthropic(model: string, pdf: Buffer, prompt: string): Promise
 /**
  * Read the schedule with whichever provider is configured.
  *
- * `pages` is only used by the text-only path, but it is always passed: the
- * caller has already extracted it for the verification pass, and handing it over
- * costs nothing.
+ * Retrieval runs first, for every provider: the document's own text is chunked,
+ * each field's passages are retrieved, and the prompt carries them. The readers
+ * that take a PDF still get the file, because a schedule is a grid and the
+ * layout is what ties a figure to its row; the text-only reader gets the
+ * retrieved passages in place of the document.
  */
 export async function read(
   pdf: Buffer,
@@ -468,7 +567,7 @@ export async function read(
    * temperature-zero promise above means nothing.
    */
   hints = "",
-): Promise<{ raw: Raw; used: Chosen }> {
+): Promise<{ raw: Raw; used: Chosen; retrieved: number }> {
   const pick = chosen();
   if (!pick) {
     throw Object.assign(
@@ -480,7 +579,8 @@ export async function read(
     );
   }
 
-  const prompt = PROMPT + hints;
+  const passages = retrieveForFields(pages);
+  const prompt = PROMPT + hints + grounding(passages);
 
   const raw =
     pick.provider === "vertex"
@@ -489,7 +589,12 @@ export async function read(
         ? await viaGemini(pick.model, pdf, prompt)
         : pick.provider === "anthropic"
           ? await viaAnthropic(pick.model, pdf, prompt)
-          : await viaGroq(pick.model, pages, prompt);
+          : await viaGroq(pick.model, pages, passages, prompt);
 
-  return { raw, used: pick };
+  return { raw, used: pick, retrieved: countRetrieved(passages) };
+}
+
+/** Distinct passages retrieved across every field, for the extraction record. */
+function countRetrieved(passages: Passages): number {
+  return new Set(EXTRACTED_FIELDS.flatMap((f) => passages[f].map((c) => c.id))).size;
 }

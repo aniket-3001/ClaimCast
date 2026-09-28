@@ -46,6 +46,7 @@ import {
   promptHints,
   recordConfirmation,
   settledBills,
+  trainingBills,
   shakyFields,
 } from "./learning.js";
 import { chosen } from "./models.js";
@@ -97,6 +98,49 @@ async function mlAuthHeader(): Promise<Record<string, string>> {
     // No metadata server. Not an error: it is how this process knows it is not
     // running on Google, and the local cost model is not asking for a token.
     return {};
+  }
+}
+
+/**
+ * Retrain the cost model once enough settled bills have arrived that it has not
+ * been trained on.
+ *
+ * Stateless on purpose. `/health` says how many bills the running booster was
+ * trained on and the database says how many exist, so the gap is recomputed on
+ * every report and nothing here has to survive a restart -- including the cost
+ * model's own, which on an ephemeral disk falls back to the image's version and
+ * is brought forward again by the next report. Every bill is sent, not only the
+ * new ones, because the booster is rebuilt on the combined pool.
+ */
+const RETRAIN_EVERY = Math.max(1, Number(process.env.RETRAIN_EVERY ?? 10));
+let retraining = false;
+
+async function maybeRetrain(log: { info: (o: object, m: string) => void; warn: (o: object, m: string) => void }) {
+  if (!ML_SERVICE_URL || retraining) return;
+  retraining = true;
+  try {
+    const auth = await mlAuthHeader();
+    const health = await fetch(ML_SERVICE_URL + "/health", { headers: auth });
+    if (!health.ok) return;
+    const trained = Number(((await health.json()) as { outcomesTrainedOn?: number }).outcomesTrainedOn ?? 0);
+    const total = await ref.db.forecastOutcome.count({ where: { actualTotal: { gt: 0 } } });
+    if (total - trained < RETRAIN_EVERY) return;
+
+    const res = await fetch(ML_SERVICE_URL + "/retrain", {
+      method: "POST",
+      headers: { "content-type": "application/json", ...auth },
+      body: JSON.stringify({ outcomes: await trainingBills(ref.db) }),
+    });
+    if (!res.ok) {
+      log.warn({ status: res.status }, "cost model retrain refused");
+      return;
+    }
+    const done = (await res.json()) as { modelVersion?: string; outcomesTrainedOn?: number };
+    log.info({ modelVersion: done.modelVersion, outcomes: done.outcomesTrainedOn }, "cost model retrained");
+  } catch (e) {
+    log.warn({ error: e instanceof Error ? e.message : String(e) }, "cost model retrain failed");
+  } finally {
+    retraining = false;
   }
 }
 
@@ -303,11 +347,12 @@ app.get<{ Params: { id: string } }>("/api/cases/:id", async (req, reply) => {
 });
 
 /**
- * The cost model, which does not exist yet.
+ * The cost model: an XGBoost quantile booster over the published tariffs, in
+ * `services/ml`.
  *
- * Phase 4 puts a tariff-anchored quantile model behind this. Until it is
- * actually there, the endpoint says so plainly — returning a plausible number
- * from nowhere would be the single most damaging thing this service could do.
+ * Where it is not configured the endpoint says so plainly -- returning a
+ * plausible number from nowhere would be the single most damaging thing this
+ * service could do.
  */
 app.post("/api/forecast", async (req, reply) => {
   const parsed = ForecastRequestSchema.safeParse(req.body);
@@ -324,14 +369,12 @@ app.post("/api/forecast", async (req, reply) => {
   }
   // Every bill anybody has reported, handed to the model with the request.
   //
-  // Not filtered to this procedure on purpose. The fitted quantity is a single
-  // private-to-tariff multiplier applied to every procedure in the catalogue, so
-  // every settled bill is an observation of the same number, and narrowing to one
-  // procedure would throw away most of the evidence for a specificity the model
-  // does not have. The model shrinks them against the survey prior; this service
-  // only carries them.
+  // Not filtered to this procedure on purpose. Between retrains these correct
+  // the booster by one shrunk factor across the catalogue, and the model skips
+  // any bill its booster was already trained on by the timestamp each carries.
+  // Procedure-specific learning is the retrain's job, not this correction's.
   //
-  // Two integers per row and nothing else -- no owner, no hospital, no policy.
+  // Two integers and a timestamp per row -- no owner, no hospital, no policy.
   // A failure to read them degrades to the forecast this service has always
   // given rather than to no forecast.
   const observed = await settledBills(ref.db).catch(() => []);
@@ -630,8 +673,14 @@ app.post("/api/outcomes", async (req, reply) => {
       // through JSON on every read.
       procedureId: request.procedureId,
       cityTier: request.cityTier,
+      hospitalId: request.hospitalId ?? null,
     },
   });
+
+  // The self-learning loop. Not awaited: the person reporting a bill is owed
+  // their answer now, and a retrain that fails costs the model a version, not
+  // them a response.
+  void maybeRetrain(req.log);
 
   // Where the reported bill fell against the band we gave. Returned because
   // somebody who has just told us something true about their own admission is

@@ -233,6 +233,21 @@ export const SOURCES: SourceSeed[] = [
       "into it silently.",
   },
   {
+    id: "esic-medical-benefit",
+    name: "ESI medical benefit, and ESIC tie-up hospitals settled at CGHS rates",
+    publisher: "Employees' State Insurance Corporation",
+    url: "https://www.esic.gov.in/benefits",
+    checksum: null,
+    fetchedAt: ASSEMBLED,
+    caveat:
+      "Not yet verified against a downloaded document. The ESIC benefits page is a " +
+      "navigation shell with no rule text to checksum; the wage ceiling of Rs 21,000 a " +
+      "month and tie-up settlement at CGHS package rates are the ESIC's published " +
+      "position but are recorded here from the Act and ESIC circulars as widely " +
+      "summarised, not from a file this project holds. Which synthetic hospitals hold a " +
+      "tie-up is invented, like everything else about them.",
+  },
+  {
     id: "general-insurance-law",
     name: "The principle of indemnity",
     publisher: "Settled position, no single publishing authority",
@@ -274,5 +289,6 @@ export const CLAUSE_SOURCE: Record<string, string> = {
   PMJAY: "nha-hbp-2-2",
   VAY_VANDANA: "nha-vay-vandana",
   CGHS_SCHEME: "cghs-rates",
+  ESI_SCHEME: "esic-medical-benefit",
   SINGLE_CLAIM_PATH: "general-insurance-law",
 };

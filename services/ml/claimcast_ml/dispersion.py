@@ -28,18 +28,16 @@ change how much more the richest fifth outspends the poorest. The report gives n
 way to test that, and it is the strongest assumption in the model. If the axes
 reinforce each other the true spread is wider than this; if they offset, narrower.
 
-**Empirical quantiles, not a fitted curve, and not a gradient booster.** The
-approved plan named LightGBM quantile regression. That was the right call for the
-data the plan assumed -- NSSO unit-level microdata, one row per household. The
-unit-level files are not what this project ended up with: the ETL reads the Key
-Indicators report, which is about a hundred published cells and no patient
-records. A gradient booster trained on 360 points that were themselves produced
-by multiplying two marginals under an independence assumption would not be
-learning anything the multiplication had not already decided. It would smooth my
-own assumption and return it looking like a fit. So the quantiles are read
-straight off the empirical sample, a lognormal is fitted alongside purely as a
-description of shape, and the two are reported together so the gap between them
-is visible rather than hidden.
+**Empirical quantiles here; the booster learns from them.** The quantiles are
+read straight off the empirical sample, a lognormal is fitted alongside purely as
+a description of shape, and the two are reported together so the gap between them
+is visible rather than hidden. The XGBoost booster in `booster.py` does not
+replace this: it takes this sample as the labels of its tariff rows. The ETL
+reads the Key Indicators report -- about a hundred published cells and no patient
+records -- so a booster trained on those rows alone learns this band and nothing
+the multiplication had not already decided, and `booster.py` says so. What it
+adds is somewhere for settled bills to land: they are the rows with real labels,
+and they are what can move the range for one procedure without moving it for all.
 
 **The median sits below 1.** Urban p50 is 0.87, rural 0.96, because the mean of a
 right-skewed distribution sits above its median: a few expensive states and the

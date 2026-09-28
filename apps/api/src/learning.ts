@@ -1,10 +1,13 @@
 /**
  * What the system learns while it runs.
  *
- * The deliberate design choice here is that there is no training step. Every
- * function below is an update applied when an observation arrives, and its
- * effect is visible to the very next request. Nothing is batched, nothing waits
- * for a nightly job, and there is no model artifact to rebuild and redeploy.
+ * Two speeds. Every function below is an update applied when an observation
+ * arrives, and its effect is visible to the very next request: nothing waits
+ * for a nightly job. The one slow path is the cost model's booster, which is
+ * rebuilt on the combined pool of tariffs and settled bills once enough new
+ * bills have arrived (`maybeRetrain` in server.ts, `POST /retrain` in the
+ * service) -- and between rebuilds, the bills it has not yet been trained on
+ * still correct each forecast through `settledBills` below.
  *
  * That is not a shortcut around doing it properly — it is the correct shape for
  * this problem. A model fitted once is a photograph of the day it was fitted,
@@ -193,8 +196,8 @@ export async function examplesFor(
  *
  * This is the loop at its tightest: somebody corrected a field an hour ago, and
  * the model reading the next schedule is shown the sentence they corrected and
- * the answer they gave. No weights move, nothing is retrained, and the effect
- * is on the very next request.
+ * the answer they gave. The reader is a hosted model, so no weights move here;
+ * the effect is on the very next request.
  *
  * Narrow on purpose. Only fields with a demonstrated correction rate get
  * examples, and only a few of those, because a prompt that grows with every
@@ -281,16 +284,35 @@ export async function learningState(db: PrismaClient): Promise<LearningState> {
 export async function settledBills(
   db: PrismaClient,
   take = 500,
-): Promise<Array<{ p50: number; actual: number }>> {
+): Promise<Array<{ p50: number; actual: number; at: string }>> {
   const rows = await db.forecastOutcome.findMany({
     // What the model said, beside what the admission came to. Both as they stood
     // at the time: a bill has to be judged against the forecast that preceded it,
-    // not against one already moved by that same bill.
-    select: { p50: true, actualTotal: true },
+    // not against one already moved by that same bill. And when it was reported,
+    // so the model can skip the bills its booster was already trained on.
+    select: { p50: true, actualTotal: true, createdAt: true },
     where: { p50: { gt: 0 }, actualTotal: { gt: 0 } },
     orderBy: { createdAt: "desc" },
     take,
   });
 
-  return rows.map((r) => ({ p50: r.p50, actual: r.actualTotal }));
+  return rows.map((r) => ({ p50: r.p50, actual: r.actualTotal, at: r.createdAt.toISOString() }));
+}
+
+/**
+ * Every settled bill, as training rows for the cost model's retrain.
+ *
+ * The forecast request each bill answered -- procedure, hospital, city tier,
+ * room, stay -- and what it came to. No owner and no policy: those are not
+ * features of what an admission costs, and they are not the model's business.
+ */
+export async function trainingBills(
+  db: PrismaClient,
+): Promise<Array<{ request: unknown; actual: number; at: string }>> {
+  const rows = await db.forecastOutcome.findMany({
+    select: { request: true, actualTotal: true, createdAt: true },
+    where: { actualTotal: { gt: 0 } },
+    orderBy: { createdAt: "asc" },
+  });
+  return rows.map((r) => ({ request: r.request, actual: r.actualTotal, at: r.createdAt.toISOString() }));
 }

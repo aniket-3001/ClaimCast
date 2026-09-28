@@ -1,9 +1,14 @@
 """
 One forecast, assembled from the pieces and honest about each of them.
 
-    p50 = anchor tariff x multiplier x median band  +  implant midpoint
-    p10, p90   the same with the band's tenth and ninetieth, and with the
+    p50 = anchor tariff x booster's p50 multiple  +  implant midpoint
+    p10, p90   the same with the booster's p10 and p90 heads, and with the
                cheapest and dearest published implant option
+
+The multiples come from the XGBoost quantile booster in `booster.py`, given the
+anchor, its scheme and specialty, the city tier and NABH status. An artifact
+built before the booster existed has none, and forecasts from the survey band
+(multiplier x the band's quantiles) exactly as it did then.
 
 **The implant is added rather than multiplied**, and it is the one part of the
 forecast with a real spread rather than an inferred one. PM-JAY's knee package is
@@ -32,6 +37,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from . import booster as booster_mod
 from . import calibration as calibration_mod
 from . import split as split_mod
 from . import tariff
@@ -92,7 +98,11 @@ def forecast(
     # request, which is what makes a forecast reproducible from its model
     # version months later. Empty on a deployment nobody has reported a bill
     # on, and empty is the survey estimate exactly as fitted.
-    observed: list[tuple[int, int]] | None = None,
+    #
+    # A third element, where present, is when the bill was reported. Bills at or
+    # before the newest one the booster was trained on are already in the model
+    # and are skipped here, so a retrain never counts a bill twice.
+    observed: list[tuple] | None = None,
 ) -> Forecast:
     if icu_days > days:
         raise ValueError(
@@ -108,9 +118,22 @@ def forecast(
     # Nothing is refitted here and the model version does not move -- the version
     # names the documents the artifact was built from, and those have not changed.
     # This is arithmetic on rows that exist at the moment of the request.
-    cal = calibration_mod.from_outcomes(observed or [])
-    centre = anchor.amount * model.multiplier * cal.factor
-    band = model.quantiles[sector]
+    fresh = [
+        (o[0], o[1])
+        for o in (observed or [])
+        if len(o) < 3 or o[2] is None or model.outcomes_through is None or o[2] > model.outcomes_through
+    ]
+    cal = calibration_mod.from_outcomes(fresh)
+    if model.booster is not None:
+        row = booster_mod.Row(anchor.amount, anchor.scheme, tariff.specialty_of(anchor), city_tier, nabh)
+        m10, m50, m90 = booster_mod.predict(
+            model.booster, booster_mod.encode([row], list(model.vocabulary))
+        )[0]
+        centre = anchor.amount * cal.factor
+        band = {"0.10": float(m10), "0.50": float(m50), "0.90": float(m90)}
+    else:
+        centre = anchor.amount * model.multiplier * cal.factor
+        band = model.quantiles[sector]
     options = model.implant_options.get(procedure_id, [])
     implant_low = options[0] if options else 0
     implant_high = options[-1] if options else 0
@@ -123,9 +146,10 @@ def forecast(
     )
 
     caveats = [
-        "The band is a spread between stratum means, not between individual bills. "
-        "The survey publishes no patient-level quantile, so the real spread of bills "
-        "is wider than this interval, not narrower.",
+        "Until settled bills are reported, the range the booster learned is a spread "
+        "between the survey's stratum means, not between individual bills. The survey "
+        "publishes no patient-level quantile, so the real spread of bills is wider "
+        "than this interval, not narrower.",
         "A city tier is not the survey's rural/urban split. Tiers X and Y are read as "
         "urban and tier Z as rural, which is the coarsest join in the model.",
     ]
@@ -154,7 +178,8 @@ def forecast(
                 "private price, and it is quoted as the only published figure for "
                 "the same object."
             )
-    if days != median_stay_days(procedure_id):
+    stay = median_stay_days(procedure_id)
+    if stay is not None and days != stay:
         caveats.append(
             "Length of stay reaches the estimate only through the tariff, which is the "
             "only source that published a per-day rate. The survey collected duration "

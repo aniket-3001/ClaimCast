@@ -149,8 +149,8 @@ const bills = await settledBills(db);
 const mine = bills.find((b) => b.p50 === 30000000 && b.actual === 36000000);
 ok(mine !== undefined, "a reported bill did not come back for the next forecast");
 ok(
-  bills.every((b) => Object.keys(b).length === 2),
-  "a settled bill carried more than the two figures the model needs",
+  bills.every((b) => Object.keys(b).sort().join() === "actual,at,p50"),
+  "a settled bill carried more than the two figures the model needs and when it was reported",
 );
 
 // ── The counters people are shown ────────────────────────────────────────

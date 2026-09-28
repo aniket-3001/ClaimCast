@@ -67,6 +67,8 @@ function start(): CaseInput {
     age: 45,
     hasPmjayCard: false,
     govtEmployeeOrPensioner: false,
+    esiInsured: false,
+    preExisting: false,
   });
 }
 

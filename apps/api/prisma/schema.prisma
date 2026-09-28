@@ -97,6 +97,8 @@ model Hospital {
   beds Int
 
   pmjayEmpanelled Boolean
+  /// ESIC tie-up for referred secondary and super-speciality care.
+  esicTieUp       Boolean  @default(false)
   cghsRateBand    CityTier?
 
   /// Synthetic. No public source publishes what a named private hospital
@@ -260,6 +262,8 @@ model Policy {
   monthsInForce    Int
   pedWaitingMonths Int
   moratoriumMonths Int
+  /// The wording's exclusions, as read and confirmed. Null where no document was read.
+  exclusions       String?
   notes            String?
 
   sourceId String
@@ -493,6 +497,8 @@ model ForecastOutcome {
   /// dig through JSON on every read.
   procedureId String
   cityTier    String
+  /// Where the admission was. Recorded, not priced from.
+  hospitalId  String?
 
   createdAt DateTime @default(now())
 

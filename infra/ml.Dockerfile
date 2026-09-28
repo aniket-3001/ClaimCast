@@ -1,21 +1,28 @@
 # The cost model service.
 #
-# The artifact is baked into the image rather than mounted, so that a running
-# container's answers cannot change underneath it: an image is a version of the
-# model, and `/health` reports which. Retraining means building an image, which
-# is the point -- a figure shown to someone stays traceable to the documents it
-# came from.
+# The artifact is baked into the image rather than mounted: an image starts from
+# a known version of the model, and `/health` reports which. `POST /retrain`
+# builds newer versions beside it from settled bills the API sends; each is a
+# directory of its own, named in every forecast it serves, so a figure shown to
+# someone stays traceable to the documents and bills it came from. On restart the
+# container is back at the baked version until the API's next retrain.
 #
 # Built from the repository root:
 #   docker build -f infra/ml.Dockerfile -t claimcast-ml .
 
-FROM python:3.11-slim
+# 3.13 because numpy 2.5 and xgboost 3.4 publish no 3.11 wheels.
+FROM python:3.13-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     CLAIMCAST_ARTIFACTS=/app/artifacts
 
 WORKDIR /app
+
+# XGBoost's Linux wheel links against the OpenMP runtime, which slim omits.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY services/ml/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
@@ -34,6 +41,7 @@ RUN python -c "\
 import app, json; \
 from claimcast_ml.forecast import forecast; \
 m = app.model_mod.load(); \
+assert m.booster is not None, 'the artifact carries no XGBoost booster'; \
 f = forecast(m, 'p-tkr', 'X', True, 'semi_private', 6, 0); \
 assert f.p10 < f.p50 < f.p90 and sum(f.split.values()) == f.p50; \
 print('artifact', m.version, 'forecasts p50 Rs', f.p50 // 100)"

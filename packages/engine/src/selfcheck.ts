@@ -65,6 +65,8 @@ console.log("The two decisions added to the tree, on the same reference admissio
     age: 45,
     hasPmjayCard: false,
     govtEmployeeOrPensioner: false,
+    esiInsured: false,
+    preExisting: false,
   };
   const base = evaluate(repair(refInput));
   const domestic = evaluate(repair({ ...refInput, implantId: "domestic" }));
@@ -99,6 +101,35 @@ console.log("The two decisions added to the tree, on the same reference admissio
   const cardHolder = evaluate(repair({ ...refInput, hasPmjayCard: true }));
   const pmjay = schemeOptions(cardHolder).find((s) => s.id === "pmjay")!;
   eq("  PM-JAY package rate with a card", pmjay.patientPays ?? -1, 0);
+
+  const esiInsured = evaluate(repair({ ...refInput, esiInsured: true }));
+  const esi = schemeOptions(esiInsured).find((s) => s.id === "esi")!;
+  eq("  ESI at an ESIC tie-up hospital", esi.patientPays ?? -1, 0);
+  if (!esi.eligible || esi.packageRate !== esiInsured.procedure.cghsRate) {
+    failures++;
+    console.log("FAIL  ESI was not offered at the CGHS rate to an insured person at a tie-up hospital");
+  } else {
+    console.log("  ok   ESI is settled at the CGHS package rate, and only for an insured person");
+  }
+
+  console.log("Waiting periods are applied, not only stored");
+  // pol-classic has run 38 months against a 36-month waiting period.
+  const served = evaluate(repair({ ...refInput, preExisting: true }));
+  eq("  pre-existing, waiting period served", served.result.patientPays, base.result.patientPays);
+  const young = evaluate(repair({ ...refInput, policyId: "pol-basic", preExisting: true }));
+  if (young.repudiation?.clause !== "PED_WAITING" || young.result.patientPays !== young.result.billTotal) {
+    failures++;
+    console.log("FAIL  a pre-existing condition nine months into a 48-month wait was paid");
+  } else {
+    console.log("  ok   pre-existing, nine months into a 48-month wait: refused in full");
+  }
+  const fresh = evaluate(repair({ ...refInput, policyId: "pol-basic" }));
+  if (fresh.repudiation !== null) {
+    failures++;
+    console.log("FAIL  a new condition was refused on a waiting period meant for pre-existing ones");
+  } else {
+    console.log("  ok   a condition that is not pre-existing is not held to the waiting period");
+  }
 }
 
 console.log("Invariants across all 16 admissions");
@@ -147,6 +178,8 @@ console.log("\nThe claim the tree makes");
       age: 45,
       hasPmjayCard: false,
       govtEmployeeOrPensioner: false,
+      esiInsured: false,
+      preExisting: false,
     }),
   );
   const key = (e: ReturnType<typeof evaluate>) =>

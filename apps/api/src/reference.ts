@@ -47,6 +47,7 @@ export async function hospitals(): Promise<Hospital[]> {
     beds: h.beds,
     network: h.network.map((n) => n.insurer),
     pmjayEmpanelled: h.pmjayEmpanelled,
+    esicTieUp: h.esicTieUp,
     cghsRateBand: h.cghsRateBand,
     costIndex: h.costIndex,
     settlementDays: h.settlementDays,
@@ -143,6 +144,7 @@ export async function policies(): Promise<Policy[]> {
     monthsInForce: p.monthsInForce,
     pedWaitingMonths: p.pedWaitingMonths,
     moratoriumMonths: p.moratoriumMonths,
+    exclusions: p.exclusions,
     ...(p.notes === null ? {} : { notes: p.notes }),
   }));
 }

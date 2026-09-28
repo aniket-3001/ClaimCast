@@ -116,7 +116,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          # The image's version: numpy 2.5 and xgboost 3.4 publish no 3.11 wheels.
+          python-version: "3.13"
       # pytest and httpx are not in requirements.txt on purpose -- that file is
       # what the container installs, and neither is imported by the service.
       - run: pip install -r services/ml/requirements.txt pytest httpx

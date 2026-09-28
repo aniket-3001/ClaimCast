@@ -162,7 +162,7 @@ export async function extractPolicy(
   hints = "",
 ): Promise<ExtractionResult> {
   const pages = await pageText(pdf);
-  const { raw, used } = await read(pdf, pages, hints);
+  const { raw, used, retrieved } = await read(pdf, pages, hints);
 
   const fields: Record<string, unknown> = {};
   const unverified: string[] = [];
@@ -208,6 +208,7 @@ export async function extractPolicy(
       // traceable to the thing that read it, including on the day that thing
       // was the text-only fallback.
       model: `${used.provider}/${used.model}`,
+      retrievedPassages: retrieved,
       extractedAt: new Date().toISOString(),
       fields,
       unverified,

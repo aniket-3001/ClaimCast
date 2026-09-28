@@ -110,6 +110,12 @@ export const CLAUSES: Record<string, Clause> = {
     source: "Central Government Health Scheme",
     text: "At a CGHS-empanelled centre, a listed procedure is paid at the fixed CGHS package rate, cashless, for a serving or retired central government employee and their dependants.",
   },
+  ESI_SCHEME: {
+    id: "ESI_SCHEME",
+    cite: "ESI — medical benefit for insured persons and dependants",
+    source: "Employees' State Insurance Act, 1948; ESIC tie-up hospitals",
+    text: "An employee of a covered establishment earning up to ₹21,000 a month, and their dependants, receive full medical care with no cost ceiling. Treatment the ESIC's own hospitals cannot provide is referred to a tie-up hospital and settled by ESIC at CGHS package rates, cashless to the patient.",
+  },
   SINGLE_CLAIM_PATH: {
     id: "SINGLE_CLAIM_PATH",
     cite: "Principle of indemnity \u2014 no double recovery",

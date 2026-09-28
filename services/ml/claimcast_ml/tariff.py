@@ -177,7 +177,18 @@ def anchor_for(
     procedures the package master has no entry for.
     """
     hbp, cghs, hbp_codes, cghs_codes = _tables()
-    code = hbp_codes.get(procedure_id)
+    # Any package or rate in either catalogue can be forecast directly by its own
+    # code -- "hbp:SB039A", "cghs:CN001" -- not only the procedures the engine
+    # names. That is what puts all 1,949 packages within reach of the model.
+    scheme, _, direct = procedure_id.partition(":")
+    if direct:
+        hbp_code = direct if scheme == "hbp" else None
+        cghs_code = direct if scheme == "cghs" else None
+    else:
+        hbp_code = hbp_codes.get(procedure_id)
+        cghs_code = cghs_codes.get(procedure_id)
+
+    code = hbp_code
     if code:
         pkg = next((p for p in hbp["packages"] if p["code"] == code), None)
         if pkg is None:
@@ -188,7 +199,7 @@ def anchor_for(
         amount, detail = _hbp_amount(pkg, tier, room_class, days, icu_days)
         return Anchor("PMJAY", amount, hbp["source"]["id"], code, detail)
 
-    code = cghs_codes.get(procedure_id)
+    code = cghs_code
     if code:
         rate = next((r for r in cghs["rates"] if r["code"] == code), None)
         if rate is None:
@@ -299,7 +310,8 @@ def implant_allowance(procedure_id: str) -> tuple[int, str] | None:
     engine's implant options describe.
     """
     hbp, _cghs, hbp_codes, _c = _tables()
-    code = hbp_codes.get(procedure_id)
+    scheme, _, direct = procedure_id.partition(":")
+    code = direct if scheme == "hbp" else hbp_codes.get(procedure_id)
     if not code:
         return None
     pkg = next((p for p in hbp["packages"] if p["code"] == code), None)
@@ -309,3 +321,26 @@ def implant_allowance(procedure_id: str) -> tuple[int, str] | None:
     if not figures:
         return None
     return max(figures) * 100, pkg["implant"]
+
+
+def specialty_of(anchor: Anchor) -> str:
+    """The specialty the anchoring package or rate is filed under, as the booster encodes it."""
+    hbp, cghs, _h, _c = _tables()
+    if anchor.scheme == "PMJAY":
+        pkg = next((p for p in hbp["packages"] if p["code"] == anchor.code), None)
+        return pkg["specialtyCode"] if pkg else ""
+    rate = next((r for r in cghs["rates"] if r["code"] == anchor.code), None)
+    return rate.get("specialty", "") if rate else ""
+
+
+def catalogue_entry(procedure_id: str) -> dict | None:
+    """The package or rate a catalogue id ("hbp:CODE", "cghs:CODE") names, or None."""
+    scheme, _, code = procedure_id.partition(":")
+    if not code:
+        return None
+    hbp, cghs, _h, _c = _tables()
+    if scheme == "hbp":
+        return next((p for p in hbp["packages"] if p["code"] == code), None)
+    if scheme == "cghs":
+        return next((r for r in cghs["rates"] if r["code"] == code), None)
+    return None

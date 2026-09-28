@@ -86,6 +86,10 @@ export const CITED: Record<ExtractedField, Cited> = {
     span: { text: "Pre-existing disease waiting period 36 months", page: 2 },
   },
   moratoriumMonths: { value: 60, span: { text: "Moratorium period 60 months", page: 2 } },
+  exclusions: {
+    value: "Registration & documentation charges; Toiletries, attendant meals, television; Expenses outside the pre/post window (Clause 7.1)",
+    span: { text: "8. Non-Payable Items", page: 5 },
+  },
 };
 
 /**

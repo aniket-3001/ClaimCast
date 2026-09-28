@@ -47,6 +47,7 @@ export function useCostModel(e: Evaluated): ModelState {
 
   const req = {
     procedureId: e.procedure.id,
+    hospitalId: e.hospital.id,
     cityTier: e.hospital.tier,
     // Accreditation is not on the hospital record and every CGHS rate in the
     // reference set is quoted at NABH, so the anchor is read there. The panel

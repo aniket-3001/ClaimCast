@@ -75,6 +75,8 @@ export const CaseInputSchema = z.object({
   age: z.number().int().min(0).max(120),
   hasPmjayCard: z.boolean(),
   govtEmployeeOrPensioner: z.boolean(),
+  esiInsured: z.boolean(),
+  preExisting: z.boolean(),
 });
 
 export type CaseInputWire = z.infer<typeof CaseInputSchema>;
@@ -105,6 +107,7 @@ export const HospitalSchema = z.object({
   beds: z.number().int().min(0),
   network: z.array(z.string()),
   pmjayEmpanelled: z.boolean(),
+  esicTieUp: z.boolean(),
   cghsRateBand: CityTier.nullable(),
   costIndex: z.number(),
   settlementDays: z.number().int().min(0),
@@ -164,6 +167,7 @@ export const PolicySchema = z.object({
   monthsInForce: z.number().int().min(0),
   pedWaitingMonths: z.number().int().min(0),
   moratoriumMonths: z.number().int().min(0),
+  exclusions: z.string().nullable(),
   notes: z.string().optional(),
 });
 export const _policyMatchesEngine: Exact<z.infer<typeof PolicySchema>, Policy> = true;
@@ -251,6 +255,12 @@ export const ForecastRequestSchema = z.object({
   roomClass: RoomClass,
   days: z.number().int().min(0).max(365),
   icuDays: z.number().int().min(0).max(365),
+  /**
+   * The hospital the admission is at. Logged with a settled bill so the outcome
+   * record says where it was; the cost model does not price from it, because no
+   * public source publishes what a named hospital charges.
+   */
+  hospitalId: z.string().optional(),
 });
 
 export const ForecastResponseSchema = z.object({
@@ -329,6 +339,7 @@ export const EXTRACTED_FIELDS = [
   "monthsInForce",
   "pedWaitingMonths",
   "moratoriumMonths",
+  "exclusions",
 ] as const;
 
 export type ExtractedField = (typeof EXTRACTED_FIELDS)[number];
@@ -359,6 +370,12 @@ export const ExtractionSchema = z.object({
   filename: z.string(),
   pages: z.number().int().min(1),
   model: z.string(),
+  /**
+   * Distinct passages retrieval pulled out of the document to ground the
+   * reading. Optional so that extractions stored before retrieval existed
+   * still parse.
+   */
+  retrievedPassages: z.number().int().min(0).optional(),
   extractedAt: z.string(),
   fields: z.record(z.enum(EXTRACTED_FIELDS), ExtractedValueSchema),
   /**

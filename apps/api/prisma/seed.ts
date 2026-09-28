@@ -78,6 +78,7 @@ async function main() {
         tier: h.tier,
         beds: h.beds,
         pmjayEmpanelled: h.pmjayEmpanelled,
+        esicTieUp: h.esicTieUp,
         cghsRateBand: h.cghsRateBand,
         costIndex: h.costIndex,
         settlementDays: h.settlementDays,
@@ -261,6 +262,7 @@ async function main() {
         monthsInForce: pol.monthsInForce,
         pedWaitingMonths: pol.pedWaitingMonths,
         moratoriumMonths: pol.moratoriumMonths,
+        exclusions: pol.exclusions,
         notes: pol.notes ?? null,
         sourceId: SYNTHETIC,
       };
@@ -306,6 +308,8 @@ async function main() {
         monthsInForce: pol.monthsInForce,
         pedWaitingMonths: pol.pedWaitingMonths,
         moratoriumMonths: pol.moratoriumMonths,
+        // The ETL reads the prescribed limits, not the exclusions list.
+        exclusions: null,
         notes:
           pol.notes +
           " Sum insured is issuable from Rs 1,00,000 to Rs 5,00,000 in multiples" +

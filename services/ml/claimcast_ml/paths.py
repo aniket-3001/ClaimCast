@@ -53,11 +53,21 @@ SNAPSHOT = (
 )
 
 
+def version_key(d: Path) -> tuple[str, int]:
+    """
+    Order artifact directories by version: the date, then the build number as a
+    number. A retrained service can build ten versions in a day, and as strings
+    `2026-09-28.10` sorts before `2026-09-28.9`.
+    """
+    stamp, _, n = d.name.rpartition(".")
+    return (stamp, int(n)) if n.isdigit() else (d.name, 0)
+
+
 def _snapshot() -> Path | None:
     """The newest artifact's data directory, if an artifact carries one."""
     if not ARTIFACTS.is_dir():
         return None
-    for d in sorted(ARTIFACTS.iterdir(), reverse=True):
+    for d in sorted(ARTIFACTS.iterdir(), key=version_key, reverse=True):
         if (d / "data").is_dir():
             return d / "data"
     return None

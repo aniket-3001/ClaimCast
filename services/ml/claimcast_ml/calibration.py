@@ -46,11 +46,12 @@ figure in front of a patient, and so that the tens of bills a single hospital
 partner could supply would genuinely take over. It is not fitted, because there
 is nothing yet to fit it on.
 
-**What this is not.** It is not training. Nothing is refitted, no artifact is
-rebuilt, and the model version does not change -- the version describes the
-documents the model was built from, and those have not moved. This is a
-correction factor computed from the rows that exist at the moment of the request,
-and the row written by one request is read by the next one.
+**What this is not.** It is not the retrain. Nothing is refitted here and the
+model version does not change. This is a correction factor computed from the rows
+that exist at the moment of the request, so a bill reported one minute is felt by
+the next forecast. The retrain (`build.py`, `POST /retrain`) is the slower path
+that folds bills into the booster itself; once it has, `forecast.py` stops passing
+those bills here, by their timestamps, so none is counted twice.
 """
 
 from __future__ import annotations

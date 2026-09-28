@@ -31,6 +31,14 @@ export interface CaseInput {
   hasPmjayCard: boolean;
   /** Self-reported: a serving or retired central government employee, CGHS-eligible. */
   govtEmployeeOrPensioner: boolean;
+  /** Self-reported: insured under ESI, or the dependant of someone who is. */
+  esiInsured: boolean;
+  /**
+   * Self-reported: the condition being treated was present before the policy
+   * began. Asked rather than inferred -- whether something is pre-existing is
+   * a clinical history question, and this app does not answer those.
+   */
+  preExisting: boolean;
 }
 
 export interface Evaluated {
@@ -52,8 +60,18 @@ export interface Evaluated {
  * nothing below this can change that; off the list, the claim always stands,
  * but whether it stands as a full in-patient admission or gets downgraded to
  * day-care billing is a real choice, decided on the tree rather than here.
+ *
+ * The waiting period is checked first because it is the harder refusal: a
+ * pre-existing condition inside it is not covered in any hospital, in any room,
+ * by any route, so no branch below could change the answer.
  */
-function admissibility(p: Procedure, pol: Policy) {
+function admissibility(p: Procedure, pol: Policy, input: CaseInput) {
+  if (input.preExisting && pol.monthsInForce < pol.pedWaitingMonths) {
+    return {
+      reason: `A pre-existing condition, and this policy has run ${pol.monthsInForce} of the ${pol.pedWaitingMonths} months it must before one is covered.`,
+      clause: "PED_WAITING",
+    };
+  }
   if (p.dayCare && !pol.dayCareCovered) {
     return {
       reason: "This policy does not cover day-care procedures, and the procedure has no minimum stay to fall back on.",
@@ -112,7 +130,7 @@ export function evaluate(input: CaseInput): Evaluated {
     implantAmount: implantOpt?.amount,
     implantLabel: implantOpt?.label,
   });
-  const repudiation = admissibility(p, pol);
+  const repudiation = admissibility(p, pol, input);
   const dayCareDowngrade = !p.dayCare && !input.admittedInpatient;
   return {
     input,
@@ -526,6 +544,24 @@ export interface Gate {
 
 export function gate(e: Evaluated): Gate {
   const p = e.procedure;
+  const pol = e.policy;
+  if (e.input.preExisting) {
+    const served = pol.monthsInForce >= pol.pedWaitingMonths;
+    // Served, the waiting period is no longer the question; fall through to
+    // the day-care test when that one can still fail.
+    if (!served || !p.dayCare) {
+      return {
+        question: "Is this a claim at all?",
+        test: served ? "Pre-existing condition, waiting period served" : "Pre-existing condition, inside the waiting period",
+        passed: served,
+        clause: "PED_WAITING",
+        detail: served
+          ? `The policy has run ${pol.monthsInForce} months against a ${pol.pedWaitingMonths}-month waiting period, so the condition is covered like any other.`
+          : e.repudiation!.reason,
+        relevant: true,
+      };
+    }
+  }
   if (!p.dayCare) {
     return {
       question: "Is this a claim at all?",
@@ -581,7 +617,7 @@ const LABEL: Record<string, string> = {
 
 /* ── Government schemes, as alternatives to the policy — never on top of it ── */
 
-export type SchemeId = "private" | "pmjay" | "vayvandana" | "cghs";
+export type SchemeId = "private" | "pmjay" | "vayvandana" | "cghs" | "esi";
 
 export interface Scheme {
   id: SchemeId;
@@ -616,6 +652,7 @@ export function schemeOptions(e: Evaluated): Scheme[] {
 
   const pmjayReach = h.pmjayEmpanelled && p.pmjayRate !== null;
   const cghsReach = h.cghsRateBand !== null && p.cghsRate !== null;
+  const esiReach = h.esicTieUp && p.cghsRate !== null;
 
   const schemes: Scheme[] = [
     {
@@ -674,6 +711,19 @@ export function schemeOptions(e: Evaluated): Scheme[] {
           ? "not a serving or retired central government employee"
           : null,
       clause: "CGHS_SCHEME",
+      current: false,
+    },
+    {
+      id: "esi",
+      label: "ESI (Employees' State Insurance)",
+      detail: esiReach
+        ? `ESIC tie-up, settled at the CGHS package rate of ${fmt(p.cghsRate!)}, cashless on an ESIC referral.`
+        : `Not available: ${!h.esicTieUp ? "hospital has no ESIC tie-up" : "no CGHS package rate for ESIC to settle this procedure at"}.`,
+      patientPays: esiReach ? 0 : null,
+      packageRate: esiReach ? p.cghsRate : null,
+      eligible: esiReach && input.esiInsured,
+      reason: !esiReach ? "not offered here" : !input.esiInsured ? "not insured under ESI" : null,
+      clause: "ESI_SCHEME",
       current: false,
     },
   ];

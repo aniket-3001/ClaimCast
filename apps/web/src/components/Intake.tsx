@@ -103,7 +103,8 @@ export function Intake({
         </div>
       </div>
 
-      {/* The three facts that decide whether a government scheme is open. They
+      {/* The facts that decide whether a government scheme is open, and whether
+          a waiting period still stands between this condition and cover. They
           are asked once, here, and answered on the tree — never as a tab of
           their own, because a scheme is a way of paying, not a topic. */}
       <div className="givens">
@@ -140,7 +141,28 @@ export function Intake({
             <option value="yes">Yes</option>
           </select>
         </div>
-        <div className="given fill" aria-hidden="true" />
+        <div className="given">
+          <label htmlFor="i-esi">ESI insured or dependant</label>
+          <select
+            id="i-esi"
+            value={input.esiInsured ? "yes" : "no"}
+            onChange={(ev) => set({ esiInsured: ev.target.value === "yes" })}
+          >
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
+        <div className="given">
+          <label htmlFor="i-ped">Pre-existing condition</label>
+          <select
+            id="i-ped"
+            value={input.preExisting ? "yes" : "no"}
+            onChange={(ev) => set({ preExisting: ev.target.value === "yes" })}
+          >
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
       </div>
 
       <section className="section">
@@ -346,6 +368,7 @@ const READ_ROWS: { field: ExtractedField; label: string; kind: Kind; unit?: stri
   { field: "dayCareCovered", label: "Day-care procedures", kind: "bool" },
   { field: "pedWaitingMonths", label: "Pre-existing disease waiting", kind: "count", unit: "months" },
   { field: "moratoriumMonths", label: "Moratorium", kind: "count", unit: "months" },
+  { field: "exclusions", label: "Exclusions", kind: "text" },
 ];
 
 /**
@@ -475,8 +498,10 @@ function ExtractionPanel({
     <div className="tnode fixed">
       <div className="tnode-k">Confirm each field</div>
       <p className="note" style={{ marginTop: 0 }}>
-        Read from {extraction.filename}, {extraction.pages} pages, by {extraction.model}. Every
-        quote below was searched for in the document itself.
+        Read from {extraction.filename}, {extraction.pages} pages, by {extraction.model}
+        {extraction.retrievedPassages !== undefined &&
+          `, grounded in ${extraction.retrievedPassages} passages retrieved from the document`}
+        . Every quote below was searched for in the document itself.
       </p>
 
       {unverified > 0 && (
@@ -659,6 +684,7 @@ function asPolicy(
     monthsInForce,
     pedWaitingMonths: num("pedWaitingMonths") ?? fallback.pedWaitingMonths,
     moratoriumMonths: num("moratoriumMonths") ?? fallback.moratoriumMonths,
+    exclusions: str("exclusions", "") || null,
     notes: `Read from ${e.filename} on ${e.extractedAt.slice(0, 10)} and confirmed field by field.`,
   };
 }

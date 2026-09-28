@@ -15,8 +15,9 @@ import json
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
-from .paths import ARTIFACTS
+from .paths import ARTIFACTS, version_key
 
 
 @dataclass(frozen=True)
@@ -32,11 +33,20 @@ class Model:
     implant_options: dict[str, list[int]]
     coverage: dict[str, float]
     raw: dict
+    #: The XGBoost quantile booster, or None for an artifact built before it
+    #: existed, which then forecasts from the survey band as it always did.
+    booster: Any = None
+    #: Specialty vocabulary the booster was encoded with.
+    vocabulary: tuple[str, ...] = ()
+    #: Timestamp of the newest settled bill the booster was trained on. Bills at
+    #: or before it are already in the model and are not applied again.
+    outcomes_through: str | None = None
 
     def basis(self) -> str:
         """One paragraph a caller can put in front of a judge without hedging."""
         r = self.raw
         return " ".join([
+            r["booster"]["basis"] if "booster" in r else "",
             r["multiplier"]["basis"],
             r["dispersion"]["basis"],
             "Held-out coverage of the p10-to-p90 interval, leaving each state out in "
@@ -60,7 +70,7 @@ def _newest() -> Path:
             "from a trained artifact and there is deliberately no untrained fallback; "
             "build one with `python -m training.train`."
         )
-    dirs = sorted(d for d in ARTIFACTS.iterdir() if (d / "model.json").is_file())
+    dirs = sorted((d for d in ARTIFACTS.iterdir() if (d / "model.json").is_file()), key=version_key)
     if not dirs:
         raise SystemExit(
             "no model.json under " + str(ARTIFACTS) + ". Build one with "
@@ -71,7 +81,16 @@ def _newest() -> Path:
 
 @lru_cache(maxsize=1)
 def load() -> Model:
-    raw = json.loads((_newest() / "model.json").read_text(encoding="utf-8"))
+    return load_from(_newest())
+
+
+def load_from(directory: Path) -> Model:
+    raw = json.loads((directory / "model.json").read_text(encoding="utf-8"))
+    fitted = None
+    if "booster" in raw:
+        from . import booster
+
+        fitted = booster.load(directory / raw["booster"]["file"])
     return Model(
         version=raw["modelVersion"],
         trained_on=raw["trainedOn"],
@@ -81,4 +100,7 @@ def load() -> Model:
         implant_options={k: sorted(v) for k, v in raw["implantOptions"].items()},
         coverage=raw["dispersion"]["coverage"],
         raw=raw,
+        booster=fitted,
+        vocabulary=tuple(raw["booster"]["vocabulary"]) if fitted is not None else (),
+        outcomes_through=(raw.get("outcomes") or {}).get("through"),
     )

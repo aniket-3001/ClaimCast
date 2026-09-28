@@ -1,11 +1,19 @@
 """
-The cost-model service: POST /forecast and GET /health.
+The cost-model service: POST /forecast, POST /retrain and GET /health.
 
-It holds one artifact in memory and does arithmetic on it. There is no inference
-loop and nothing to warm up, so a cold start is a JSON read; the service is a
-separate process because the plan puts the probabilistic components at the edges
-of a deterministic core, and that boundary is worth keeping even when the
-probabilistic component turns out to be small.
+It holds one artifact in memory -- an XGBoost quantile booster and the figures
+around it -- and predicts from it. The service is a separate process because the
+plan puts the probabilistic components at the edges of a deterministic core, and
+that boundary is worth keeping.
+
+`/retrain` is the self-learning loop. The API calls it with every settled bill it
+holds once enough new ones have arrived since the version `/health` reports; the
+service rebuilds the booster on the combined pool of published tariffs and those
+bills, writes it as a new artifact version, and serves from it. On a platform with
+an ephemeral disk a restart returns to the version baked into the image, `/health`
+then reports fewer bills trained on than the API holds, and the next outcome
+reported triggers the rebuild again -- so the loop repairs itself from the
+database rather than from the container.
 
 `/health` reports the model version, the training date and the checksum of every
 document the artifact was built from. That is what makes a forecast auditable
@@ -15,10 +23,13 @@ the exact PDFs it came from.
 
 from __future__ import annotations
 
+import threading
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from claimcast_ml import build as build_mod
 from claimcast_ml import model as model_mod
 from claimcast_ml.forecast import forecast
 
@@ -40,9 +51,12 @@ class Outcome(BaseModel):
 
     p50: int = Field(ge=0)
     actual: int = Field(ge=0)
+    #: When the bill was reported, ISO 8601. Bills the current booster was
+    #: already trained on are recognised by it and not applied a second time.
+    at: str | None = None
 
 
-class ForecastRequest(BaseModel):
+class ForecastRequestCore(BaseModel):
     """Mirrors `ForecastRequestSchema` in packages/contracts."""
 
     procedureId: str
@@ -51,21 +65,43 @@ class ForecastRequest(BaseModel):
     roomClass: str
     days: int = Field(ge=0, le=365)
     icuDays: int = Field(ge=0, le=365)
+    #: Which hospital the admission is at. Logged with the outcome; the booster
+    #: does not read it, because no public source prices a named hospital.
+    hospitalId: str | None = None
+
+
+class ForecastRequest(ForecastRequestCore):
     #: Settled bills, newest first, capped by the caller. Absent from a caller
     #: that has none, which is the shape this service shipped with.
     observed: list[Outcome] = Field(default_factory=list, max_length=500)
 
 
+class SettledBill(BaseModel):
+    """One settled bill as training data: the request it was forecast for, and what it came to."""
+
+    request: ForecastRequestCore
+    actual: int = Field(gt=0)
+    at: str | None = None
+
+
+class RetrainRequest(BaseModel):
+    outcomes: list[SettledBill] = Field(max_length=100_000)
+
+
 @app.get("/health")
 def health() -> dict:
     m = model_mod.load()
+    b = m.raw.get("booster", {})
     return {
         "status": "ok",
         "modelVersion": m.version,
         "trainedOn": m.trained_on,
         "surveyPeriod": m.raw["surveyPeriod"],
+        "model": b.get("library", "survey band") + (" " + b["objective"] if b else ""),
+        "trainingRows": b.get("trainingRows"),
+        "outcomesTrainedOn": (m.raw.get("outcomes") or {}).get("n", 0),
         "multiplier": m.multiplier,
-        "heldOutCoverage": m.coverage,
+        "heldOutCoverage": b.get("heldOutCoverage", m.coverage),
         "sources": {
             name: {"id": s["id"], "checksum": s["checksum"], "supplies": s["supplies"]}
             for name, s in m.raw["sources"].items()
@@ -85,7 +121,7 @@ def post_forecast(req: ForecastRequest) -> JSONResponse:
             req.roomClass,
             req.days,
             req.icuDays,
-            [(o.p50, o.actual) for o in req.observed],
+            [(o.p50, o.actual, o.at) for o in req.observed],
         )
     except KeyError as exc:
         # An unknown procedure, or one with no ailment coding. Both are refusals
@@ -110,4 +146,39 @@ def post_forecast(req: ForecastRequest) -> JSONResponse:
         "trainedOn": f.trained_on,
         "basis": f.basis,
         "caveats": f.caveats,
+    })
+
+
+#: One retrain at a time. A second request while one runs is answered 409 rather
+#: than queued: the caller retries on the next outcome, with the fuller pool.
+_retraining = threading.Lock()
+
+
+@app.post("/retrain")
+def post_retrain(req: RetrainRequest) -> JSONResponse:
+    if not _retraining.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="a retrain is already running")
+    try:
+        before = model_mod.load()
+        outcomes = build_mod.outcomes_from_json([o.model_dump() for o in req.outcomes])
+        artifact, fitted = build_mod.build(outcomes)
+        out = build_mod.write(artifact, fitted)
+        model_mod.load.cache_clear()
+        after = model_mod.load()
+        if after.version != artifact["modelVersion"]:
+            raise HTTPException(
+                status_code=500,
+                detail="wrote " + str(out) + " but the service loaded " + after.version,
+            )
+    finally:
+        _retraining.release()
+
+    rows = artifact["booster"]["trainingRows"]
+    return JSONResponse({
+        "previousVersion": before.version,
+        "modelVersion": after.version,
+        "outcomesTrainedOn": rows["outcomes"],
+        "outcomesDropped": rows["outcomesDropped"],
+        "tariffRows": rows["tariff"],
+        "heldOutCoverage": artifact["booster"]["heldOutCoverage"],
     })

@@ -68,9 +68,18 @@ def procedures() -> dict[str, dict]:
     return out
 
 
-def median_stay_days(procedure_id: str) -> int:
+def median_stay_days(procedure_id: str) -> int | None:
+    """None for a catalogue package: the catalogue publishes no length of stay."""
+    if ":" in procedure_id:
+        return None
     return procedures()[procedure_id]["medianStayDays"]
 
 
 def name_of(procedure_id: str) -> str:
+    if ":" in procedure_id:
+        from .tariff import catalogue_entry
+
+        entry = catalogue_entry(procedure_id) or {}
+        name = entry.get("package") or entry.get("name") or procedure_id
+        return name + " (" + procedure_id + ")"
     return procedures()[procedure_id]["name"]

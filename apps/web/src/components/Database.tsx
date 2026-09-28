@@ -122,6 +122,8 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                     age: 45,
                     hasPmjayCard: false,
                     govtEmployeeOrPensioner: false,
+                    esiInsured: false,
+                    preExisting: false,
                   })
                 }
               >
@@ -194,6 +196,7 @@ function Hospitals() {
                       {h.city} · {h.beds} beds ·{" "}
                       {h.network.length ? `${h.network.length} cashless tie-ups` : "no cashless tie-ups"}
                       {h.pmjayEmpanelled && " · PM-JAY empanelled"}
+                      {h.esicTieUp && " · ESIC tie-up"}
                     </div>
                     {h.flags?.map((f) => (
                       <div className="sub" key={f}>

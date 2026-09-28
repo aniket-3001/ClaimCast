@@ -110,7 +110,7 @@ queryable column rather than a note in a file, because a figure whose provenance
 has to be labelled wherever it surfaces. Phase 3 drops the caveats one published document
 at a time, as each is downloaded and checksummed.
 
-Four tabs over one shared admission. **Start** is the front door: who is asking, which policy they hold, the three facts that decide whether a government scheme is open to them, and the policy schedule read back field by field for confirmation. **The path** is the decision tree: the admission at the top, the government fork under it where one applies, then the 24-hour gate and the choices in the order they are faced along the care journey — where, which bed, which implant, how the claim is made — and under those the deductions no choice moves and the figure the family ends up paying. Every branch is a full re-adjudication, so the rupee figure under it is what would actually be paid on that path, not an adjustment applied to this one. **The working** is the same admission as arithmetic: the bill line by line with each deduction citing its clause, then every room class and every hospital in full. **Database** is what the system already knows — the ten hospitals, fourteen procedures, six policy structures, sixteen settled admissions, IRDAI Lists I-IV and the clause registry the engine draws on.
+Four tabs over one shared admission. **Start** is the front door: who is asking, which policy they hold, the facts that decide whether a government scheme — PM-JAY, Vay Vandana, CGHS or ESI — is open to them and whether a pre-existing condition is still inside its waiting period, and the policy schedule read back field by field for confirmation. **The path** is the decision tree: the admission at the top, the government fork under it where one applies, then the 24-hour gate and the choices in the order they are faced along the care journey — where, which bed, which implant, how the claim is made — and under those the deductions no choice moves and the figure the family ends up paying. Every branch is a full re-adjudication, so the rupee figure under it is what would actually be paid on that path, not an adjustment applied to this one. **The working** is the same admission as arithmetic: the bill line by line with each deduction citing its clause, then every room class and every hospital in full. **Database** is what the system already knows — the ten hospitals, fourteen procedures, six policy structures, sixteen settled admissions, IRDAI Lists I-IV and the clause registry the engine draws on.
 
 Every hospital, insurer, product, patient and bill is invented. The sixteen stored admissions are chosen for what each one breaks — the room exactly at the sub-limit, the intensive-care stay that nothing may be scaled against, the claim refused five hours short of twenty-four, the sum insured that ran out in March, the nursing home with a single room class and therefore no cheaper bed to move to.
 
@@ -126,6 +126,45 @@ it needs `npm run db:up` first and fails loudly rather than quietly skipping if 
 database is not there.
 
 `npm run check` is the guard on the deck. It asserts the rupee figures on slide 3 against the engine, so if the two ever disagree the build fails rather than the slide going out wrong.
+
+### Reading the policy: retrieval, then extraction, then a person
+
+`apps/api/src/extract.ts` reads an uploaded schedule in three steps. The document's own
+text is chunked and, for each of the seventeen fields — sum insured, sub-limits, co-pay,
+waiting periods, exclusions and the rest — the passages most likely to state it are
+retrieved by TF-IDF (`retrieval.ts`, shared with the policy Q&A in `rag.ts`). The model is
+then prompted with those passages and asked to quote, not paraphrase; the text-only
+reader gets the retrieved passages in place of the document. Every quote is searched for
+in the PDF's own text and marked unverified if it is not there, and nothing reaches the
+engine until the user has confirmed each field. `extract.check.ts` asserts that retrieval
+surfaces the stating page for every quotable field of the mockup schedule.
+
+### The cost model and its learning loop
+
+`services/ml` is an **XGBoost quantile regression** (`reg:quantileerror` at p10, p50 and
+p90): the private charge as a multiple of the published tariff, from the tariff itself,
+its scheme and specialty, the city tier and NABH status. It is trained on every
+numerically priced row of both public tariffs — the ~1,900 PM-JAY HBP 2022 packages at
+three city tiers and every CGHS rate — labelled with the NSS 75th round's
+state-by-quintile spread around the fitted multiplier, plus every settled bill reported
+back through the app. Any catalogue package can be forecast directly (`hbp:SB039A`), not
+only the engine's fourteen procedures. `claimcast_ml/booster.py` says plainly what each
+part of that pool can teach it: until bills arrive the range is the survey's; only
+settled bills make it procedure-specific.
+
+Each settled bill is logged as (procedure, hospital, city tier, forecast, actual). Once
+`RETRAIN_EVERY` (default 10) bills have arrived that the running booster was not trained
+on, the API sends all of them to `POST /retrain`, which rebuilds the booster on the
+combined tariff-and-bill pool and serves the new version. Between retrains the newer bills
+still correct each forecast through a shrunk calibration factor, and a bill already in the
+booster is never applied twice.
+
+```bash
+cd services/ml
+python -m training.train                        # build the shipped artifact
+python -m training.train --outcomes bills.json  # rebuild on tariffs + settled bills
+python -m pytest -q
+```
 
 ## Sources
 

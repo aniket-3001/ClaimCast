@@ -31,6 +31,7 @@ export const POLICIES: Policy[] = [
     monthsInForce: 38,
     pedWaitingMonths: 36,
     moratoriumMonths: 60,
+    exclusions: "Registration & documentation charges; Toiletries, attendant meals, television; Expenses outside the pre/post window (Clause 7.1)",
     notes: "The common shape: a flat rupee room limit with proportionate reduction attached.",
   },
   {
@@ -51,6 +52,7 @@ export const POLICIES: Policy[] = [
     monthsInForce: 20,
     pedWaitingMonths: 36,
     moratoriumMonths: 60,
+    exclusions: null,
     notes:
       "Standardised wording, identical across insurers. Two limits on the room and a 5% co-payment on every claim.",
   },
@@ -72,6 +74,7 @@ export const POLICIES: Policy[] = [
     monthsInForce: 74,
     pedWaitingMonths: 24,
     moratoriumMonths: 60,
+    exclusions: null,
     notes: "No room limit, so nothing is ever scaled. Past its moratorium.",
   },
   {
@@ -92,6 +95,7 @@ export const POLICIES: Policy[] = [
     monthsInForce: 31,
     pedWaitingMonths: 24,
     moratoriumMonths: 60,
+    exclusions: null,
     notes: "A 20% co-payment on the admissible balance, applied after every other deduction.",
   },
   {
@@ -112,6 +116,7 @@ export const POLICIES: Policy[] = [
     monthsInForce: 14,
     pedWaitingMonths: 0,
     moratoriumMonths: 60,
+    exclusions: null,
     notes:
       "Waiting periods waived, but the room limit is 1% of a small sum insured. In a metro that is below the general ward.",
   },
@@ -133,6 +138,7 @@ export const POLICIES: Policy[] = [
     monthsInForce: 9,
     pedWaitingMonths: 48,
     moratoriumMonths: 60,
+    exclusions: null,
     notes: "Nine months old, with a 48-month waiting period on anything pre-existing.",
   },
 ];

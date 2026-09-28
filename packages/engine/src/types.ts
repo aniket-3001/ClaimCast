@@ -53,6 +53,12 @@ export interface Hospital {
   /** Which insurers hold a cashless network agreement with this hospital. */
   network: string[];
   pmjayEmpanelled: boolean;
+  /**
+   * Holds an ESIC tie-up for secondary and super-speciality referrals. ESIC
+   * settles those at CGHS package rates, so the tie-up and a CGHS rate for the
+   * procedure are together what puts ESI within reach here.
+   */
+  esicTieUp: boolean;
   cghsRateBand: "X" | "Y" | "Z" | null;
   rooms: RoomTariff[];
   /** Median days from discharge to reimbursement settlement, observed. */
@@ -152,6 +158,12 @@ export interface Policy {
   monthsInForce: number;
   pedWaitingMonths: number;
   moratoriumMonths: number;
+  /**
+   * What the wording excludes, in its own words, as read off a schedule and
+   * confirmed. Null where no document has been read for this policy -- which
+   * is not the same as a policy with no exclusions, and is never priced as one.
+   */
+  exclusions: string | null;
   notes?: string;
 }
 

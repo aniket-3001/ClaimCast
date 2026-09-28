@@ -29,6 +29,7 @@ import { fileURLToPath } from "node:url";
 import { POLICIES } from "@claimcast/engine/fixtures";
 import { EXTRACTED_FIELDS } from "@claimcast/contracts";
 import { found, pageText } from "./extract.js";
+import { retrieveForFields } from "./models.js";
 import { CITED, FABRICATED, UNSTATED } from "./schedule.target.js";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
@@ -89,6 +90,22 @@ for (const f of FABRICATED) {
   }
 }
 
+// Retrieval has to put each field's own sentence in front of the model. A field
+// whose quote sits on a page none of its retrieved passages come from is a field
+// the model would be reading from the wrong part of the document.
+const passages = retrieveForFields(pages);
+let grounded = 0;
+for (const field of EXTRACTED_FIELDS) {
+  const span = CITED[field].span;
+  if (!span) continue;
+  if (passages[field].some((c) => c.page === span.page)) grounded++;
+  else
+    failures.push(
+      `${field}: retrieval did not surface page ${span.page}, where the schedule states it ` +
+        `(got pages ${passages[field].map((c) => c.page).join(", ") || "none"}).`,
+    );
+}
+
 const gaps = EXTRACTED_FIELDS.filter((f) => CITED[f].span === null);
 
 console.log(`policy-schedule.pdf — ${pages.length} pages read`);
@@ -97,6 +114,7 @@ console.log(
 );
 for (const g of gaps) console.log(`  absent: ${g} — ${CITED[g].absent}`);
 console.log(`  ${FABRICATED.length} fabricated spans refused`);
+console.log(`  retrieval surfaced the stating page for ${grounded} of ${EXTRACTED_FIELDS.length - gaps.length} quotable fields`);
 for (const f of UNSTATED) {
   console.log(
     `  gap: ${f} is not in a schedule at all — pol-classic's ${String(fixture[f])} comes from the case`,

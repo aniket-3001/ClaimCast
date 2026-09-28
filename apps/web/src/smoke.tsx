@@ -43,6 +43,10 @@ const cases: CaseInput[] = ADMISSIONS.map((a) => ({
   age: 45,
   hasPmjayCard: false,
   govtEmployeeOrPensioner: false,
+  esiInsured: false,
+  // The one stored admission refused on a waiting period has to be refused
+  // live as well, not only because the record says so.
+  preExisting: a.repudiated?.clause === "PED_WAITING",
 }));
 // Every hospital against every policy, cheapest room, so no combination the
 // controls can reach goes unrendered.
@@ -62,6 +66,8 @@ for (const h of HOSPITALS)
       age: 20 + ((n * 11) % 80),
       hasPmjayCard: n % 3 === 0,
       govtEmployeeOrPensioner: n % 3 === 1,
+      esiInsured: n % 3 === 2,
+      preExisting: n % 5 === 0,
     });
 
 let rendered = 0;

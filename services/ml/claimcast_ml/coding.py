@@ -102,6 +102,8 @@ CODING: dict[str, Coding] = {
 
 
 def coding_for(procedure_id: str) -> Coding:
+    if ":" in procedure_id:
+        return _catalogue_coding(procedure_id)
     try:
         return CODING[procedure_id]
     except KeyError:
@@ -110,3 +112,32 @@ def coding_for(procedure_id: str) -> Coding:
             + ". Deciding which category a procedure falls in is a judgement, not a "
             "lookup, so this service refuses to guess one: add it to coding.py."
         ) from None
+
+
+def _catalogue_coding(procedure_id: str) -> Coding:
+    """
+    A catalogue package's category, from its specialty.
+
+    The category only names the survey cell a forecast's basis refers to; the
+    booster reads the specialty itself. Where a specialty belongs to no single
+    category the forecast says so rather than choosing one.
+    """
+    from .categories import SPECIALTIES
+    from .tariff import catalogue_entry
+
+    entry = catalogue_entry(procedure_id)
+    if entry is None:
+        raise KeyError(
+            "no package or rate " + repr(procedure_id) + " in the published catalogues."
+        )
+    specialty = entry.get("specialtyCode") or entry.get("specialty", "")
+    for category, prefixes in SPECIALTIES.items():
+        if specialty in prefixes:
+            return Coding(category)
+    return Coding(
+        "any",
+        weak=(
+            "The package's specialty (" + specialty + ") maps to no single survey "
+            "ailment category, so the basis refers to the all-ailment figure."
+        ),
+    )
