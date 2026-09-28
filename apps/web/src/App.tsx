@@ -8,9 +8,10 @@ import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Database } from "./components/Database";
 import { Learning } from "./components/Learning";
-import { ChatDock } from "./components/ChatDock";
+import { ChatDock, chatRecords, type Turn } from "./components/ChatDock";
+import { SavedSessions } from "./components/SavedSessions";
 import { Login, type Role } from "./components/Login";
-import { recordChoice } from "./api";
+import { recordChoice, saveSession } from "./api";
 
 type Tab = "start" | "journey" | "working" | "database" | "learning";
 
@@ -101,6 +102,10 @@ export default function App() {
   // The uploaded policy document, once there is one. Held here rather than in
   // Intake so the chatbox on every tab can search it after Intake unmounts.
   const [documentId, setDocumentId] = useState<string | null>(null);
+  const [chatTurns, setChatTurns] = useState<Turn[]>([]);
+  // One saved record per sitting: the first save creates it, later ones update it.
+  const [saved, setSaved] = useState<{ id: string; at: Date } | null>(null);
+  const [saving, setSaving] = useState<"idle" | "saving" | string>("idle");
   const [name, setName] = useState("");
   const [policyholder, setPolicyholder] = useState("");
   const e = useMemo(() => evaluate(input), [input]);
@@ -147,6 +152,23 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
+  const saveNow = async () => {
+    setSaving("saving");
+    const r = await saveSession({
+      ...(saved ? { id: saved.id } : {}),
+      ...(name ? { name } : {}),
+      ...(policyholder ? { policyholder } : {}),
+      case: e.input,
+      ...(e.input.policyId === "pol-uploaded" ? { policy: e.policy } : {}),
+      ...(documentId ? { documentId } : {}),
+      chat: chatRecords(chatTurns),
+    });
+    if (r.ok) {
+      setSaved({ id: r.id, at: new Date() });
+      setSaving("idle");
+    } else setSaving(r.reason);
+  };
+
   if (!role) return <Login onPick={setRole} />;
 
   return (
@@ -164,6 +186,16 @@ export default function App() {
             · synthetic data
           </div>
           {role === "user" && <Account />}
+          {role === "user" && (
+            <button className="save-session" onClick={() => void saveNow()} disabled={saving === "saving"}>
+              {saving === "saving"
+                ? "Saving…"
+                : saved
+                  ? `Saved ${saved.at.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} · save again`
+                  : "Save my session"}
+            </button>
+          )}
+          {saving !== "idle" && saving !== "saving" && <div className="warn-line">{saving}</div>}
           <button className="switch-view" onClick={() => setRole(null)}>
             Switch view
           </button>
@@ -219,10 +251,17 @@ export default function App() {
           <Alternatives e={e} onPick={pick} />
         </>
       )}
-      {tab === "database" && <Database onOpen={open} />}
+      {tab === "database" && (
+        <>
+          <SavedSessions onOpen={open} />
+          <Database onOpen={open} />
+        </>
+      )}
       {tab === "learning" && <Learning />}
 
-      {role === "user" && <ChatDock e={e} documentId={documentId} />}
+      {role === "user" && (
+        <ChatDock e={e} documentId={documentId} turns={chatTurns} setTurns={setChatTurns} />
+      )}
 
       <footer className="foot">
         <span>Team Rocket · IIIT-Delhi · GE HealthCare Precision Care Challenge 2026</span>

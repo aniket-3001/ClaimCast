@@ -79,7 +79,7 @@ for (const c of cases) {
   const e = evaluate(c);
   renderToString(<Controls value={c} onChange={noop} />);
   renderToString(<Journey e={e} onPick={noop} />);
-  renderToString(<ChatDock e={e} documentId={null} />);
+  renderToString(<ChatDock e={e} documentId={null} turns={[]} setTurns={noop} />);
   renderToString(<BillView e={e} />);
   renderToString(<Alternatives e={e} onPick={noop} />);
   rendered++;

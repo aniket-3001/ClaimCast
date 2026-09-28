@@ -119,6 +119,33 @@ export function Learning() {
         </div>
       </section>
 
+      <section className="section">
+        <div className="section-head">
+          <h2>The chatbox&rsquo;s memory</h2>
+          <span className="aside">Grows with every saved session</span>
+        </div>
+        <p className="note" style={{ marginTop: 0 }}>
+          When a family saves their session, their questions and ClaimCast&rsquo;s answers are kept.
+          Each new question recalls the most similar past ones and shows the model how they were
+          explained, so the chatbox gets better at answering what families actually ask. The model&rsquo;s
+          weights are not retrained &mdash; it learns by remembering. Figures are never taken from memory:
+          they come from the engine for the admission on screen, and an answer that invented one is not
+          remembered.
+        </p>
+        <div className="signals">
+          <Signal
+            n={state.savedSessions ?? 0}
+            k="Saved sessions"
+            why="Families who pressed Save my session. Each one is listed, in full, on the Database tab."
+          />
+          <Signal
+            n={state.chatMemory ?? 0}
+            k="Answers in memory"
+            why="Chat answers from saved sessions that came back clean, with no figure the engine did not state. These are what the chatbox recalls from."
+          />
+        </div>
+      </section>
+
       <CostModelLearning m={state.costModel ?? null} />
 
       <section className="section">

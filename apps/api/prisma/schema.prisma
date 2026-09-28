@@ -551,9 +551,10 @@ model User {
   name         String?
   createdAt    DateTime @default(now())
 
-  cases     Case[]
-  documents PolicyDocument[]
-  outcomes  ForecastOutcome[]
+  cases         Case[]
+  documents     PolicyDocument[]
+  outcomes      ForecastOutcome[]
+  savedSessions SavedSession[]
 
   @@map("users")
 }
@@ -597,4 +598,34 @@ model PolicyDocument {
 
   @@index([userId])
   @@map("policy_documents")
+}
+
+/// A family's session with ClaimCast, kept when they pressed "Save my session".
+///
+/// Everything the admin side needs to see what the family saw: who, which
+/// admission, which policy (an uploaded one travels here, since it lives only in
+/// their browser), what the engine worked out at the time, and the chat. The
+/// chat turns are also the chatbox's memory: later questions retrieve similar
+/// past ones from here.
+model SavedSession {
+  id           String   @id @default(cuid())
+  userId       String?
+  name         String?
+  policyholder String?
+  /// The CaseInput, as the screen had it.
+  input        Json
+  /// An uploaded, confirmed policy, when that is what was priced.
+  policy       Json?
+  documentId   String?
+  /// The engine's outcome at the moment of saving.
+  summary      Json
+  /// Chat turns: question, answer, facts used, flagged figures, model.
+  chat         Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@map("saved_sessions")
 }

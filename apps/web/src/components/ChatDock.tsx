@@ -14,7 +14,7 @@ import { askChat } from "../api";
  * than left to read like the engine's arithmetic.
  */
 
-type Turn =
+export type Turn =
   | { role: "user"; text: string }
   | { role: "assistant"; answer: ChatAnswer }
   | { role: "error"; text: string };
@@ -26,9 +26,19 @@ const STARTERS = [
   "Is a government scheme open to us?",
 ];
 
-export function ChatDock({ e, documentId }: { e: Evaluated; documentId: string | null }) {
+export function ChatDock({
+  e,
+  documentId,
+  turns,
+  setTurns,
+}: {
+  e: Evaluated;
+  documentId: string | null;
+  /** Held by the app, so "Save my session" can keep the conversation. */
+  turns: Turn[];
+  setTurns: (update: (ts: Turn[]) => Turn[]) => void;
+}) {
   const [open, setOpen] = useState(false);
-  const [turns, setTurns] = useState<Turn[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const end = useRef<HTMLDivElement>(null);
@@ -174,7 +184,30 @@ function Answer({ a }: { a: ChatAnswer }) {
           </ul>
         </details>
       )}
-      <div className="chat-model">{a.model}</div>
+      <div className="chat-model">
+        {a.model}
+        {a.memoryUsed > 0 &&
+          ` · recalled ${a.memoryUsed} past ${a.memoryUsed === 1 ? "conversation" : "conversations"} from saved sessions`}
+      </div>
     </div>
   );
+}
+
+/** The conversation as it is kept in a saved session: each question with its answer. */
+export function chatRecords(turns: Turn[]) {
+  const out = [];
+  for (let i = 0; i < turns.length - 1; i++) {
+    const q = turns[i];
+    const a = turns[i + 1];
+    if (q.role === "user" && a.role === "assistant") {
+      out.push({
+        question: q.text,
+        answer: a.answer.answer,
+        factIds: a.answer.facts.map((f) => f.id),
+        unsupportedFigures: a.answer.unsupportedFigures,
+        model: a.answer.model,
+      });
+    }
+  }
+  return out;
 }

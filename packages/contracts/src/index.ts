@@ -488,6 +488,9 @@ export const LearningStateSchema = z.object({
   outcomes: z.number().int().min(0),
   /** Branch choices recorded. */
   choices: z.number().int().min(0),
+  /** Saved sessions, and the chat answers in them the chatbox can recall. */
+  savedSessions: z.number().int().min(0).optional(),
+  chatMemory: z.number().int().min(0).optional(),
   /**
    * The cost model's own learning: which booster version is serving, how many
    * settled bills it was trained on, and how many more until it retrains.
@@ -644,5 +647,68 @@ export const ChatAnswerSchema = z.object({
   usedDocument: z.boolean(),
   retrievedPages: z.array(z.number().int().min(1)),
   model: z.string(),
+  /** How many past saved conversations the answer was shown as examples. */
+  memoryUsed: z.number().int().min(0).default(0),
 });
 export type ChatAnswer = z.infer<typeof ChatAnswerSchema>;
+
+// ── Saved sessions ────────────────────────────────────────────────────────
+
+/** One chat turn, as it is kept in a saved session and recalled as memory. */
+export const ChatTurnRecordSchema = z.object({
+  question: z.string().max(500),
+  answer: z.string().max(4000),
+  factIds: z.array(z.string()).max(60).default([]),
+  unsupportedFigures: z.array(z.string()).max(20).default([]),
+  model: z.string().max(200).default(""),
+});
+export type ChatTurnRecord = z.infer<typeof ChatTurnRecordSchema>;
+
+/**
+ * "Save my session". `id`, when given, updates that session rather than
+ * starting another, so pressing save twice keeps one record per sitting.
+ */
+export const SaveSessionSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().max(120).optional(),
+  policyholder: z.string().max(120).optional(),
+  case: CaseInputSchema,
+  policy: PolicySchema.optional(),
+  documentId: z.string().optional(),
+  chat: z.array(ChatTurnRecordSchema).max(100).default([]),
+});
+export type SaveSessionRequest = z.infer<typeof SaveSessionSchema>;
+
+/** What the engine worked out, frozen at the moment of saving. */
+export const SessionSummarySchema = z.object({
+  procedure: z.string(),
+  hospital: z.string(),
+  city: z.string(),
+  policy: z.string(),
+  roomClass: z.string(),
+  billTotal: Paise,
+  insurerPays: Paise,
+  patientPays: Paise,
+  deductionTotal: Paise,
+  deductions: z.array(z.object({ line: z.string(), amount: Paise, clause: z.string() })),
+  repudiated: z.string().nullable(),
+});
+
+export const SavedSessionRowSchema = z.object({
+  id: z.string(),
+  name: z.string().nullable(),
+  policyholder: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  summary: SessionSummarySchema,
+  chatTurns: z.number().int().min(0),
+  uploadedPolicy: z.boolean(),
+});
+export type SavedSessionRow = z.infer<typeof SavedSessionRowSchema>;
+
+export const SavedSessionDetailSchema = SavedSessionRowSchema.extend({
+  input: CaseInputSchema,
+  policy: PolicySchema.nullable(),
+  chat: z.array(ChatTurnRecordSchema),
+});
+export type SavedSessionDetail = z.infer<typeof SavedSessionDetailSchema>;

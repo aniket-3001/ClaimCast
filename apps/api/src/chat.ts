@@ -21,7 +21,7 @@
  */
 
 import type { Fact } from "@claimcast/engine";
-import type { ChatAnswer, ChatRequest } from "@claimcast/contracts";
+import type { ChatAnswer, ChatRequest, ChatTurnRecord } from "@claimcast/contracts";
 import { found } from "./extract.js";
 import { chat } from "./llm.js";
 import { chunkPages, retrieve, type ScoredChunk } from "./retrieval.js";
@@ -45,6 +45,9 @@ Rules:
   needed. If asked, say that ClaimCast only works out the money and they should ask their doctor.
 - Never say a claim will definitely be paid. These are estimates from the policy wording.
 - If neither the facts nor the passages answer the question, say so plainly.
+- MEMORY (sometimes) holds questions other families asked in saved sessions and how ClaimCast
+  answered them. Use it only to learn how to explain things clearly and what people usually want
+  to know. Its figures belong to other admissions: never repeat a figure from MEMORY.
 
 Reply with JSON only -- no prose, no markdown fence -- in exactly this shape:
 { "answer": string, "facts": [ "F3", ... ], "citations": [ { "quote": string, "page": integer } ] }
@@ -73,7 +76,11 @@ function parseJson(text: string): Record<string, unknown> {
   return JSON.parse(body.slice(start, end + 1)) as Record<string, unknown>;
 }
 
-export function buildPrompt(facts: Fact[], passages: ScoredChunk[] | null): string {
+export function buildPrompt(
+  facts: Fact[],
+  passages: ScoredChunk[] | null,
+  memory: ChatTurnRecord[] = [],
+): string {
   const factBlock = facts.map((f) => `${f.id}. ${f.text}`).join("\n");
   const passageBlock =
     passages === null
@@ -82,7 +89,11 @@ export function buildPrompt(facts: Fact[], passages: ScoredChunk[] | null): stri
         (passages.length
           ? passages.map((p) => `[page ${p.chunk.page}] "${p.chunk.text}"`).join("\n\n")
           : "(no passage in the document matched this question)");
-  return `${SYSTEM}\n\n── FACTS about this admission ──\n${factBlock}${passageBlock}`;
+  const memoryBlock = memory.length
+    ? "\n\n── MEMORY: past questions from saved sessions, and ClaimCast's answers (other admissions) ──\n" +
+      memory.map((m) => `Q: ${m.question}\nA: ${m.answer}`).join("\n\n")
+    : "";
+  return `${SYSTEM}\n\n── FACTS about this admission ──\n${factBlock}${passageBlock}${memoryBlock}`;
 }
 
 /**
@@ -95,6 +106,7 @@ export function groundChat(args: {
   pages: string[] | null;
   retrievedPages: number[];
   model: string;
+  memoryUsed?: number;
 }): ChatAnswer {
   const parsed = parseJson(args.rawModelText);
   const answer = typeof parsed.answer === "string" ? parsed.answer.trim() : "";
@@ -132,6 +144,7 @@ export function groundChat(args: {
     usedDocument: args.pages !== null,
     retrievedPages: args.retrievedPages,
     model: args.model,
+    memoryUsed: args.memoryUsed ?? 0,
   };
 }
 
@@ -141,6 +154,8 @@ export async function answerChat(args: {
   facts: Fact[];
   /** The uploaded document's page text, or null when none was given. */
   pages: string[] | null;
+  /** Past answers from saved sessions most like this question. */
+  memory?: ChatTurnRecord[];
 }): Promise<ChatAnswer> {
   const top = args.pages === null ? null : retrieve(chunkPages(args.pages), args.question, 5);
   const retrievedPages = top ? [...new Set(top.map((t) => t.chunk.page))].sort((a, b) => a - b) : [];
@@ -153,12 +168,26 @@ export async function answerChat(args: {
       "\n\nNow the family asks: "
     : "";
 
-  const { text, used } = await chat(buildPrompt(args.facts, top), history + args.question);
-  return groundChat({
-    rawModelText: text,
-    facts: args.facts,
-    pages: args.pages,
-    retrievedPages,
-    model: `${used.provider}/${used.model}`,
-  });
+  const memory = args.memory ?? [];
+  const system = buildPrompt(args.facts, top, memory);
+  // Open models occasionally answer in prose instead of the JSON asked for.
+  // One more try, told so, before giving up; a second miss is a real failure.
+  for (let attempt = 0; ; attempt++) {
+    const { text, used } = await chat(
+      attempt === 0 ? system : system + "\n\nYour last reply was not valid JSON. Reply with the JSON object only.",
+      history + args.question,
+    );
+    try {
+      return groundChat({
+        rawModelText: text,
+        facts: args.facts,
+        pages: args.pages,
+        retrievedPages,
+        model: `${used.provider}/${used.model}`,
+        memoryUsed: memory.length,
+      });
+    } catch (e) {
+      if (attempt >= 1 || !(e instanceof SyntaxError || (e as { status?: number }).status === 502)) throw e;
+    }
+  }
 }

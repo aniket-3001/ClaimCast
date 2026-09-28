@@ -271,7 +271,7 @@ function tool() {
 }
 
 export interface Chosen {
-  provider: "vertex" | "gemini" | "anthropic" | "groq";
+  provider: "vertex" | "gemini" | "anthropic" | "groq" | "openrouter";
   /** Recorded on the extraction, so a figure on screen can be traced to what read it. */
   model: string;
 }
@@ -288,6 +288,7 @@ export function chosen(): Chosen | null {
   const gemini = process.env.GEMINI_API_KEY;
   const anthropic = process.env.ANTHROPIC_API_KEY;
   const groq = process.env.GROQ_API_KEY;
+  const openrouter = process.env.OPENROUTER_API_KEY;
 
   // Pro, not Flash, on both Google paths. This reads a financial document that a
   // person is then asked to confirm, and the difference in price between the two
@@ -304,16 +305,19 @@ export function chosen(): Chosen | null {
   const geminiModel = process.env.GEMINI_MODEL ?? "gemini-3.1-pro-preview";
   const anthropicModel = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
   const groqModel = process.env.GROQ_MODEL ?? "openai/gpt-oss-120b";
+  const openrouterModel = process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct";
 
   if (forced === "vertex" && vertex) return { provider: "vertex", model: vertexModel };
   if (forced === "gemini" && gemini) return { provider: "gemini", model: geminiModel };
   if (forced === "anthropic" && anthropic) return { provider: "anthropic", model: anthropicModel };
   if (forced === "groq" && groq) return { provider: "groq", model: groqModel };
+  if (forced === "openrouter" && openrouter) return { provider: "openrouter", model: openrouterModel };
 
   if (vertex) return { provider: "vertex", model: vertexModel };
   if (gemini) return { provider: "gemini", model: geminiModel };
   if (anthropic) return { provider: "anthropic", model: anthropicModel };
   if (groq) return { provider: "groq", model: groqModel };
+  if (openrouter) return { provider: "openrouter", model: openrouterModel };
   return null;
 }
 
@@ -475,8 +479,20 @@ async function viaGemini(
   return parseJson(text);
 }
 
-async function viaGroq(model: string, pages: string[], passages: Passages, prompt: string): Promise<Raw> {
-  const key = process.env.GROQ_API_KEY!;
+async function viaGroq(
+  model: string,
+  pages: string[],
+  passages: Passages,
+  prompt: string,
+  // OpenRouter speaks the same protocol, so it is the same text-only reader at
+  // a different address.
+  via: { name: string; url: string; key: string } = {
+    name: "Groq",
+    url: "https://api.groq.com/openai/v1/chat/completions",
+    key: process.env.GROQ_API_KEY!,
+  },
+): Promise<Raw> {
+  const key = via.key;
 
   // Text only, and said so on the page it produces: the reader is told which
   // model read the schedule, and this one did not see it. It is handed the
@@ -484,7 +500,7 @@ async function viaGroq(model: string, pages: string[], passages: Passages, promp
   // forty-page wording inside a text model's context at all.
   const document = retrievedDocument(pages, passages);
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+  const res = await fetch(via.url, {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
     body: JSON.stringify({
@@ -501,7 +517,7 @@ async function viaGroq(model: string, pages: string[], passages: Passages, promp
 
   if (!res.ok) {
     const detail = await res.text();
-    throw Object.assign(new Error(`Groq refused the request: ${res.status} ${detail.slice(0, 300)}`), {
+    throw Object.assign(new Error(`${via.name} refused the request: ${res.status} ${detail.slice(0, 300)}`), {
       status: res.status === 429 ? 429 : 502,
     });
   }
@@ -509,7 +525,7 @@ async function viaGroq(model: string, pages: string[], passages: Passages, promp
   const body = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const text = body.choices?.[0]?.message?.content ?? "";
   if (!text.trim()) {
-    throw Object.assign(new Error("Groq returned an empty answer."), { status: 502 });
+    throw Object.assign(new Error(`${via.name} returned an empty answer.`), { status: 502 });
   }
   return parseJson(text);
 }
@@ -573,7 +589,7 @@ export async function read(
     throw Object.assign(
       new Error(
         "No extraction provider is configured. Set VERTEX_PROJECT, or one of " +
-          "GEMINI_API_KEY, ANTHROPIC_API_KEY or GROQ_API_KEY.",
+          "GEMINI_API_KEY, ANTHROPIC_API_KEY, GROQ_API_KEY or OPENROUTER_API_KEY.",
       ),
       { status: 503 },
     );
@@ -589,7 +605,13 @@ export async function read(
         ? await viaGemini(pick.model, pdf, prompt)
         : pick.provider === "anthropic"
           ? await viaAnthropic(pick.model, pdf, prompt)
-          : await viaGroq(pick.model, pages, passages, prompt);
+          : pick.provider === "openrouter"
+            ? await viaGroq(pick.model, pages, passages, prompt, {
+                name: "OpenRouter",
+                url: "https://openrouter.ai/api/v1/chat/completions",
+                key: process.env.OPENROUTER_API_KEY!,
+              })
+            : await viaGroq(pick.model, pages, passages, prompt);
 
   return { raw, used: pick, retrieved: countRetrieved(passages) };
 }

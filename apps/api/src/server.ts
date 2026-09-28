@@ -27,6 +27,7 @@ import { caseFacts, evaluate, repair, setRegistry, withPolicy, type Fact, type R
 import {
   AskPdfSchema,
   ChatRequestSchema,
+  SaveSessionSchema,
   BranchChoiceSchema,
   CaseInputSchema,
   ConfirmSchema,
@@ -53,6 +54,7 @@ import {
 import { chosen } from "./models.js";
 import { answerFromPolicyPdf } from "./rag.js";
 import { answerChat } from "./chat.js";
+import { chatMemory, listSessions, recall, saveSession, sessionDetail } from "./sessions.js";
 import * as session from "./session.js";
 import { attempt } from "./throttle.js";
 
@@ -669,16 +671,22 @@ app.post("/api/chat", async (req, reply) => {
     pages = await pageText(bytes);
   }
 
+  // What the chatbox has learned: similar questions from saved sessions. A
+  // memory that cannot be read degrades to an answer without it, not to none.
+  const memory = recall(await chatMemory(ref.db).catch(() => []), question);
+
   try {
-    return await answerChat({ question, history, facts, pages });
+    return await answerChat({ question, history, facts, pages, memory });
   } catch (e) {
+    // The provider's message only -- never the question, which is the family's.
+    req.log.warn({ error: e instanceof Error ? e.message.slice(0, 300) : String(e) }, "chat failed");
     const raw = (e as { status?: unknown }).status;
     const status = typeof raw === "number" ? raw : 502;
     return reply.code(status).send({
       error: "could not answer",
       detail:
         status === 503
-          ? "No model provider is configured on this server, so the chat cannot answer. Set GEMINI_API_KEY, GROQ_API_KEY or ANTHROPIC_API_KEY."
+          ? "No model provider is configured on this server, so the chat cannot answer. Set OPENROUTER_API_KEY (or GEMINI_API_KEY, GROQ_API_KEY, ANTHROPIC_API_KEY)."
           : "The question could not be answered. Try asking it another way.",
     });
   }
@@ -696,7 +704,46 @@ app.post("/api/chat", async (req, reply) => {
  */
 app.get("/api/learning", async () => {
   const state = await learningState(ref.db);
-  return { ...state, costModel: await costModelState(state.outcomes) };
+  const [savedSessions, memory] = await Promise.all([
+    ref.db.savedSession.count(),
+    chatMemory(ref.db).catch(() => []),
+  ]);
+  return {
+    ...state,
+    savedSessions,
+    chatMemory: memory.length,
+    costModel: await costModelState(state.outcomes),
+  };
+});
+
+/**
+ * "Save my session". Priced again by the engine so the outcome kept is the
+ * server's own; an uploaded policy is installed for that one evaluation.
+ */
+app.post("/api/sessions", async (req, reply) => {
+  const parsed = SaveSessionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return reply.code(400).send({ error: "invalid session", detail: parsed.error.flatten() });
+  }
+  const userId = await session.current(req, reply);
+  if (!bundle) bundle = await loadReference();
+  try {
+    return reply.code(201).send(await saveSession(ref.db, userId, parsed.data));
+  } catch (e) {
+    return reply.code(422).send({ error: e instanceof Error ? e.message : "could not save" });
+  }
+});
+
+/**
+ * The admin side's view of every saved session. Open by design: this prototype
+ * presents two sides of the product, not two levels of access, and every record
+ * here is synthetic or volunteered by whoever pressed save.
+ */
+app.get("/api/admin/sessions", async () => listSessions(ref.db));
+
+app.get<{ Params: { id: string } }>("/api/admin/sessions/:id", async (req, reply) => {
+  const s = await sessionDetail(ref.db, req.params.id);
+  return s ?? reply.code(404).send({ error: "no such session" });
 });
 
 /** What the cost model says about itself, for the admin's learning screen. */

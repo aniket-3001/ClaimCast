@@ -16,6 +16,11 @@
 
 import { setRegistry, type Registry } from "@claimcast/engine";
 import {
+  SavedSessionDetailSchema,
+  SavedSessionRowSchema,
+  type SaveSessionRequest,
+  type SavedSessionDetail,
+  type SavedSessionRow,
   ChatAnswerSchema,
   type ChatAnswer,
   type ChatRequest,
@@ -373,4 +378,34 @@ export async function askChat(
     return { ok: false, reason: body.detail ?? body.error ?? "That question could not be answered." };
   }
   return { ok: true, answer: ChatAnswerSchema.parse(await res.json()) };
+}
+
+/** "Save my session": keep this sitting in the database, or update it if already saved. */
+export async function saveSession(
+  req: SaveSessionRequest,
+): Promise<{ ok: true; id: string } | { ok: false; reason: string }> {
+  const res = await fetch(BASE + "/api/sessions", {
+    method: "POST",
+    credentials: CREDS,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(req),
+  }).catch(() => null);
+  if (!res) return { ok: false, reason: "The server is not reachable." };
+  const body = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
+  return res.ok && body.id ? { ok: true, id: body.id } : { ok: false, reason: body.error ?? "Could not save." };
+}
+
+/** Every saved session, newest first, for the admin side. */
+export async function adminSessions(): Promise<SavedSessionRow[] | null> {
+  const res = await fetch(BASE + "/api/admin/sessions", { credentials: CREDS }).catch(() => null);
+  if (!res || !res.ok) return null;
+  return SavedSessionRowSchema.array().safeParse(await res.json().catch(() => null)).data ?? null;
+}
+
+export async function adminSession(id: string): Promise<SavedSessionDetail | null> {
+  const res = await fetch(BASE + "/api/admin/sessions/" + encodeURIComponent(id), { credentials: CREDS }).catch(
+    () => null,
+  );
+  if (!res || !res.ok) return null;
+  return SavedSessionDetailSchema.safeParse(await res.json().catch(() => null)).data ?? null;
 }

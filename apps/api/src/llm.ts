@@ -76,12 +76,28 @@ async function viaVertex(model: string, system: string, user: string): Promise<s
   });
 }
 
-async function viaGroq(model: string, system: string, user: string): Promise<string> {
-  const key = process.env.GROQ_API_KEY!;
+/** OpenRouter and Groq both speak the OpenAI chat-completions protocol. */
+const OPENAI_COMPATIBLE = {
+  groq: { name: "Groq", url: "https://api.groq.com/openai/v1/chat/completions", key: "GROQ_API_KEY" },
+  openrouter: { name: "OpenRouter", url: "https://openrouter.ai/api/v1/chat/completions", key: "OPENROUTER_API_KEY" },
+} as const;
 
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+async function viaOpenAiCompatible(
+  which: keyof typeof OPENAI_COMPATIBLE,
+  model: string,
+  system: string,
+  user: string,
+): Promise<string> {
+  const { name, url, key } = OPENAI_COMPATIBLE[which];
+
+  const res = await fetch(url, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    headers: {
+      "content-type": "application/json",
+      authorization: `Bearer ${process.env[key]!}`,
+      // OpenRouter's attribution headers; ignored by Groq.
+      "x-title": "ClaimCast",
+    },
     body: JSON.stringify({
       model,
       temperature: 0,
@@ -96,7 +112,7 @@ async function viaGroq(model: string, system: string, user: string): Promise<str
   if (!res.ok) {
     const detail = await res.text();
     throw Object.assign(
-      new Error(`Groq refused the request: ${res.status} ${detail.slice(0, 300)}`),
+      new Error(`${name} refused the request: ${res.status} ${detail.slice(0, 300)}`),
       { status: res.status === 429 ? 429 : 502 },
     );
   }
@@ -104,7 +120,7 @@ async function viaGroq(model: string, system: string, user: string): Promise<str
   const body = (await res.json()) as { choices?: { message?: { content?: string } }[] };
   const text = body.choices?.[0]?.message?.content ?? "";
   if (!text.trim()) {
-    throw Object.assign(new Error("Groq returned an empty answer."), { status: 502 });
+    throw Object.assign(new Error(`${name} returned an empty answer.`), { status: 502 });
   }
   return text;
 }
@@ -132,7 +148,11 @@ async function viaAnthropic(model: string, system: string, user: string): Promis
  * server" and a 502 into "could not be answered" without inspecting the text.
  */
 export async function chat(system: string, user: string): Promise<ChatResult> {
-  const pick = chosen();
+  // The chatbox runs on OpenRouter whenever a key for it is set -- Llama 3.3 70B
+  // by default -- whatever reads the policy schedules.
+  const pick: Chosen | null = process.env.OPENROUTER_API_KEY
+    ? { provider: "openrouter", model: process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct" }
+    : chosen();
   if (!pick) {
     throw Object.assign(
       new Error(
@@ -150,7 +170,9 @@ export async function chat(system: string, user: string): Promise<ChatResult> {
         ? await viaGemini(pick.model, system, user)
         : pick.provider === "anthropic"
           ? await viaAnthropic(pick.model, system, user)
-          : await viaGroq(pick.model, system, user);
+          : pick.provider === "openrouter"
+            ? await viaOpenAiCompatible("openrouter", pick.model, system, user)
+            : await viaOpenAiCompatible("groq", pick.model, system, user);
 
   return { text, used: pick };
 }
