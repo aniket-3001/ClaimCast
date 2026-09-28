@@ -85,7 +85,7 @@ export default function Account() {
           onChange={(ev) => setForm((f) => ({ ...f, password: ev.target.value }))}
         />
         <button type="submit" className="acct-go" disabled={form.busy}>
-          {form.busy ? "…" : "Keep"}
+          {form.busy ? "…" : "Sign in"}
         </button>
         <button type="button" className="acct-link" onClick={() => setForm(BLANK)}>
           Cancel
@@ -97,19 +97,12 @@ export default function Account() {
 
   return (
     <div className="acct">
-      <span className="acct-who">
-        {me.cases === 0
-          ? "This browser only"
-          : me.cases === 1
-            ? "1 case on this browser"
-            : `${me.cases} cases on this browser`}
-      </span>
       <button
         type="button"
         className="acct-link"
         onClick={() => setForm({ ...BLANK, open: true })}
       >
-        Keep them
+        Sign in with email
       </button>
     </div>
   );

@@ -2153,3 +2153,447 @@ footer.foot {
     gap: 4px;
   }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   Visual refresh
+   One layer over everything above: a cooler, deeper ground with a soft
+   glow, rounder cards, a pill navigation, and a header that sits on one
+   line. Applies to every screen, the path and the working included, so
+   the whole app reads as one piece.
+   ════════════════════════════════════════════════════════════════════ */
+
+:root {
+  --bg: #0e1116;
+  --surface: #161a21;
+  --surface-2: #1c212a;
+  --ink: #eef1f5;
+  --ink-2: #b4bcc8;
+  --ink-3: #8690a0;
+  --hair: #262d38;
+  --hair-2: #1f252e;
+  --accent: #7db5ff;
+  --accent-pale: #2c4a72;
+  --accent-wash: #152131;
+  --on-accent: #0b1320;
+  --loss: #ff7b7b;
+  --paid: #3ed598;
+  --warn: #f0b252;
+  --radius: 14px;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
+body {
+  background:
+    radial-gradient(1100px 520px at 50% -180px, rgba(125, 181, 255, 0.13), transparent 70%),
+    radial-gradient(700px 400px at 100% 0, rgba(62, 213, 152, 0.06), transparent 70%),
+    var(--bg);
+  background-attachment: fixed;
+  line-height: 1.55;
+}
+
+.wrap {
+  padding-top: 26px;
+}
+
+/* ── Header ─────────────────────────────────────────────── */
+
+.masthead {
+  align-items: center;
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  background: rgba(22, 26, 33, 0.72);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+}
+
+.brand-block {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-size: 28px;
+  background: linear-gradient(90deg, #eef1f5 0%, #a9ccff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.role-pill {
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: var(--accent-wash);
+  color: var(--accent);
+  border: 1px solid var(--accent-pale);
+}
+
+.role-pill.admin {
+  background: rgba(240, 178, 82, 0.1);
+  color: var(--warn);
+  border-color: rgba(240, 178, 82, 0.35);
+}
+
+.masthead-right {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.masthead-right .warn-line {
+  flex-basis: 100%;
+  text-align: right;
+}
+
+.acct-link {
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.acct-link:hover:not(:disabled) {
+  color: var(--ink);
+  opacity: 1;
+}
+
+.switch-view {
+  min-height: 0;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+
+.save-session {
+  min-height: 0;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #4ee0a6, #2fbf85);
+  box-shadow: 0 4px 14px rgba(62, 213, 152, 0.25);
+  color: #06140e;
+}
+
+/* ── Navigation: pills, not underlines ──────────────────── */
+
+.tabs {
+  display: inline-flex;
+  gap: 4px;
+  padding: 5px;
+  margin-bottom: 22px;
+  border: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.tab {
+  margin-bottom: 0;
+  padding: 8px 18px;
+  border-bottom: none;
+  border-radius: 999px;
+  font-size: 15px;
+  align-items: center;
+}
+
+.tab:hover {
+  background: var(--surface-2);
+}
+
+.tab[aria-selected="true"] {
+  background: var(--accent-wash);
+  color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-pale) inset;
+}
+
+.tab .tab-n,
+.login-tabs .tab-n {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--hair);
+  color: var(--ink-2);
+  font-size: 11px;
+  opacity: 1;
+}
+
+.tab[aria-selected="true"] .tab-n {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ── Cards and sections ─────────────────────────────────── */
+
+.section {
+  padding: 22px 24px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--hair);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.section-head {
+  border-bottom: none;
+  padding-bottom: 4px;
+  margin-bottom: 12px;
+}
+
+.section-head h2 {
+  font-size: 23px;
+}
+
+.lede,
+.note {
+  color: var(--ink-2);
+  max-width: 70ch;
+}
+
+.signal {
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  border-top: 2px solid var(--accent-pale);
+}
+
+.signal-n {
+  font-size: 34px;
+  color: var(--accent);
+}
+
+.tnode,
+.tgate,
+.outcome,
+.model {
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.seg {
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--hair);
+}
+
+.seg button {
+  border-radius: 999px;
+}
+
+table {
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+th {
+  background: var(--surface-2);
+}
+
+button:not(.tab):not(.chat-fab):not(.login-card):not(.session-row):not(.chat-starter):not(.chat-close):not(.acct-link) {
+  border-radius: 10px;
+}
+
+/* ── Start: the questions as a tidy grid ────────────────── */
+
+.givens {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 1px;
+  background: var(--hair);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.given,
+.given.wide,
+.given.narrow {
+  min-width: 0;
+  border-left: none;
+  background: var(--surface);
+  padding: 12px 16px 13px;
+}
+
+.given.fill {
+  display: none;
+}
+
+.given > label {
+  white-space: normal;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  font-size: 11px;
+  margin-bottom: 3px;
+}
+
+.given > select,
+.given > input {
+  background-color: transparent;
+}
+
+/* ── Login ──────────────────────────────────────────────── */
+
+.login {
+  padding-top: 80px;
+}
+
+.login-brand .brand {
+  font-size: 30px;
+}
+
+.login-hero {
+  margin: 18px 0 10px;
+  max-width: 20ch;
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(34px, 5vw, 52px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.login-lede {
+  margin: 0;
+  max-width: 56ch;
+  color: var(--ink-2);
+  font-size: 17px;
+}
+
+.login-sides {
+  margin-top: 36px;
+}
+
+.login-card {
+  min-height: 0;
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--surface-2), var(--surface));
+  box-shadow: var(--shadow);
+}
+
+.login-card:hover,
+.login-card:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--accent-pale);
+}
+
+.login-badge {
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: var(--accent-wash);
+  color: var(--accent);
+}
+
+.login-badge.admin {
+  background: rgba(240, 178, 82, 0.12);
+  color: var(--warn);
+}
+
+.login-go {
+  align-self: flex-start;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* ── Chat ───────────────────────────────────────────────── */
+
+.chat-fab {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 0;
+  background: linear-gradient(180deg, #93c2ff, #5f9eff);
+  box-shadow: 0 10px 30px rgba(95, 158, 255, 0.35);
+}
+
+.chat-fab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #0b1320;
+  box-shadow: 0 0 0 3px rgba(11, 19, 32, 0.25);
+}
+
+.chat-panel {
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.chat-head {
+  background: linear-gradient(180deg, var(--accent-wash), var(--surface));
+}
+
+.chat-msg.user {
+  background: linear-gradient(180deg, #2f5185, #26446f);
+  border-bottom-right-radius: 4px;
+}
+
+.chat-msg.assistant {
+  background: var(--surface-2);
+  border-bottom-left-radius: 4px;
+}
+
+.chat-starter {
+  border-radius: 10px;
+}
+
+/* ── Saved sessions ─────────────────────────────────────── */
+
+.sessions {
+  border-radius: 12px;
+}
+
+.session-row {
+  min-height: 0;
+  background: var(--surface-2);
+}
+
+.session-detail {
+  background: var(--bg);
+}
+
+/* ── Footer ─────────────────────────────────────────────── */
+
+.foot {
+  border-top: 1px solid var(--hair);
+  margin-top: 28px;
+  padding-top: 18px;
+  color: var(--ink-3);
+}
+
+/* Grid fixes: no grey block where a row is not full, and five questions fit
+   on one row at laptop width. Cell dividers are drawn per cell instead. */
+.givens {
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--hair);
+  overflow: hidden;
+}
+
+.given,
+.given.wide,
+.given.narrow {
+  box-shadow: inset -1px 0 0 var(--hair-2), inset 0 -1px 0 var(--hair-2);
+}
+
+/* Room under the page for the floating chat button. */
+.wrap {
+  padding-bottom: 90px;
+}

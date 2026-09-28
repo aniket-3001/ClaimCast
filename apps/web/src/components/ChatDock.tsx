@@ -22,8 +22,8 @@ export type Turn =
 const STARTERS = [
   "Why do I pay this much?",
   "What would a cheaper room save me?",
-  "Which charges are refused whatever I choose?",
-  "Is a government scheme open to us?",
+  "Which charges won’t be paid, whatever I choose?",
+  "Can a government scheme help us?",
 ];
 
 export function ChatDock({
@@ -73,6 +73,7 @@ export function ChatDock({
   if (!open) {
     return (
       <button className="chat-fab" onClick={() => setOpen(true)} aria-label="Ask about this admission">
+        <span className="chat-fab-dot" aria-hidden="true" />
         Ask ClaimCast
       </button>
     );
@@ -82,7 +83,7 @@ export function ChatDock({
     <aside className="chat-panel" aria-label="Ask about this admission">
       <header className="chat-head">
         <div>
-          <div className="chat-title">Ask about this admission</div>
+          <div className="chat-title">Ask ClaimCast</div>
           <div className="chat-sub">
             {e.procedure.name} · {e.hospital.name}
             {documentId ? " · your uploaded policy" : ""}
@@ -97,8 +98,9 @@ export function ChatDock({
         {turns.length === 0 && (
           <div className="chat-empty">
             <p>
-              Answers come from ClaimCast&rsquo;s own figures for the admission on screen
-              {documentId ? " and the policy you uploaded" : ""}. Money only &mdash; no medical advice.
+              Ask anything about your bill{documentId ? " or your policy" : ""}. Amounts come straight
+              from ClaimCast&rsquo;s calculation, never guessed. We only help with money &mdash; please ask
+              your doctor about treatment.
             </p>
             <div className="chat-starters">
               {STARTERS.map((s) => (
@@ -138,7 +140,7 @@ export function ChatDock({
           className="chat-input"
           value={draft}
           maxLength={500}
-          placeholder="Ask about this bill or your policy"
+          placeholder="Type your question…"
           onChange={(ev) => setDraft(ev.target.value)}
           disabled={busy}
         />
@@ -157,17 +159,15 @@ function Answer({ a }: { a: ChatAnswer }) {
 
       {a.unsupportedFigures.length > 0 && (
         <div className="chat-warn">
-          Not from ClaimCast&rsquo;s figures: {a.unsupportedFigures.join(", ")}. Treat{" "}
-          {a.unsupportedFigures.length === 1 ? "it" : "them"} as unchecked.
+          Please ignore {a.unsupportedFigures.join(", ")} &mdash; {a.unsupportedFigures.length === 1 ? "that amount is" : "those amounts are"} not
+          from ClaimCast&rsquo;s calculation.
         </div>
       )}
 
       {(a.facts.length > 0 || a.citations.length > 0) && (
         <details className="chat-basis">
           <summary>
-            Based on {a.facts.length ? `${a.facts.length} ClaimCast ${a.facts.length === 1 ? "figure" : "figures"}` : ""}
-            {a.facts.length && a.citations.length ? " and " : ""}
-            {a.citations.length ? `${a.citations.length} ${a.citations.length === 1 ? "quote" : "quotes"} from your policy` : ""}
+            Where this comes from
           </summary>
           <ul>
             {a.facts.map((f) => (
@@ -178,17 +178,17 @@ function Answer({ a }: { a: ChatAnswer }) {
             {a.citations.map((c, i) => (
               <li key={"c" + i} className={c.verified ? "chat-quote" : "chat-quote bad"}>
                 &ldquo;{c.quote}&rdquo; <span className="cite">page {c.page}</span>
-                {!c.verified && <span className="cite-bad"> not found in the document</span>}
+                {!c.verified && <span className="cite-bad"> could not be found in your document</span>}
               </li>
             ))}
           </ul>
         </details>
       )}
-      <div className="chat-model">
-        {a.model}
-        {a.memoryUsed > 0 &&
-          ` · recalled ${a.memoryUsed} past ${a.memoryUsed === 1 ? "conversation" : "conversations"} from saved sessions`}
-      </div>
+      {a.memoryUsed > 0 && (
+        <div className="chat-model">
+          Learned from {a.memoryUsed} similar {a.memoryUsed === 1 ? "question" : "questions"} other families asked
+        </div>
+      )}
     </div>
   );
 }

@@ -13,19 +13,19 @@ export type Role = "user" | "admin";
 const SIDES: { role: Role; title: string; who: string; pitch: string; tabs: string[] }[] = [
   {
     role: "user",
-    title: "Family / caregiver",
-    who: "Log in as user",
+    title: "I’m a patient or family member",
+    who: "Continue as a family",
     pitch:
-      "Before the admission: what the policy will refuse, which choices change it, and the arithmetic behind every rupee.",
-    tabs: ["Start — who you are, your policy, your schedule", "The path — every choice and what it costs you", "The working — the bill line by line, each deduction cited"],
+      "Find out, before you are admitted, how much of the hospital bill your insurance will not pay — and which choices would lower it.",
+    tabs: ["Start — tell us about you and your insurance", "The path — each choice and what it costs you", "The working — your bill, line by line"],
   },
   {
     role: "admin",
-    title: "ClaimCast admin",
-    who: "Log in as admin",
+    title: "I’m on the ClaimCast team",
+    who: "Continue as admin",
     pitch:
-      "Behind the screens: the reference data every figure comes from, and the record of what the system has learned from use.",
-    tabs: ["Database — hospitals, procedures, policies, IRDAI lists, clauses", "What it has learned — corrections, settled bills, and the cost model retraining itself"],
+      "See every saved family session, the hospital and insurance data behind each figure, and how ClaimCast learns from every family it helps.",
+    tabs: ["Database — saved sessions, hospitals, treatments, plans", "What it has learned — memory and self-learning"],
   },
 ];
 
@@ -34,12 +34,17 @@ export function Login({ onPick }: { onPick: (role: Role) => void }) {
     <div className="login">
       <div className="login-brand">
         <div className="brand">ClaimCast</div>
-        <div className="brand-sub">What the policy will not pay, before the admission</div>
+        <h1 className="login-hero">Know what your hospital bill will cost you &mdash; before you are admitted.</h1>
+        <p className="login-lede">
+          Health insurance in India often refuses part of a claim. ClaimCast shows you how much, why,
+          and what you can still change.
+        </p>
       </div>
 
       <div className="login-sides">
         {SIDES.map((s) => (
           <button key={s.role} className="login-card" onClick={() => onPick(s.role)}>
+            <span className={`login-badge ${s.role}`}>{s.role === "user" ? "For families" : "For the team"}</span>
             <span className="login-role">{s.title}</span>
             <span className="login-pitch">{s.pitch}</span>
             <ul className="login-tabs">
@@ -56,8 +61,7 @@ export function Login({ onPick }: { onPick: (role: Role) => void }) {
       </div>
 
       <p className="login-note">
-        Prototype · synthetic data · no password. The two views are the two sides of ClaimCast, not two
-        levels of access.
+        Demo version · all hospitals, insurers and patients are made up · no password needed
       </p>
     </div>
   );

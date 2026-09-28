@@ -79,7 +79,7 @@ export function Intake({
           />
         </div>
         <div className="given">
-          <label htmlFor="i-policyholder">Policyholder</label>
+          <label htmlFor="i-policyholder">Name on the policy</label>
           <input
             id="i-policyholder"
             type="text"
@@ -89,7 +89,7 @@ export function Intake({
           />
         </div>
         <div className="given wide">
-          <label htmlFor="i-policy">Policy held</label>
+          <label htmlFor="i-policy">Your health insurance plan</label>
           <select
             id="i-policy"
             value={input.policyId}
@@ -124,7 +124,7 @@ export function Intake({
           />
         </div>
         <div className="given">
-          <label htmlFor="i-pmjay">PM-JAY card in the household</label>
+          <label htmlFor="i-pmjay">Ayushman Bharat card at home?</label>
           <select
             id="i-pmjay"
             value={input.hasPmjayCard ? "yes" : "no"}
@@ -135,7 +135,7 @@ export function Intake({
           </select>
         </div>
         <div className="given">
-          <label htmlFor="i-cghs">Central govt service or pension</label>
+          <label htmlFor="i-cghs">Central govt. employee or pensioner?</label>
           <select
             id="i-cghs"
             value={input.govtEmployeeOrPensioner ? "yes" : "no"}
@@ -146,7 +146,7 @@ export function Intake({
           </select>
         </div>
         <div className="given">
-          <label htmlFor="i-esi">ESI insured or dependant</label>
+          <label htmlFor="i-esi">Covered by ESI at work?</label>
           <select
             id="i-esi"
             value={input.esiInsured ? "yes" : "no"}
@@ -157,7 +157,7 @@ export function Intake({
           </select>
         </div>
         <div className="given">
-          <label htmlFor="i-ped">Pre-existing condition</label>
+          <label htmlFor="i-ped">Illness began before the policy?</label>
           <select
             id="i-ped"
             value={input.preExisting ? "yes" : "no"}
@@ -173,19 +173,19 @@ export function Intake({
         <div className="section-head">
           <h2>Your policy schedule</h2>
           <span className="aside">
-            {up.stage === "read" ? "Read from your PDF" : "Simulated for this demo"}
+            {up.stage === "read" ? "Read from your PDF" : "Sample plan for this demo"}
           </span>
         </div>
 
         {up.stage === "idle" && (
           <label className="tnode start" style={{ cursor: "pointer", display: "block" }}>
-            <div className="tnode-k">Upload</div>
+            <div className="tnode-k">Optional</div>
             <div className="tnode-v" style={{ fontSize: 20 }}>
-              Your policy schedule, as a PDF
+              Upload your policy document (PDF)
             </div>
             <div className="tnode-sub">
-              Click to attach. It is encrypted before it is read and deleted afterwards; nothing
-              in it is logged.
+              Click to choose the file. We read your limits from it for you to check. It is kept
+              private and deleted after a few days.
             </div>
             <input
               type="file"
@@ -203,11 +203,10 @@ export function Intake({
           <div className="tnode start">
             <div className="tnode-k">Reading {up.filename}</div>
             <div className="tnode-v" style={{ fontSize: 20 }}>
-              Extracting the schedule&hellip;
+              Reading your policy&hellip;
             </div>
             <div className="tnode-sub">
-              Each field comes back with the sentence it was taken from, and every sentence is
-              checked against the document before you see it.
+              Each detail comes with the exact line it was found on, so you can check it.
             </div>
           </div>
         )}
@@ -215,9 +214,9 @@ export function Intake({
         {up.stage === "refused" && (
           <>
             <div className="tnode start">
-              <div className="tnode-k">Not read</div>
+              <div className="tnode-k">Could not read the file</div>
               <div className="tnode-v" style={{ fontSize: 20 }}>
-                The schedule has to be entered by hand
+                Please check your plan's details below
               </div>
               <div className="tnode-sub">{up.reason}</div>
             </div>
@@ -247,8 +246,8 @@ export function Intake({
       </section>
 
       <p className="note" style={{ marginTop: 16 }}>
-        The reader only extracts. Every field is confirmed by you before it can move a rupee, and
-        every correction you make is what teaches it which fields to stop being confident about.
+        Nothing we read from your document is used until you have checked it. If you fix something,
+        ClaimCast learns to read that detail more carefully next time.
       </p>
     </>
   );
@@ -261,7 +260,7 @@ interface HandRow {
 }
 
 const FIELDS: HandRow[] = [
-  { label: "Sum insured", value: (p) => fmt(p.sumInsured), clause: "Schedule of Benefits" },
+  { label: "Total cover per year", value: (p) => fmt(p.sumInsured), clause: "Schedule of Benefits" },
   {
     label: "Room rent limit",
     value: (p) =>
@@ -288,17 +287,17 @@ const FIELDS: HandRow[] = [
     clause: "Clause 6.1",
   },
   {
-    label: "Implant sub-limit",
+    label: "Limit on implants",
     value: (p) => (p.implantSubLimit ? fmt(p.implantSubLimit) : "No sub-limit"),
     clause: "Clause 4.5",
   },
   {
-    label: "Pre / post-hospitalisation window",
+    label: "Costs covered before / after the stay",
     value: (p) => `${p.preHospDays} / ${p.postHospDays} days`,
     clause: "Clause 7.1",
   },
   {
-    label: "Day-care procedures covered",
+    label: "Short (day-care) procedures covered",
     value: (p) => (p.dayCareCovered ? "Yes" : "No"),
     clause: "Clause 3.3",
   },
@@ -307,7 +306,7 @@ const FIELDS: HandRow[] = [
 function HandEntered({ policy, onConfirm }: { policy: Policy; onConfirm: () => void }) {
   return (
     <div className="tnode fixed">
-      <div className="tnode-k">Confirm each field</div>
+      <div className="tnode-k">Your plan at a glance</div>
       <ul className="rows">
         {FIELDS.map((f) => {
           const v = f.value(policy);
@@ -359,20 +358,20 @@ type Kind = "text" | "money" | "pct" | "count" | "bool";
 const READ_ROWS: { field: ExtractedField; label: string; kind: Kind; unit?: string }[] = [
   { field: "insurer", label: "Insurer", kind: "text" },
   { field: "product", label: "Product", kind: "text" },
-  { field: "sumInsured", label: "Sum insured", kind: "money", unit: "\u20b9" },
+  { field: "sumInsured", label: "Total cover per year", kind: "money", unit: "\u20b9" },
   { field: "roomCapPerDay", label: "Room rent limit", kind: "money", unit: "\u20b9 / day" },
-  { field: "roomCapPctOfSI", label: "Room limit as % of sum insured", kind: "pct", unit: "%" },
+  { field: "roomCapPctOfSI", label: "Room limit (as % of cover)", kind: "pct", unit: "%" },
   { field: "icuCapPerDay", label: "ICU limit", kind: "money", unit: "\u20b9 / day" },
-  { field: "icuCapPctOfSI", label: "ICU limit as % of sum insured", kind: "pct", unit: "%" },
-  { field: "proportionateDeduction", label: "Proportionate deduction", kind: "bool" },
+  { field: "icuCapPctOfSI", label: "ICU limit (as % of cover)", kind: "pct", unit: "%" },
+  { field: "proportionateDeduction", label: "Cuts other charges if room is too costly", kind: "bool" },
   { field: "copayPct", label: "Co-payment", kind: "pct", unit: "%" },
-  { field: "implantSubLimit", label: "Implant sub-limit", kind: "money", unit: "\u20b9" },
-  { field: "preHospDays", label: "Pre-hospitalisation window", kind: "count", unit: "days" },
-  { field: "postHospDays", label: "Post-hospitalisation window", kind: "count", unit: "days" },
-  { field: "dayCareCovered", label: "Day-care procedures", kind: "bool" },
-  { field: "pedWaitingMonths", label: "Pre-existing disease waiting", kind: "count", unit: "months" },
-  { field: "moratoriumMonths", label: "Moratorium", kind: "count", unit: "months" },
-  { field: "exclusions", label: "Exclusions", kind: "text" },
+  { field: "implantSubLimit", label: "Limit on implants", kind: "money", unit: "\u20b9" },
+  { field: "preHospDays", label: "Covers costs before admission for", kind: "count", unit: "days" },
+  { field: "postHospDays", label: "Covers costs after discharge for", kind: "count", unit: "days" },
+  { field: "dayCareCovered", label: "Short (day-care) procedures covered", kind: "bool" },
+  { field: "pedWaitingMonths", label: "Wait before old illnesses are covered", kind: "count", unit: "months" },
+  { field: "moratoriumMonths", label: "After this, claims cannot be disputed", kind: "count", unit: "months" },
+  { field: "exclusions", label: "Not covered", kind: "text" },
 ];
 
 /**
@@ -500,18 +499,16 @@ function ExtractionPanel({
 
   return (
     <div className="tnode fixed">
-      <div className="tnode-k">Confirm each field</div>
+      <div className="tnode-k">Please check what we read</div>
       <p className="note" style={{ marginTop: 0 }}>
-        Read from {extraction.filename}, {extraction.pages} pages, by {extraction.model}
-        {extraction.retrievedPassages !== undefined &&
-          `, grounded in ${extraction.retrievedPassages} passages retrieved from the document`}
-        . Every quote below was searched for in the document itself.
+        We read {extraction.pages} pages of {extraction.filename}. Next to each detail is the line
+        we found it on &mdash; change anything that looks wrong.
       </p>
 
       {unverified > 0 && (
         <p className="warn-line">
-          {unverified} {unverified === 1 ? "quote was" : "quotes were"} not found in the document.
-          Those fields are marked below. Check them against your own copy before confirming.
+          {unverified} {unverified === 1 ? "detail" : "details"} could not be matched to a line in your
+          document. They are marked below &mdash; please check them against your copy.
         </p>
       )}
 
@@ -527,10 +524,10 @@ function ExtractionPanel({
                 {got.span ? (
                   <span className={got.verified ? "cite" : "cite cite-bad"}>
                     “{got.span.text}” — page {got.span.page}
-                    {got.verified ? "" : " · not found in the document"}
+                    {got.verified ? "" : " · please check this one"}
                   </span>
                 ) : (
-                  <span className="cite cite-bad">cited nothing</span>
+                  <span className="cite cite-bad">not found in your document</span>
                 )}
                 {/* What the reader had said, kept on screen beside the
                     change. A person who has just overwritten a figure is owed a
@@ -538,7 +535,7 @@ function ExtractionPanel({
                     the new value, that is about to be recorded. */}
                 {norm(confirmed[r.field]) !== norm(got.value) && (
                   <span className="cite cite-edited">
-                    read as {show(r.kind, got.value)} &mdash; you changed it
+                    we read {show(r.kind, got.value)} &mdash; you changed it
                   </span>
                 )}
                 {/* The correction loop, closing. Nothing was retrained
@@ -548,8 +545,8 @@ function ExtractionPanel({
                     weighed rather than obeyed. */}
                 {warn && (
                   <span className="cite cite-warn">
-                    readers corrected this field {warn.corrected} times in {warn.seen} readings
-                    &mdash; worth checking against your own copy
+                    others often correct this one ({warn.corrected} of {warn.seen} times) &mdash; worth a
+                    second look
                   </span>
                 )}
               </span>
@@ -580,7 +577,7 @@ function ExtractionPanel({
       </ul>
 
       <div className="given narrow" style={{ marginTop: 14 }}>
-        <label htmlFor="i-months">Months the cover has run</label>
+        <label htmlFor="i-months">How many months you have had this cover</label>
         <input
           id="i-months"
           type="number"
@@ -591,8 +588,8 @@ function ExtractionPanel({
         />
       </div>
       <p className="note" style={{ marginTop: 6 }}>
-        A schedule states the period of insurance, which is this policy year — not how long the
-        cover has been continuously in force. The reader is told not to guess it, so you say it.
+        Your document shows this year&rsquo;s dates, not how long you have been insured without a
+        break. Waiting periods depend on it, so please tell us.
       </p>
 
       {/* Asked here rather than in a settings screen nobody opens, and asked
@@ -606,14 +603,13 @@ function ExtractionPanel({
           onChange={(ev) => setKeepExamples(ev.target.checked)}
         />
         <span>
-          Keep the wording of the fields I corrected, so the reader can be shown them as worked
-          examples. Only the fields you changed, and only the sentence quoted beside them.
+          Help ClaimCast improve: keep the lines I corrected as examples. Only the details you changed
+          are kept.
         </span>
       </label>
       <p className="note" style={{ marginTop: 6 }}>
-        Leave it unticked and nothing from your schedule is kept. What is recorded either way is a
-        count &mdash; which field, which reader, changed or not &mdash; and that carries nothing
-        about you or your policy.
+        Leave it unticked and nothing from your document is kept &mdash; only a count of which
+        details needed fixing, with nothing about you.
       </p>
 
       <button

@@ -41,7 +41,7 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
       <div className="section-head">
         <h2>Saved sessions</h2>
         <span className="aside">
-          {Array.isArray(rows) ? `${rows.length} kept` : ""}{" "}
+          {Array.isArray(rows) ? `${rows.length} ${rows.length === 1 ? "family" : "families"}` : ""}{" "}
           <button className="switch-view" onClick={load}>
             Refresh
           </button>
@@ -52,8 +52,8 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
       {rows === null && <p className="note">The server did not answer.</p>}
       {Array.isArray(rows) && rows.length === 0 && (
         <p className="note" style={{ marginTop: 0 }}>
-          None yet. On the user side, &ldquo;Save my session&rdquo; keeps the family&rsquo;s details, the
-          admission, what ClaimCast worked out and their chat here.
+          No saved sessions yet. When a family presses &ldquo;Save my session&rdquo;, their details, their
+          hospital stay, what ClaimCast worked out and their chat appear here.
         </p>
       )}
 
@@ -68,11 +68,11 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                 </span>
                 <span className="session-what">
                   {r.summary.procedure} · {r.summary.hospital} · {r.summary.policy}
-                  {r.uploadedPolicy ? " · uploaded policy" : ""}
+                  {r.uploadedPolicy ? " · own policy uploaded" : ""}
                 </span>
                 <span className="session-pays">
                   pays <b className="loss">{fmt(r.summary.patientPays)}</b> of {fmt(r.summary.billTotal)}
-                  {r.chatTurns > 0 && <span className="session-chat"> · {r.chatTurns} chat</span>}
+                  {r.chatTurns > 0 && <span className="session-chat"> · {r.chatTurns} {r.chatTurns === 1 ? "question" : "questions"} asked</span>}
                 </span>
               </button>
 
@@ -88,23 +88,23 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                           <div>
                             {detail.name || "—"}
                             {detail.policyholder && detail.policyholder !== detail.name
-                              ? ` (policyholder ${detail.policyholder})`
+                              ? ` (policy in the name of ${detail.policyholder})`
                               : ""}
                           </div>
-                          <div className="session-k">Admission</div>
+                          <div className="session-k">Hospital stay</div>
                           <div>
                             {detail.summary.procedure}, {detail.summary.hospital}, {detail.summary.city},{" "}
                             {detail.summary.roomClass.toLowerCase()} room, {detail.input.days} nights
                           </div>
-                          <div className="session-k">Outcome when saved</div>
+                          <div className="session-k">What ClaimCast worked out</div>
                           <div>
-                            Bill {fmt(detail.summary.billTotal)} · insurer {fmt(detail.summary.insurerPays)} ·
-                            family <b className="loss">{fmt(detail.summary.patientPays)}</b>
+                            Bill {fmt(detail.summary.billTotal)} · insurance pays {fmt(detail.summary.insurerPays)} ·
+                            family pays <b className="loss">{fmt(detail.summary.patientPays)}</b>
                             {detail.summary.repudiated && <div className="warn-line">{detail.summary.repudiated}</div>}
                           </div>
                         </div>
                         <div>
-                          <div className="session-k">Refused, by clause</div>
+                          <div className="session-k">Not paid by insurance, and why</div>
                           <ul className="session-list">
                             {detail.summary.deductions.map((d, i) => (
                               <li key={i}>
@@ -116,7 +116,7 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                         </div>
                       </div>
 
-                      <div className="session-k">Chat</div>
+                      <div className="session-k">Questions they asked</div>
                       {detail.chat.length === 0 ? (
                         <p className="note" style={{ marginTop: 4 }}>No questions asked.</p>
                       ) : (
@@ -128,7 +128,7 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                                 {t.answer}
                                 {t.unsupportedFigures.length > 0 && (
                                   <div className="chat-warn">
-                                    Flagged, not remembered: {t.unsupportedFigures.join(", ")}
+                                    Contained an unchecked amount ({t.unsupportedFigures.join(", ")}), so it is not remembered
                                   </div>
                                 )}
                               </div>
@@ -138,7 +138,7 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                       )}
 
                       <button className="switch-view" onClick={() => reopen(detail)}>
-                        Open it as the family saw it →
+                        See it as the family saw it →
                       </button>
                     </>
                   )}

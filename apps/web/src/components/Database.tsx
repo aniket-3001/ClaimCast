@@ -16,12 +16,12 @@ import {
 type View = "admissions" | "hospitals" | "procedures" | "policies" | "lists" | "clauses";
 
 const VIEWS: { id: View; label: string }[] = [
-  { id: "admissions", label: "Admissions" },
   { id: "hospitals", label: "Hospitals" },
-  { id: "procedures", label: "Procedures" },
-  { id: "policies", label: "Policies" },
-  { id: "lists", label: "Non-payables" },
-  { id: "clauses", label: "Clauses" },
+  { id: "procedures", label: "Treatments" },
+  { id: "policies", label: "Insurance plans" },
+  { id: "lists", label: "Never covered" },
+  { id: "clauses", label: "Rules" },
+  { id: "admissions", label: "Past admissions" },
 ];
 
 /**
@@ -33,10 +33,14 @@ const VIEWS: { id: View; label: string }[] = [
  * deduction has to cite. All of it synthetic.
  */
 export function Database({ onOpen }: { onOpen: (c: CaseInput) => void }) {
-  const [view, setView] = useState<View>("admissions");
+  const [view, setView] = useState<View>("hospitals");
 
   return (
-    <>
+    <section className="section">
+      <div className="section-head">
+        <h2>What ClaimCast knows</h2>
+        <span className="aside">The data behind every figure the family sees</span>
+      </div>
       <div className="seg" style={{ marginBottom: 22 }}>
         {VIEWS.map((v) => (
           <button key={v.id} type="button" aria-pressed={view === v.id} onClick={() => setView(v.id)}>
@@ -51,7 +55,7 @@ export function Database({ onOpen }: { onOpen: (c: CaseInput) => void }) {
       {view === "policies" && <Policies />}
       {view === "lists" && <Lists />}
       {view === "clauses" && <Clauses />}
-    </>
+    </section>
   );
 }
 
@@ -75,11 +79,9 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
   if (rows.length === 0) {
     return (
       <p className="lede">
-        No settled admissions. This deployment has not adjudicated one, and none ship with
-        it &mdash; a row here would be a claim that somebody was admitted somewhere on a
-        given day and that this is what it cost, which is not a thing worth inventing to
-        fill a table. The engine's sixteen worked cases still exist, in its test fixtures,
-        where they are checked on every build rather than displayed as history.
+        No past admissions recorded yet. We do not fill this table with made-up patients &mdash;
+        rows appear here only when real claims are settled. The families who used ClaimCast are
+        listed above, under Saved sessions.
       </p>
     );
   }
@@ -94,12 +96,12 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
         <table>
           <thead>
             <tr>
-              <th>Ref</th>
+              <th>No.</th>
               <th>Admission</th>
               <th>Policy</th>
               <th className="num">Bill</th>
-              <th className="num">Patient</th>
-              <th className="num">Ratio</th>
+              <th className="num">Family pays</th>
+              <th className="num">Room cut</th>
             </tr>
           </thead>
           <tbody>
@@ -168,21 +170,21 @@ function Hospitals() {
   return (
     <>
       <p className="lede">
-        Tariffs are per day. The clinical index prices everything that is not the room against a
-        metro corporate hospital at 1.00.
+        Room prices are per day. &ldquo;Clinical&rdquo; shows how expensive the hospital&rsquo;s
+        treatment charges are compared with a big-city private hospital (1.00).
       </p>
       <div className="scroll">
         <table>
           <thead>
             <tr>
               <th>Hospital</th>
-              <th>Band</th>
+              <th>Price tier</th>
               <th className="num">General</th>
               <th className="num">Semi-private</th>
               <th className="num">Private</th>
               <th className="num">ICU</th>
               <th className="num">Clinical</th>
-              <th className="num">Settles in</th>
+              <th className="num">Refund takes</th>
             </tr>
           </thead>
           <tbody>
@@ -194,9 +196,9 @@ function Hospitals() {
                     {h.name}
                     <div className="sub">
                       {h.city} · {h.beds} beds ·{" "}
-                      {h.network.length ? `${h.network.length} cashless tie-ups` : "no cashless tie-ups"}
-                      {h.pmjayEmpanelled && " · PM-JAY empanelled"}
-                      {h.esicTieUp && " · ESIC tie-up"}
+                      {h.network.length ? `cashless with ${h.network.length} ${h.network.length === 1 ? "insurer" : "insurers"}` : "no cashless insurers"}
+                      {h.pmjayEmpanelled && " · accepts Ayushman Bharat"}
+                      {h.esicTieUp && " · accepts ESI"}
                     </div>
                     {h.flags?.map((f) => (
                       <div className="sub" key={f}>
@@ -233,11 +235,11 @@ function Procedures() {
         <table>
           <thead>
             <tr>
-              <th>Procedure</th>
+              <th>Treatment</th>
               <th>Code</th>
-              <th className="num">PM-JAY</th>
-              <th className="num">CGHS</th>
-              <th className="num">Private range</th>
+              <th className="num">Govt. rate (PM-JAY)</th>
+              <th className="num">Govt. rate (CGHS)</th>
+              <th className="num">Private hospitals</th>
               <th className="num">Stay</th>
             </tr>
           </thead>
@@ -277,19 +279,19 @@ function Policies() {
   return (
     <>
       <p className="lede">
-        Names are invented. Every field is one that appears on a real schedule.
+        Sample plans with invented names, built from the limits real Indian policies use.
       </p>
       <div className="scroll">
         <table>
           <thead>
             <tr>
-              <th>Product</th>
-              <th className="num">Sum insured</th>
+              <th>Plan</th>
+              <th className="num">Cover</th>
               <th className="num">Room limit</th>
               <th className="num">ICU limit</th>
               <th className="num">Co-pay</th>
               <th className="num">Implant</th>
-              <th>Scales</th>
+              <th>Cuts other charges</th>
             </tr>
           </thead>
           <tbody>
@@ -337,7 +339,8 @@ function Lists() {
   return (
     <>
       <p className="lede">
-        IRDAI keeps four lists. Only the first reaches the patient&rsquo;s bill.
+        The insurance regulator (IRDAI) keeps four lists of items. Only the first &mdash; things no
+        policy ever pays for &mdash; ends up on the family&rsquo;s bill.
       </p>
       <ul className="rows">
         {LIST_FRAMEWORK.map((l) => (
@@ -352,7 +355,7 @@ function Lists() {
 
       <section className="section">
         <div className="section-head">
-          <h2>List I, as billed</h2>
+          <h2>Items no policy pays for</h2>
           <span className="aside">
             {LIST_I.length} items · {fmt(listITotal())} on a five-day metro admission
           </span>
@@ -380,7 +383,7 @@ function Lists() {
           </table>
         </div>
         <p className="note">
-          The one part of the bill no policy decision can move.
+          No choice of hospital, room or plan changes these.
         </p>
       </section>
     </>
@@ -392,7 +395,7 @@ function Clauses() {
   return (
     <>
       <p className="lede">
-        Every deduction names one of these. A number with no clause behind it cannot reduce a payout.
+        Every amount ClaimCast says will not be paid points to one of these rules.
       </p>
       <ul className="rows">
         {Object.values(CLAUSES).map((c) => (

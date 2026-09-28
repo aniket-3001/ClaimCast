@@ -174,17 +174,13 @@ export default function App() {
   return (
     <div className="wrap">
       <header className="masthead">
-        <div>
+        <div className="brand-block">
           <div className="brand">ClaimCast</div>
-          <div className="brand-sub">What the policy will not pay, before the admission</div>
+          <span className={`role-pill ${role}`}>
+            {role === "admin" ? "Team view" : name || policyholder ? `For ${name || policyholder}` : "Family view"}
+          </span>
         </div>
         <div className="masthead-right">
-          <div className="brand-sub">
-            {role === "admin"
-              ? "Admin view"
-              : `User view${name || policyholder ? ` · for ${name || policyholder}` : ""}`}{" "}
-            · synthetic data
-          </div>
           {role === "user" && <Account />}
           {role === "user" && (
             <button className="save-session" onClick={() => void saveNow()} disabled={saving === "saving"}>
@@ -195,10 +191,10 @@ export default function App() {
                   : "Save my session"}
             </button>
           )}
-          {saving !== "idle" && saving !== "saving" && <div className="warn-line">{saving}</div>}
           <button className="switch-view" onClick={() => setRole(null)}>
             Switch view
           </button>
+          {saving !== "idle" && saving !== "saving" && <div className="warn-line">{saving}</div>}
         </div>
       </header>
 
@@ -264,8 +260,8 @@ export default function App() {
       )}
 
       <footer className="foot">
-        <span>Team Rocket · IIIT-Delhi · GE HealthCare Precision Care Challenge 2026</span>
-        <span>No real patient, hospital, insurer or bill appears anywhere in this prototype.</span>
+        <span>ClaimCast · Team Rocket, IIIT-Delhi · GE HealthCare Precision Care Challenge 2026</span>
+        <span>Demo data only. Estimates, not guarantees. Not medical advice.</span>
       </footer>
     </div>
   );

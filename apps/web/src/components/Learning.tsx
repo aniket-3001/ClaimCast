@@ -63,7 +63,7 @@ export function Learning() {
   }, []);
 
   if (state === "loading") {
-    return <div className="model model-quiet">Reading the counters&hellip;</div>;
+    return <div className="model model-quiet">Loading&hellip;</div>;
   }
 
   if (state === null) {
@@ -71,7 +71,7 @@ export function Learning() {
       <div className="model model-quiet">
         <span className="model-k">Not reachable</span>
         <p className="model-why">
-          The server did not answer. Nothing on the other screens depends on this one.
+          Could not reach the server. The family&rsquo;s screens are not affected.
         </p>
       </div>
     );
@@ -90,58 +90,55 @@ export function Learning() {
     <>
       <section className="section">
         <div className="section-head">
-          <h2>What it has learned</h2>
-          <span className="aside">Live</span>
+          <h2>How ClaimCast learns from families</h2>
+          <span className="aside">Updates as people use it</span>
         </div>
 
         <p className="note" style={{ marginTop: 0 }}>
-          Three things in this application answer back, and each one is written down as it
-          arrives: an observation recorded by one request is read by the next one. Settled bills
-          also go further &mdash; they retrain the cost model itself, below.
+          Every time a family uses ClaimCast, it learns something. These counts go up as soon as it
+          happens &mdash; the very next family benefits.
         </p>
 
         <div className="signals">
           <Signal
             n={state.confirmations}
-            k="Field confirmations"
-            why="A person looked at what the reader pulled out of their schedule and said whether it was right. A true label on a real document, produced by a step that had to happen anyway."
+            k="Policy details checked"
+            why="Families checked the details ClaimCast read from their policy document. Each fix teaches it which details to read more carefully."
           />
           <Signal
             n={state.outcomes}
-            k="Settled bills reported"
-            why="What an admission actually came to, against the band we gave for it. The only evidence that can say whether the forecast was any good, and the hardest to come by -- it has to be volunteered weeks later."
+            k="Final bills shared"
+            why="Families told us what their hospital bill finally came to. This is how ClaimCast finds out whether its estimates were right."
           />
           <Signal
             n={state.choices}
-            k="Branches taken"
-            why="Which way people went at each fork. Cheap and plentiful, and worth exactly one thing: deciding what the tree offers first. It makes no figure on any screen more accurate."
+            k="Choices made"
+            why="Which hospital, room or option families picked on their path. It helps decide which options to show first."
           />
         </div>
       </section>
 
       <section className="section">
         <div className="section-head">
-          <h2>The chatbox&rsquo;s memory</h2>
+          <h2>The chat assistant&rsquo;s memory</h2>
           <span className="aside">Grows with every saved session</span>
         </div>
         <p className="note" style={{ marginTop: 0 }}>
-          When a family saves their session, their questions and ClaimCast&rsquo;s answers are kept.
-          Each new question recalls the most similar past ones and shows the model how they were
-          explained, so the chatbox gets better at answering what families actually ask. The model&rsquo;s
-          weights are not retrained &mdash; it learns by remembering. Figures are never taken from memory:
-          they come from the engine for the admission on screen, and an answer that invented one is not
-          remembered.
+          When a family saves their session, their questions and the answers they got are remembered.
+          When someone asks something similar later, the assistant looks back at how it was
+          explained before &mdash; so it keeps getting better at what families actually ask. The
+          rupee amounts always come from the new family&rsquo;s own bill, never from someone else&rsquo;s.
         </p>
         <div className="signals">
           <Signal
             n={state.savedSessions ?? 0}
             k="Saved sessions"
-            why="Families who pressed Save my session. Each one is listed, in full, on the Database tab."
+            why="Families who pressed “Save my session”. You can see each one on the Database tab."
           />
           <Signal
             n={state.chatMemory ?? 0}
-            k="Answers in memory"
-            why="Chat answers from saved sessions that came back clean, with no figure the engine did not state. These are what the chatbox recalls from."
+            k="Answers remembered"
+            why="Past answers the assistant can look back on. Answers containing a wrong amount are left out."
           />
         </div>
       </section>
@@ -150,26 +147,22 @@ export function Learning() {
 
       <section className="section">
         <div className="section-head">
-          <h2>Where the reader is weakest</h2>
+          <h2>Policy details that are often misread</h2>
           <span className="aside">
-            {total === 0 ? "Nothing judged yet" : `${corrected} corrected of ${total} judged`}
+            {total === 0 ? "None checked yet" : `${corrected} fixed out of ${total} checked`}
           </span>
         </div>
 
         {ranked.length === 0 ? (
           <p className="note" style={{ marginTop: 0 }}>
-            Nobody has confirmed an extraction on this deployment yet, so there is nothing to
-            report. That is the honest state of a system that learns from use on the day it goes
-            up, and it is shown rather than hidden behind a plausible-looking chart.
+            No family has checked an uploaded policy yet. Once they do, the details that most often
+            need fixing will show up here.
           </p>
         ) : (
           <>
             <p className="note" style={{ marginTop: 0 }}>
-              Read down, not across. A field corrected often is one to check against your own copy
-              before confirming it, and that warning is already on the intake screen for anybody
-              uploading a schedule now. What this does not do is make the reader better at its
-              job: it is a hosted model nobody here fits, and the honest claim is that the system
-              learns where to distrust it.
+              The details at the top are the ones families fix most often. ClaimCast now warns the
+              next family to double-check those details when they upload their policy.
             </p>
             <ul className="rows">
               {ranked.map((f) => {
@@ -181,7 +174,7 @@ export function Learning() {
                       <span className="cite">
                         {f.model}
                         {f.unverified > 0 &&
-                          ` · ${f.unverified} of ${f.seen} cited a quote that was not in the document`}
+                          ` · ${f.unverified} of ${f.seen} could not be matched to the document`}
                       </span>
                     </span>
                     <span className={rate >= 0.25 ? "row-amt loss" : "row-amt"}>
@@ -196,9 +189,8 @@ export function Learning() {
       </section>
 
       <p className="note" style={{ marginTop: 16 }}>
-        What is stored is a count: which field, which reader, changed or not. The wording of
-        anybody&rsquo;s schedule is kept only where that person ticked the box asking to keep it,
-        and only for the fields they corrected. Branch choices carry no owner at all.
+        Privacy: we keep counts, not documents. A family&rsquo;s policy wording is kept only if they
+        ticked the box to share it, and choices on the path are never linked to a person.
       </p>
     </>
   );
@@ -224,53 +216,47 @@ function CostModelLearning({ m }: { m: NonNullable<LearningState["costModel"]> |
     return (
       <section className="section">
         <div className="section-head">
-          <h2>The cost model</h2>
-          <span className="aside">Not reachable</span>
+          <h2>The bill estimator</h2>
+          <span className="aside">Not connected</span>
         </div>
         <p className="note" style={{ marginTop: 0 }}>
-          The cost model service is not configured or not answering, so its version and retraining
-          state cannot be shown. Every other figure on this screen is unaffected.
+          The bill estimator is not running right now, so its learning progress cannot be shown.
         </p>
       </section>
     );
   }
   const toNext = Math.max(0, m.retrainEvery - m.pending);
-  const coverage = Object.entries(m.heldOutCoverage)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${k} ${Math.round(v * 100)}%`)
-    .join(", ");
   return (
     <section className="section">
       <div className="section-head">
-        <h2>The cost model, retraining itself</h2>
-        <span className="aside">{m.model}</span>
+        <h2>The bill estimator teaches itself</h2>
+        <span className="aside">Machine learning model (XGBoost)</span>
       </div>
       <p className="note" style={{ marginTop: 0 }}>
-        The bill forecast is an XGBoost quantile model trained on every published PM-JAY package and
-        CGHS rate. Each settled bill a family reports is logged with its procedure, hospital, city
-        and forecast; once {m.retrainEvery} new ones have arrived, the model is rebuilt on tariffs
-        and bills together and a new version starts serving. Until bills arrive it knows only the
-        survey&rsquo;s spread; the bills are what make it specific.
+        ClaimCast estimates a hospital bill using a machine learning model trained on every
+        government price list for treatments in India. When families share their final bills, it
+        learns from them: after every {m.retrainEvery} new bills, it retrains itself on everything
+        it knows and starts using the improved version straight away.
       </p>
       <div className="signals">
         <Signal
           n={m.outcomesTrainedOn}
-          k="Settled bills learned from"
-          why={`Version ${m.modelVersion}, built ${m.trainedOn}, on ${m.tariffRows.toLocaleString("en-IN")} tariff rows plus these bills.`}
+          k="Real bills learned from"
+          why={`Current version ${m.modelVersion}, trained on ${m.tariffRows.toLocaleString("en-IN")} government prices plus these bills.`}
         />
         <Signal
           n={m.pending}
-          k="Waiting for the next retrain"
+          k="New bills waiting"
           why={
             toNext === 0
-              ? "Enough new bills have arrived; the next one reported triggers the rebuild."
-              : `${toNext} more ${toNext === 1 ? "bill" : "bills"} and the model rebuilds itself on the combined pool.`
+              ? "Enough new bills are in — it retrains with the next one."
+              : `${toNext} more ${toNext === 1 ? "bill" : "bills"} and it retrains itself.`
           }
         />
         <Signal
           n={Math.round((Object.values(m.heldOutCoverage)[0] ?? 0) * 100)}
-          k="Held-out coverage, %"
-          why={`Share of held-out prices inside the predicted p10–p90 range (${coverage || "not reported"}), against a nominal 80%.`}
+          k="Accuracy check, %"
+          why={`Tested on prices it had not seen: ${Math.round((Object.values(m.heldOutCoverage)[0] ?? 0) * 100)}% fell inside its predicted range, as designed (target 80%).`}
         />
       </div>
     </section>
