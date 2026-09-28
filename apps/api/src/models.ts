@@ -251,7 +251,7 @@ function parseJson(text: string): Raw {
  */
 let vertexToken: { value: string; until: number } | null = null;
 
-async function accessToken(): Promise<string> {
+export async function accessToken(): Promise<string> {
   const explicit = (process.env.GOOGLE_ACCESS_TOKEN ?? "").trim();
   if (explicit) return explicit;
 

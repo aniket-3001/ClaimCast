@@ -521,3 +521,42 @@ export const ShakyFieldSchema = z.object({
   corrected: z.number().int().min(0),
 });
 export type ShakyField = z.infer<typeof ShakyFieldSchema>;
+
+// ── Policy PDF Q&A (RAG) ──────────────────────────────────────────────────
+
+/**
+ * A question about the policy PDF a user has already uploaded. `hospitalId`
+ * is optional -- when given, the answer is cross-checked against that
+ * hospital's own record; left out, the question is scanned for a hospital
+ * name the pool recognises.
+ */
+export const AskPdfSchema = z.object({
+  question: z.string().min(1).max(500),
+  hospitalId: z.string().min(1).optional(),
+});
+export type AskPdfRequest = z.infer<typeof AskPdfSchema>;
+
+/**
+ * One quote the answer leaned on, and whether it is really on the page it
+ * claims. `rag.ts` checks this against the document's own text the same way
+ * `extract.ts` checks an extracted field's span -- a citation shaped like the
+ * real thing and not actually in the document is caught here, not trusted.
+ */
+export const PolicyQaCitationSchema = z.object({
+  quote: z.string(),
+  page: z.number().int(),
+  verified: z.boolean(),
+});
+
+export const PolicyQaAnswerSchema = z.object({
+  answer: z.string(),
+  citations: z.array(PolicyQaCitationSchema),
+  /** How many citations failed verification against the document's own text. */
+  unverified: z.number().int().min(0),
+  /** Which pages retrieval actually pulled from, so a screen can say what was searched. */
+  retrievedPages: z.array(z.number().int().min(1)),
+  /** Name of the hospital this answer was cross-checked against, if one was named. */
+  hospital: z.string().nullable(),
+  model: z.string(),
+});
+export type PolicyQaAnswer = z.infer<typeof PolicyQaAnswerSchema>;

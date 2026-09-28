@@ -19,6 +19,7 @@ import {
   ExtractionSchema,
   ForecastResponseSchema,
   LearningStateSchema,
+  PolicyQaAnswerSchema,
   ReferenceBundleSchema,
   SavedCaseSchema,
   SessionSchema,
@@ -28,6 +29,7 @@ import {
   type ForecastRequest,
   type ForecastResponse,
   type LearningState,
+  type PolicyQaAnswer,
   type ReferenceBundle,
   type SavedCase,
   type Session,
@@ -315,4 +317,32 @@ export async function myCases(): Promise<SavedCase[]> {
   } catch {
     return [];
   }
+}
+
+/**
+ * Ask a question about the policy PDF this user uploaded.
+ *
+ * Answered by retrieval over the document itself -- never the model's general
+ * knowledge -- and cross-checked against a named hospital's own record when
+ * `hospitalId` is given. `citations` names the exact phrase and page each
+ * factual claim came from; a screen should treat `unverified > 0` as worth a
+ * visible flag, not a silent pass -- it means the model cited something that
+ * is not actually in the document.
+ */
+export async function askAboutPolicyPdf(
+  documentId: string,
+  question: string,
+  hospitalId?: string,
+): Promise<{ ok: true; answer: PolicyQaAnswer } | { ok: false; reason: string }> {
+  const res = await fetch(BASE + "/api/policies/" + encodeURIComponent(documentId) + "/ask", {
+    method: "POST",
+    credentials: CREDS,
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ question, ...(hospitalId ? { hospitalId } : {}) }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    return { ok: false, reason: body.detail ?? "That question could not be answered." };
+  }
+  return { ok: true, answer: PolicyQaAnswerSchema.parse(await res.json()) };
 }

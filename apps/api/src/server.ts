@@ -25,6 +25,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { evaluate, repair, setRegistry, type Registry } from "@claimcast/engine";
 import {
+  AskPdfSchema,
   BranchChoiceSchema,
   CaseInputSchema,
   ConfirmSchema,
@@ -39,7 +40,7 @@ import {
 } from "@claimcast/contracts";
 import * as ref from "./reference.js";
 import * as vault from "./vault.js";
-import { extractPolicy } from "./extract.js";
+import { extractPolicy, pageText } from "./extract.js";
 import {
   learningState,
   promptHints,
@@ -48,6 +49,7 @@ import {
   shakyFields,
 } from "./learning.js";
 import { chosen } from "./models.js";
+import { answerFromPolicyPdf } from "./rag.js";
 import * as session from "./session.js";
 import { attempt } from "./throttle.js";
 
@@ -522,6 +524,63 @@ app.post("/api/policies/:id/confirm", async (req, reply) => {
   }
 
   return { documentId: id, confirmedAt: new Date().toISOString(), learned };
+});
+
+/**
+ * A question about the policy PDF this user uploaded — answered by retrieval
+ * over the document itself, not a canned clause list, and optionally
+ * cross-checked against one hospital's own record. See `rag.ts`.
+ *
+ * `:id` is the document id from `/api/policies/extract`, not a reference
+ * policy id: this reads the actual file the caller uploaded, which is why it
+ * is gated by the same ownership check as `/confirm` rather than being open
+ * reference data.
+ */
+app.post<{ Params: { id: string } }>("/api/policies/:id/ask", async (req, reply) => {
+  const parsed = AskPdfSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return reply.code(400).send({ error: "invalid question", detail: parsed.error.flatten() });
+  }
+
+  const userId = await session.current(req, reply);
+  const doc = await ref.db.policyDocument.findFirst({ where: { id: req.params.id, userId } });
+  if (!doc) return reply.code(404).send({ error: "no such document" });
+
+  const bytes = await vault.get(doc.storageKey);
+  if (!bytes) {
+    return reply.code(410).send({
+      error: "document expired",
+      detail: `Uploads are kept ${vault.RETENTION} days before they are deleted. Upload the schedule again to ask about it.`,
+    });
+  }
+
+  if (!bundle) bundle = await loadReference();
+  const extraction = ExtractionSchema.safeParse(doc.extraction);
+  const extractedInsurer =
+    extraction.success && typeof extraction.data.fields.insurer?.value === "string"
+      ? extraction.data.fields.insurer.value
+      : null;
+
+  try {
+    const pages = await pageText(bytes);
+    return await answerFromPolicyPdf({
+      pages,
+      question: parsed.data.question,
+      hospitals: bundle.hospitals,
+      hospitalId: parsed.data.hospitalId,
+      extractedInsurer,
+    });
+  } catch (e) {
+    const raw = (e as { status?: unknown }).status;
+    const status = typeof raw === "number" ? raw : 502;
+    return reply.code(status).send({
+      error: "could not answer",
+      detail:
+        status === 503
+          ? "No model provider is configured on this server."
+          : "The question could not be answered.",
+    });
+  }
 });
 
 /**
