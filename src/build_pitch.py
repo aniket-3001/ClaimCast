@@ -328,8 +328,8 @@ cols = [
     ]),
     ("ACCESSIBILITY", "Can everyone read and trust it?", [
         "High-contrast colours and large figures; fixed labels that ran into each other.",
-        "Works without uploading anything — the policy PDF is optional.",
-        "Next: Hindi and regional languages, voice questions, screen-reader checks.",
+        "English and Hindi on every page, switched with one button; light and dark themes.",
+        "Next: more Indian languages, voice questions, screen-reader checks.",
     ]),
     ("PURPOSE", "Does it change a decision?", [
         "Each choice shows how much it saves or costs, e.g. ₹78,400 for the right room.",
@@ -373,13 +373,14 @@ cd = CategoryChartData()
 cd.categories = labels
 cd.add_series("Cities", urban)
 cd.add_series("Villages", rural)
-gf = s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(0.5), Inches(1.5), Inches(6.4), Inches(4.4), cd)
+gf = s.shapes.add_chart(XL_CHART_TYPE.BAR_CLUSTERED, Inches(0.45), Inches(1.45), Inches(6.55), Inches(4.5), cd)
 ch = gf.chart
 ch.has_legend = True
 ch.legend.position = XL_LEGEND_POSITION.TOP
 ch.legend.include_in_layout = False
 ch.legend.font.size, ch.legend.font.name = Pt(11), TXT
-ch.plots[0].gap_width = 60
+ch.plots[0].gap_width = 45
+ch.plots[0].overlap = -8
 for ser, col in zip(ch.series, (BLUE, SOFT)):
     ser.format.fill.solid()
     ser.format.fill.fore_color.rgb = col
@@ -387,10 +388,14 @@ ch.plots[0].has_data_labels = True
 dl = ch.plots[0].data_labels
 dl.number_format, dl.number_format_is_linked = '"₹"#,##0', False
 dl.position = XL_LABEL_POSITION.OUTSIDE_END
-dl.font.size, dl.font.name, dl.font.color.rgb = Pt(9), TXT, BODY
+dl.font.size, dl.font.name, dl.font.color.rgb = Pt(11), TXT, INK
+dl.font.bold = True
 ch.value_axis.visible = False
 ch.value_axis.has_major_gridlines = False
-ch.category_axis.tick_labels.font.size = Pt(10.5)
+ch.value_axis.maximum_scale = 100000
+ch.value_axis.minimum_scale = 0
+ch.category_axis.reverse_order = True
+ch.category_axis.tick_labels.font.size = Pt(11)
 ch.category_axis.tick_labels.font.name = TXT
 ch.category_axis.format.line.color.rgb = HAIR
 say(s, 0.6, 6.0, 6.3, 0.7, [P((
@@ -438,34 +443,65 @@ say(s, 0.9, 5.7, 11.6, 1.05, [P(("Today:  ", 15, True, SOFT), ("find out after d
 s.notes_slide.notes_text_frame.text = "Retrieval to simulation: existing tools retrieve wording; ClaimCast simulates the claim."
 
 # ═══════════════════════════════════════════════════════════════ 8 · COST
+# Inference only, as measured: the chat is ~$0.0005 a question on OpenRouter
+# (Llama 3.3 70B); a bill estimate is ~1 ms of CPU, priced at Cloud Run's
+# $0.000024 per vCPU-second. Hosting and storage are deliberately left out.
+USD = 88                      # rupees per US dollar, assumed
+CHAT_Q = 0.0005 * USD         # rupees per chat question
+EST = 0.002 * 0.000024 * USD  # rupees per bill estimate (2 ms, generous)
+Q_PER_FAMILY, EST_PER_FAMILY = 5, 20
+
 s = new_slide(8)
-title(s, "What ClaimCast costs to run", "Measured on the working prototype")
+title(s, "What each answer costs", "Inference only — the cost of answering a family, measured on the working prototype")
 stats = [
     ("₹0", "for data", "Every price list and rule comes from public government sources."),
-    ("₹9–15", "a month to host", "Runs on Google Cloud free tiers; a ₹200 budget alert guards it."),
-    ("~5 paise", "per chat question", "Llama 3.3 70B through OpenRouter — measured on our own usage."),
+    ("~5 paise", "per chat question", "Llama 3.3 70B through OpenRouter, measured on our own usage."),
+    ("≈ ₹0", "per bill estimate", "The estimator answers in about 1 millisecond on an ordinary CPU."),
     ("~5 sec", "to retrain the estimator", "On a normal laptop. No GPU or special hardware needed."),
 ]
 for i, (big, unit, why) in enumerate(stats):
     x = 0.6 + i * 3.08
-    card(s, x, 1.55, 2.88, 2.75)
-    say(s, x + 0.25, 1.8, 2.5, 0.75, [P((big, 34, True, BLUE, False, HEAD))])
-    say(s, x + 0.25, 2.55, 2.5, 0.35, [P((unit, 13, True, INK))])
-    say(s, x + 0.25, 2.95, 2.45, 1.25, [P((why, 11.5, False, BODY), line=1.25)])
-box(s, 0.6, 4.65, 12.13, 2.1, GREEN, None, MSO_SHAPE.ROUNDED_RECTANGLE, 0.06)
-say(s, 0.95, 4.85, 5.5, 1.7, [
-    P(("Under ₹1", 44, True, WHITE, False, HEAD), sa=2),
-    P(("to serve one family’s whole session, including five chat questions.", 13.5, False, WHITE), line=1.25)],
-    anchor=MSO_ANCHOR.MIDDLE)
-box(s, 6.75, 5.0, 0.015, 1.4, WHITE)
-say(s, 7.1, 4.85, 5.4, 1.7, [
-    P(("₹78,400", 44, True, WHITE, False, HEAD), sa=2),
-    P(("saved in our example admission by choosing the right room.", 13.5, False, WHITE), line=1.25)],
+    card(s, x, 1.5, 2.88, 2.15)
+    say(s, x + 0.25, 1.68, 2.5, 0.7, [P((big, 30, True, BLUE, False, HEAD))])
+    say(s, x + 0.25, 2.38, 2.5, 0.35, [P((unit, 13, True, INK))])
+    say(s, x + 0.25, 2.75, 2.45, 0.85, [P((why, 11, False, BODY), line=1.2)])
+
+say(s, 0.6, 3.9, 8, 0.35, [P(("IF WE SCALE UP  ·  5 chat questions and 20 bill estimates per family", 11, True, BLUE))])
+rows = [("Families a month", "Chat questions", "Chat cost", "Bill estimates", "Total a month", "Per family")]
+for fam, label, questions in ((1_000, "1,000", "5,000"), (1_00_000, "1 lakh", "5 lakh"), (10_00_000, "10 lakh", "50 lakh")):
+    chat = fam * Q_PER_FAMILY * CHAT_Q
+    est = fam * EST_PER_FAMILY * EST
+    rows.append((label, questions, inr(chat), "< ₹1" if est < 1 else inr(est), inr(chat + est),
+                 f"{(chat + est) / fam * 100:.0f} paise"))
+tbl = s.shapes.add_table(len(rows), 6, Inches(0.6), Inches(4.3), Inches(8.1), Inches(2.4)).table
+for j, wd in enumerate([1.55, 1.4, 1.25, 1.35, 1.35, 1.2]):
+    tbl.columns[j].width = Inches(wd)
+for i, row in enumerate(rows):
+    tbl.rows[i].height = Inches(0.52 if i == 0 else 0.6)
+    for j, val in enumerate(row):
+        cell = tbl.cell(i, j)
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = INK if i == 0 else (WHITE if i % 2 else CARD)
+        cell.margin_left = cell.margin_right = Inches(0.12)
+        cell.vertical_anchor = MSO_ANCHOR.MIDDLE
+        tf = cell.text_frame
+        tf.clear()
+        r = tf.paragraphs[0].add_run()
+        r.text = val
+        r.font.name, r.font.size = TXT, Pt(11 if i == 0 else 13)
+        r.font.bold = i == 0 or j in (0, 4)
+        r.font.color.rgb = WHITE if i == 0 else (BLUE if j == 4 else INK)
+box(s, 9.0, 3.95, 3.73, 2.75, GREEN, None, MSO_SHAPE.ROUNDED_RECTANGLE, 0.06)
+say(s, 9.3, 4.15, 3.2, 2.4, [
+    P(("~22 paise", 36, True, WHITE, False, HEAD), sa=4),
+    P(("per family, at any size — the cost grows in a straight line with use, with no big fixed cost.", 12.5, False, WHITE), line=1.25, sa=8),
+    P(("Against ₹78,400 saved in our example admission.", 12, True, WHITE), line=1.2)],
     anchor=MSO_ANCHOR.MIDDLE)
 s.notes_slide.notes_text_frame.text = (
-    "Hosting: infra/deploy.md (Cloud Run + always-free e2-micro Postgres; Artifact Registry ~₹9–15/month). "
-    "Chat: OpenRouter usage rose about $0.005 over ~11 test calls, under 5 paise each. Retrain: the full "
-    "artifact build ran in 4.6 s on a MacBook. The ₹78,400 is the prototype's example case.")
+    "Inference cost only; hosting, storage and staff are not included. Chat: OpenRouter usage rose about "
+    "$0.005 over ~11 test calls, about $0.0005 each. Bill estimate: the ML service answered in 0.9-2.7 ms; "
+    "priced at 2 ms of Cloud Run CPU ($0.000024 per vCPU-second). $1 is taken as ₹88. The ₹78,400 is the "
+    "prototype's example case.")
 
 # ═══════════════════════════════════════════════════════════════ 9 · COMPETITORS
 s = new_slide(9)
@@ -509,24 +545,43 @@ s.notes_slide.notes_text_frame.text = (
 s = new_slide(10)
 title(s, "What comes next")
 phases = [
-    ("Next 3 months", ["Study with 20 real families", "Hindi and regional languages", "Ask by voice or WhatsApp"]),
-    ("Next 6 months", ["Partner hospitals share real prices and bills", "The estimator learns from real bills",
-                       "Connect to insurers’ cashless approval"]),
-    ("Next 12 months", ["Pilot at a hospital admission desk", "Mobile app for families",
-                        "Strong privacy, consent and security for real data"]),
+    ("Next 3 months", "Prove it helps families", [
+        "Study with 20 real families at an admission desk",
+        "More Indian languages after Hindi: Tamil, Bengali, Marathi",
+        "Ask by voice, and on WhatsApp",
+        "Collect the first 50 real bills so the estimator starts learning",
+        "Proper logins for the team side",
+    ], "Target: usability score 70+"),
+    ("Next 6 months", "Real prices, real bills", [
+        "Partner hospitals share their price lists and final bills",
+        "Read the policy formats of India’s 20 largest insurers",
+        "Connect to insurers’ cashless approval",
+        "Price every one of the 1,949 government treatment packages on the path",
+    ], "Target: estimate within 15% of the real bill"),
+    ("Next 12 months", "Ready for real patients", [
+        "Pilot at a hospital admission desk",
+        "Mobile app for families",
+        "Privacy and consent under India’s DPDP Act, 2023",
+        "Link to Ayushman Bharat Digital Mission health records, with consent",
+    ], "Target: 1 lakh families a month"),
 ]
-for i, (when, items) in enumerate(phases):
+for i, (when, goal, items, target) in enumerate(phases):
     x = 0.6 + i * 4.15
-    card(s, x, 1.45, 3.85, 3.95)
-    dot(s, x + 0.3, 1.72, i + 1, 0.52)
-    say(s, x + 0.98, 1.8, 2.8, 0.45, [P((when, 18, True, INK, False, HEAD))])
-    bullets(s, x + 0.3, 2.6, 3.3, 2.7, items, size=14, gap=12)
-card(s, 0.6, 5.75, 12.13, 1.0, PALE, None)
-say(s, 0.9, 5.75, 11.6, 1.0, [P(("Already in place: ", 13, True, BLUE),
-                              ("all 1,949 government treatment prices are loaded, the estimator retrains itself, "
-                               "and the chat assistant learns from every saved session.", 13, False, INK),
-                              line=1.25)], anchor=MSO_ANCHOR.MIDDLE)
-s.notes_slide.notes_text_frame.text = "Roadmap dates are targets, not commitments."
+    card(s, x, 1.3, 3.85, 4.55)
+    dot(s, x + 0.3, 1.52, i + 1, 0.52)
+    say(s, x + 0.98, 1.5, 2.8, 0.4, [P((when, 18, True, INK, False, HEAD))])
+    say(s, x + 0.98, 1.88, 2.8, 0.3, [P((goal, 11.5, True, BLUE))])
+    bullets(s, x + 0.3, 2.45, 3.3, 2.75, items, size=12, gap=7)
+    box(s, x + 0.3, 5.28, 3.25, 0.42, PALE, None, MSO_SHAPE.ROUNDED_RECTANGLE, 0.3)
+    say(s, x + 0.3, 5.28, 3.25, 0.42, [P((target, 11, True, BLUE), align=PP_ALIGN.CENTER)], anchor=MSO_ANCHOR.MIDDLE)
+card(s, 0.6, 6.05, 12.13, 0.72, PALE, None)
+say(s, 0.9, 6.05, 11.6, 0.72, [P(("Already in place: ", 12.5, True, BLUE),
+                              ("1,949 government treatment prices loaded · the estimator retrains itself · the chat assistant "
+                               "remembers saved sessions · English and Hindi · light and dark themes.", 12.5, False, INK),
+                              line=1.2)], anchor=MSO_ANCHOR.MIDDLE)
+s.notes_slide.notes_text_frame.text = (
+    "Roadmap dates and targets are goals, not commitments. DPDP Act: Digital Personal Data Protection Act, 2023. "
+    "ABDM: Ayushman Bharat Digital Mission, the national digital health records programme.")
 
 # ═══════════════════════════════════════════════════════════════ 11 · THANK YOU
 s = new_slide(11)
