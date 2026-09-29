@@ -24,6 +24,7 @@ import { useEffect, useState } from "react";
 import { fmt, type Evaluated } from "@claimcast/engine";
 import type { ForecastRequest, ForecastResponse } from "@claimcast/contracts";
 import { getForecast, reportOutcome } from "../api";
+import { t, tx } from "../i18n";
 
 export type ModelState =
   | { status: "loading" }
@@ -84,17 +85,18 @@ export function useCostModel(e: Evaluated): ModelState {
 
 export function CostModelNote({ m }: { m: ModelState }) {
   if (m.status === "loading") {
-    return <div className="model model-quiet">Asking the cost model for this admission…</div>;
+    return <div className="model model-quiet">{t("Asking the cost model for this admission…")}</div>;
   }
 
   if (m.status === "none") {
     return (
       <div className="model model-quiet">
-        <span className="model-k">No modelled band</span>
-        <p className="model-why">{m.reason}</p>
+        <span className="model-k">{t("No modelled band")}</span>
+        <p className="model-why">{tx(m.reason)}</p>
         <p className="model-why">
-          The range above is the simulated private spread the reference set carries, which slide 5
-          declares as simulated. Nothing has been invented to fill the gap.
+          {t(
+            "The range above is the simulated private spread the reference set carries, which slide 5 declares as simulated. Nothing has been invented to fill the gap.",
+          )}
         </p>
       </div>
     );
@@ -104,9 +106,9 @@ export function CostModelNote({ m }: { m: ModelState }) {
   return (
     <div className="model">
       <div className="model-h">
-        <span className="model-k">What the whole bill is likely to be</span>
+        <span className="model-k">{t("What the whole bill is likely to be")}</span>
         <span className="cite">
-          {f.modelVersion} · trained {f.trainedOn}
+          {f.modelVersion} · {t("trained {d}", { d: f.trainedOn })}
         </span>
       </div>
 
@@ -116,23 +118,23 @@ export function CostModelNote({ m }: { m: ModelState }) {
         <span className="model-edge">{fmt(f.p90)}</span>
       </div>
       <div className="model-band-k">
-        <span>tenth percentile</span>
-        <span>median</span>
-        <span>ninetieth</span>
+        <span>{t("tenth percentile")}</span>
+        <span>{t("median")}</span>
+        <span>{t("ninetieth")}</span>
       </div>
 
       <div className="model-anchor">
-        Anchored on the {f.anchor.scheme} rate of <strong>{fmt(f.anchor.amount)}</strong> —{" "}
-        <span className="cite">{f.anchor.code}</span>, {f.anchor.detail}. Accreditation is not on the
-        hospital record, so the rate is read at NABH.
+        {t("Anchored on the {scheme} rate of", { scheme: f.anchor.scheme })} <strong>{fmt(f.anchor.amount)}</strong> —{" "}
+        <span className="cite">{f.anchor.code}</span>, {tx(f.anchor.detail)}.{" "}
+        {t("Accreditation is not on the hospital record, so the rate is read at NABH.")}
       </div>
 
       {f.calibration && f.calibration.n > 0 && (
         <div className="model-learned">
-          Adjusted <strong>{f.calibration.factor.toFixed(2)}&times;</strong> on{" "}
-          {f.calibration.n} settled {f.calibration.n === 1 ? "bill" : "bills"} reported against
-          earlier forecasts. Each one counted from the moment it was sent &mdash; the model behind
-          this band is the same version it was before, and nothing was retrained.
+          {t(
+            "Adjusted {f}× on {n} settled bills reported against earlier forecasts. Each one counted from the moment it was sent — the model behind this band is the same version it was before, and nothing was retrained.",
+            { f: f.calibration.factor.toFixed(2), n: f.calibration.n },
+          )}
         </div>
       )}
 
@@ -144,7 +146,7 @@ export function CostModelNote({ m }: { m: ModelState }) {
           const amount = f.split[kind] ?? 0;
           return amount > 0 ? (
             <li key={kind}>
-              <span className="k">{label}</span>
+              <span className="k">{t(label)}</span>
               <span className="v">{fmt(amount)}</span>
             </li>
           ) : null;
@@ -153,7 +155,7 @@ export function CostModelNote({ m }: { m: ModelState }) {
 
       <details className="model-caveats">
         <summary>
-          What is wrong with this estimate <span className="chip warn">{f.caveats.length}</span>
+          {t("What is wrong with this estimate")} <span className="chip warn">{f.caveats.length}</span>
         </summary>
         <p className="model-basis">{f.basis}</p>
         <ul>
@@ -214,10 +216,12 @@ function ReportOutcome({
     return (
       <div className="model-outcome">
         <p className="model-why">
-          Recorded &mdash; thank you. {fmt(paise)} fell{" "}
-          <strong>{sent.within ? "inside" : "outside"}</strong> the band above. It is now one of
-          the settled bills this model reads, and it counted from the moment you sent it: nothing
-          was retrained, and nothing had to be.
+          {t(
+            sent.within
+              ? "Recorded — thank you. {x} fell inside the band above. It is now one of the settled bills this model reads, and it counted from the moment you sent it: nothing was retrained, and nothing had to be."
+              : "Recorded — thank you. {x} fell outside the band above. It is now one of the settled bills this model reads, and it counted from the moment you sent it: nothing was retrained, and nothing had to be.",
+            { x: fmt(paise) },
+          )}
         </p>
       </div>
     );
@@ -225,14 +229,14 @@ function ReportOutcome({
 
   return (
     <details className="model-outcome">
-      <summary>Already had this admission? Tell us what it came to</summary>
+      <summary>{t("Already had this admission? Tell us what it came to")}</summary>
       <p className="model-why">
-        One number, and it improves the band for the next person asking about this procedure in
-        this kind of city. It is stored against this forecast and nothing else &mdash; not your
-        name, not your hospital, not your policy.
+        {t(
+          "One number, and it improves the band for the next person asking about this procedure in this kind of city. It is stored against this forecast and nothing else — not your name, not your hospital, not your policy.",
+        )}
       </p>
       <div className="outcome-ask">
-        <label htmlFor="o-actual">What the admission actually came to</label>
+        <label htmlFor="o-actual">{t("What the admission actually came to")}</label>
         <div className="row-edit">
           <input
             id="o-actual"
@@ -246,13 +250,12 @@ function ReportOutcome({
           <span className="unit">&#8377;</span>
         </div>
         <button type="button" disabled={!usable} onClick={() => void send()}>
-          Report it
+          {t("Report it")}
         </button>
       </div>
       {failed && (
         <p className="model-why warn-line">
-          That did not reach the server. Nothing was recorded, and nothing else on this screen is
-          affected.
+          {t("That did not reach the server. Nothing was recorded, and nothing else on this screen is affected.")}
         </p>
       )}
     </details>

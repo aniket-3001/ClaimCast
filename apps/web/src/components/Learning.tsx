@@ -28,6 +28,7 @@
 import { useEffect, useState } from "react";
 import type { LearningState } from "@claimcast/contracts";
 import { learningState } from "../api";
+import { plural, t } from "../i18n";
 
 /** How each field is named here, matching the wording on the intake screen. */
 const LABEL: Record<string, string> = {
@@ -63,15 +64,15 @@ export function Learning() {
   }, []);
 
   if (state === "loading") {
-    return <div className="model model-quiet">Loading&hellip;</div>;
+    return <div className="model model-quiet">{t("Loading…")}</div>;
   }
 
   if (state === null) {
     return (
       <div className="model model-quiet">
-        <span className="model-k">Not reachable</span>
+        <span className="model-k">{t("Not reachable")}</span>
         <p className="model-why">
-          Could not reach the server. The family&rsquo;s screens are not affected.
+          {t("Could not reach the server. The family’s screens are not affected.")}
         </p>
       </div>
     );
@@ -90,55 +91,53 @@ export function Learning() {
     <>
       <section className="section">
         <div className="section-head">
-          <h2>How ClaimCast learns from families</h2>
-          <span className="aside">Updates as people use it</span>
+          <h2>{t("How ClaimCast learns from families")}</h2>
+          <span className="aside">{t("Updates as people use it")}</span>
         </div>
 
         <p className="note" style={{ marginTop: 0 }}>
-          Every time a family uses ClaimCast, it learns something. These counts go up as soon as it
-          happens &mdash; the very next family benefits.
+          {t("Every time a family uses ClaimCast, it learns something. These counts go up as soon as it happens — the very next family benefits.")}
         </p>
 
         <div className="signals">
           <Signal
             n={state.confirmations}
-            k="Policy details checked"
-            why="Families checked the details ClaimCast read from their policy document. Each fix teaches it which details to read more carefully."
+            k={t("Policy details checked")}
+            why={t("Families checked the details ClaimCast read from their policy document. Each fix teaches it which details to read more carefully.")}
           />
           <Signal
             n={state.outcomes}
-            k="Final bills shared"
-            why="Families told us what their hospital bill finally came to. This is how ClaimCast finds out whether its estimates were right."
+            k={t("Final bills shared")}
+            why={t("Families told us what their hospital bill finally came to. This is how ClaimCast finds out whether its estimates were right.")}
           />
           <Signal
             n={state.choices}
-            k="Choices made"
-            why="Which hospital, room or option families picked on their path. It helps decide which options to show first."
+            k={t("Choices made")}
+            why={t("Which hospital, room or option families picked on their path. It helps decide which options to show first.")}
           />
         </div>
       </section>
 
       <section className="section">
         <div className="section-head">
-          <h2>The chat assistant&rsquo;s memory</h2>
-          <span className="aside">Grows with every saved session</span>
+          <h2>{t("The chat assistant’s memory")}</h2>
+          <span className="aside">{t("Grows with every saved session")}</span>
         </div>
         <p className="note" style={{ marginTop: 0 }}>
-          When a family saves their session, their questions and the answers they got are remembered.
-          When someone asks something similar later, the assistant looks back at how it was
-          explained before &mdash; so it keeps getting better at what families actually ask. The
-          rupee amounts always come from the new family&rsquo;s own bill, never from someone else&rsquo;s.
+          {t(
+            "When a family saves their session, their questions and the answers they got are remembered. When someone asks something similar later, the assistant looks back at how it was explained before — so it keeps getting better at what families actually ask. The rupee amounts always come from the new family’s own bill, never from someone else’s.",
+          )}
         </p>
         <div className="signals">
           <Signal
             n={state.savedSessions ?? 0}
-            k="Saved sessions"
-            why="Families who pressed “Save my session”. You can see each one on the Database tab."
+            k={t("Saved sessions")}
+            why={t("Families who pressed “Save my session”. You can see each one on the Database tab.")}
           />
           <Signal
             n={state.chatMemory ?? 0}
-            k="Answers remembered"
-            why="Past answers the assistant can look back on. Answers containing a wrong amount are left out."
+            k={t("Answers remembered")}
+            why={t("Past answers the assistant can look back on. Answers containing a wrong amount are left out.")}
           />
         </div>
       </section>
@@ -147,22 +146,24 @@ export function Learning() {
 
       <section className="section">
         <div className="section-head">
-          <h2>Policy details that are often misread</h2>
+          <h2>{t("Policy details that are often misread")}</h2>
           <span className="aside">
-            {total === 0 ? "None checked yet" : `${corrected} fixed out of ${total} checked`}
+            {total === 0 ? t("None checked yet") : t("{a} fixed out of {b} checked", { a: corrected, b: total })}
           </span>
         </div>
 
         {ranked.length === 0 ? (
           <p className="note" style={{ marginTop: 0 }}>
-            No family has checked an uploaded policy yet. Once they do, the details that most often
-            need fixing will show up here.
+            {t(
+              "No family has checked an uploaded policy yet. Once they do, the details that most often need fixing will show up here.",
+            )}
           </p>
         ) : (
           <>
             <p className="note" style={{ marginTop: 0 }}>
-              The details at the top are the ones families fix most often. ClaimCast now warns the
-              next family to double-check those details when they upload their policy.
+              {t(
+                "The details at the top are the ones families fix most often. ClaimCast now warns the next family to double-check those details when they upload their policy.",
+              )}
             </p>
             <ul className="rows">
               {ranked.map((f) => {
@@ -170,11 +171,11 @@ export function Learning() {
                 return (
                   <li className="row" key={f.field + "/" + f.model}>
                     <span className="row-l">
-                      <span>{LABEL[f.field] ?? f.field}</span>
+                      <span>{t(LABEL[f.field] ?? f.field)}</span>
                       <span className="cite">
                         {f.model}
                         {f.unverified > 0 &&
-                          ` · ${f.unverified} of ${f.seen} could not be matched to the document`}
+                          " · " + t("{a} of {b} could not be matched to the document", { a: f.unverified, b: f.seen })}
                       </span>
                     </span>
                     <span className={rate >= 0.25 ? "row-amt loss" : "row-amt"}>
@@ -189,8 +190,7 @@ export function Learning() {
       </section>
 
       <p className="note" style={{ marginTop: 16 }}>
-        Privacy: we keep counts, not documents. A family&rsquo;s policy wording is kept only if they
-        ticked the box to share it, and choices on the path are never linked to a person.
+        {t("Privacy: we keep counts, not documents. A family’s policy wording is kept only if they ticked the box to share it, and choices on the path are never linked to a person.")}
       </p>
     </>
   );
@@ -216,11 +216,11 @@ function CostModelLearning({ m }: { m: NonNullable<LearningState["costModel"]> |
     return (
       <section className="section">
         <div className="section-head">
-          <h2>The bill estimator</h2>
-          <span className="aside">Not connected</span>
+          <h2>{t("The bill estimator")}</h2>
+          <span className="aside">{t("Not connected")}</span>
         </div>
         <p className="note" style={{ marginTop: 0 }}>
-          The bill estimator is not running right now, so its learning progress cannot be shown.
+          {t("The bill estimator is not running right now, so its learning progress cannot be shown.")}
         </p>
       </section>
     );
@@ -229,34 +229,36 @@ function CostModelLearning({ m }: { m: NonNullable<LearningState["costModel"]> |
   return (
     <section className="section">
       <div className="section-head">
-        <h2>The bill estimator teaches itself</h2>
-        <span className="aside">Machine learning model (XGBoost)</span>
+        <h2>{t("The bill estimator teaches itself")}</h2>
+        <span className="aside">{t("Machine learning model (XGBoost)")}</span>
       </div>
       <p className="note" style={{ marginTop: 0 }}>
-        ClaimCast estimates a hospital bill using a machine learning model trained on every
-        government price list for treatments in India. When families share their final bills, it
-        learns from them: after every {m.retrainEvery} new bills, it retrains itself on everything
-        it knows and starts using the improved version straight away.
+        {t("ClaimCast estimates a hospital bill using a machine learning model trained on every government price list for treatments in India. When families share their final bills, it learns from them: after every {n} new bills, it retrains itself on everything it knows and starts using the improved version straight away.", { n: m.retrainEvery })}
       </p>
       <div className="signals">
         <Signal
           n={m.outcomesTrainedOn}
-          k="Real bills learned from"
-          why={`Current version ${m.modelVersion}, trained on ${m.tariffRows.toLocaleString("en-IN")} government prices plus these bills.`}
+          k={t("Real bills learned from")}
+          why={t("Current version {v}, trained on {rows} government prices plus these bills.", {
+            v: m.modelVersion,
+            rows: m.tariffRows.toLocaleString("en-IN"),
+          })}
         />
         <Signal
           n={m.pending}
-          k="New bills waiting"
+          k={t("New bills waiting")}
           why={
             toNext === 0
-              ? "Enough new bills are in — it retrains with the next one."
-              : `${toNext} more ${toNext === 1 ? "bill" : "bills"} and it retrains itself.`
+              ? t("Enough new bills are in — it retrains with the next one.")
+              : plural(toNext, "{n} more bill and it retrains itself.", "{n} more bills and it retrains itself.")
           }
         />
         <Signal
           n={Math.round((Object.values(m.heldOutCoverage)[0] ?? 0) * 100)}
-          k="Accuracy check, %"
-          why={`Tested on prices it had not seen: ${Math.round((Object.values(m.heldOutCoverage)[0] ?? 0) * 100)}% fell inside its predicted range, as designed (target 80%).`}
+          k={t("Accuracy check, %")}
+          why={t("Tested on prices it had not seen: {p}% fell inside its predicted range, as designed (target 80%).", {
+            p: Math.round((Object.values(m.heldOutCoverage)[0] ?? 0) * 100),
+          })}
         />
       </div>
     </section>

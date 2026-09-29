@@ -15,6 +15,7 @@ import {
   type Stage,
   registry,
 } from "@claimcast/engine";
+import { plural, t, tx } from "../i18n";
 
 /**
  * The admission as a path, not a form.
@@ -45,27 +46,27 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
           branch is clicked, which is the point of the whole page. */}
       <div className="outcome">
         <div className="outcome-main">
-          <span className="outcome-k">As things stand, you pay</span>
+          <span className="outcome-k">{t("As things stand, you pay")}</span>
           <span className="outcome-v">{fmt(r.patientPays)}</span>
         </div>
         <div className="outcome-of">
-          <span className="k">Insurer pays</span>
+          <span className="k">{t("Insurer pays")}</span>
           <span className="v paid">{fmt(r.insurerPays)}</span>
         </div>
         <div className="outcome-of">
-          <span className="k">Bill</span>
+          <span className="k">{t("Bill")}</span>
           <span className="v">{fmt(r.billTotal)}</span>
         </div>
       </div>
 
       <div className="tree">
         <div className="tnode start">
-          <div className="tnode-k">The admission</div>
+          <div className="tnode-k">{t("The admission")}</div>
           <div className="tnode-v">{e.procedure.name}</div>
           <div className="tnode-sub">
-            {e.input.days} {e.input.days === 1 ? "night" : "nights"}
-            {e.input.icuDays > 0 && `, ${e.input.icuDays} in intensive care`} · {e.policy.product},{" "}
-            {fmt(e.policy.sumInsured)} sum insured
+            {plural(e.input.days, "{n} night", "{n} nights")}
+            {e.input.icuDays > 0 && t(", {n} in intensive care", { n: e.input.icuDays })} · {e.policy.product},{" "}
+            {t("{x} sum insured", { x: fmt(e.policy.sumInsured) })}
           </div>
         </div>
 
@@ -74,29 +75,29 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
         <Link />
 
         <div className={`tgate ${g.passed ? "pass" : "fail"}`}>
-          <div className="tgate-q">{g.question}</div>
+          <div className="tgate-q">{tx(g.question)}</div>
           <div className="tgate-test">
-            {g.test} <span className="cite">{CLAUSES[g.clause].cite}</span>
+            {tx(g.test)} <span className="cite">{tx(CLAUSES[g.clause].cite)}</span>
           </div>
-          <div className="tgate-verdict">{g.passed ? "Yes" : "No"}</div>
-          <div className="tgate-detail">{g.detail}</div>
+          <div className="tgate-verdict">{g.passed ? t("Yes") : t("No")}</div>
+          <div className="tgate-detail">{tx(g.detail)}</div>
         </div>
 
         <Link />
 
         {!g.passed ? (
           <div className="tnode end refused">
-            <div className="tnode-k">Nothing is payable</div>
+            <div className="tnode-k">{t("Nothing is payable")}</div>
             <div className="tnode-v loss">{fmt(r.billTotal)}</div>
             <div className="tnode-sub">
-              The claim fails before any deduction. The whole bill is the family&rsquo;s.
+              {t("The claim fails before any deduction. The whole bill is the family’s.")}
             </div>
           </div>
         ) : (
           <>
             {journey(e).map((s, i, all) => (
               <Fragment key={s.id}>
-                {s.phase !== all[i - 1]?.phase && <div className="phase">{s.phase}</div>}
+                {s.phase !== all[i - 1]?.phase && <div className="phase">{tx(s.phase)}</div>}
                 <StageBlock stage={s} onPick={onPick} />
                 <Link />
               </Fragment>
@@ -104,23 +105,24 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
 
             {fixedTotal > 0 && (
               <>
-                <div className="phase">Procedure</div>
+                <div className="phase">{tx("Procedure")}</div>
                 <div className="tnode fixed">
-                  <div className="tnode-k">Refused whichever path you take</div>
+                  <div className="tnode-k">{t("Refused whichever path you take")}</div>
                   <ul className="rows">
                     {fixed.map((x) => (
                       <li className="row" key={x.clause}>
                         <span className="row-l">
-                          <span>{x.label}</span>
-                          <span className="cite">{CLAUSES[x.clause].cite}</span>
+                          <span>{tx(x.label)}</span>
+                          <span className="cite">{tx(CLAUSES[x.clause].cite)}</span>
                         </span>
                         <span className="row-amt loss">{fmt(x.amount)}</span>
                       </li>
                     ))}
                   </ul>
                   <div className="tnode-sub">
-                    These come off the procedure, never off the room tariff. No cheaper bed and no
-                    other hospital moves them.
+                    {t(
+                      "These come off the procedure, never off the room tariff. No cheaper bed and no other hospital moves them.",
+                    )}
                   </div>
                 </div>
                 <Link />
@@ -128,12 +130,20 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
             )}
 
             <div className="tnode end">
-              <div className="tnode-k">You pay</div>
+              <div className="tnode-k">{t("You pay")}</div>
               <div className="tnode-v loss">{fmt(r.patientPays)}</div>
               <div className="tnode-sub">
-                {fmt(f.low.patientPays)} – {fmt(f.high.patientPays)} once the clinical bill is
-                known, on the {f.spread === "fitted" ? "fitted" : "simulated"} spread.
-                The insurer pays {fmt(r.insurerPays)} of {fmt(r.billTotal)}.
+                {t(
+                  f.spread === "fitted"
+                    ? "{lo} – {hi} once the clinical bill is known, on the fitted spread. The insurer pays {paid} of {bill}."
+                    : "{lo} – {hi} once the clinical bill is known, on the simulated spread. The insurer pays {paid} of {bill}.",
+                  {
+                    lo: fmt(f.low.patientPays),
+                    hi: fmt(f.high.patientPays),
+                    paid: fmt(r.insurerPays),
+                    bill: fmt(r.billTotal),
+                  },
+                )}
               </div>
               <Split insurer={r.insurerPays} total={r.billTotal} patient={r.patientPays} />
               <CostModelNote m={m} />
@@ -168,31 +178,35 @@ function GovtFork({ e }: { e: Evaluated }) {
     <>
       <Link />
       <div className="fork">
-        <div className="fork-k">Who pays for this admission</div>
+        <div className="fork-k">{t("Who pays for this admission")}</div>
         <div className="fork-v">
           {saved > 0 ? (
             <>
-              {best.label} would leave {fmt(best.patientPays!)} to find, not{" "}
-              {fmt(e.result.patientPays)}
+              {t("{way} would leave {x} to find, not {y}", {
+                way: tx(best.label),
+                x: fmt(best.patientPays!),
+                y: fmt(e.result.patientPays),
+              })}
             </>
           ) : (
-            <>The private policy is still the better of the paths open here</>
+            <>{t("The private policy is still the better of the paths open here")}</>
           )}
         </div>
         <div className="fork-ways">
           {ways.map((s) => (
             <div key={s.id} className={`way ${s.id === best.id && saved > 0 ? "on" : ""}`}>
-              <span className="way-label">{s.label}</span>
+              <span className="way-label">{tx(s.label)}</span>
               {s.patientPays !== null && <span className="way-pay">{fmt(s.patientPays)}</span>}
               <span className="way-note">
-                {s.detail} <span className="cite">{CLAUSES[s.clause].cite}</span>
+                {tx(s.detail)} <span className="cite">{tx(CLAUSES[s.clause].cite)}</span>
               </span>
             </div>
           ))}
         </div>
         <div className="tnode-sub" style={{ textAlign: "center" }}>
-          One path per admission &mdash; <span className="cite">{CLAUSES.SINGLE_CLAIM_PATH.cite}</span>. The
-          rest of this tree follows the private claim.
+          {t("One path per admission")} &mdash;{" "}
+          <span className="cite">{tx(CLAUSES.SINGLE_CLAIM_PATH.cite)}</span>.{" "}
+          {t("The rest of this tree follows the private claim.")}
         </div>
       </div>
     </>
@@ -210,10 +224,10 @@ function StageBlock({ stage, onPick }: { stage: Stage; onPick: (next: CaseInput)
       <div className="stage-q">
         <span className="stage-n">{stage.step}</span>
         <span className="stage-t">
-          <span className="stage-h">{stage.question}</span>
+          <span className="stage-h">{tx(stage.question)}</span>
           <span className="stage-m">
-            {stage.mechanic}
-            {stage.clause && <span className="cite">{CLAUSES[stage.clause].cite}</span>}
+            {tx(stage.mechanic)}
+            {stage.clause && <span className="cite">{tx(CLAUSES[stage.clause].cite)}</span>}
           </span>
         </span>
       </div>
@@ -226,7 +240,7 @@ function StageBlock({ stage, onPick }: { stage: Stage; onPick: (next: CaseInput)
         ))}
       </div>
 
-      {stage.settled && <div className="stage-settled">{stage.settled}</div>}
+      {stage.settled && <div className="stage-settled">{tx(stage.settled)}</div>}
     </div>
   );
 }
@@ -252,18 +266,18 @@ function BranchCard({
       aria-current={b.chosen}
       onClick={() => onPick(b.next)}
     >
-      <span className="branch-label">{b.label}</span>
-      <span className="branch-note">{b.blocked ?? b.note}</span>
+      <span className="branch-label">{tx(b.label)}</span>
+      <span className="branch-note">{tx(b.blocked ?? b.note)}</span>
       {money && !b.blocked && (
         <>
           <span className="branch-pay">{fmt(b.patientPays)}</span>
           <span className={`branch-delta ${!worth ? "" : b.delta < 0 ? "good" : "bad"}`}>
             {b.chosen
-              ? "on this path"
+              ? t("on this path")
               : b.delta === 0
-                ? "no change"
+                ? t("no change")
                 : !worth
-                  ? "under " + fmt(MATERIALITY)
+                  ? t("under {x}", { x: fmt(MATERIALITY) })
                   : signed(b.delta)}
           </span>
         </>

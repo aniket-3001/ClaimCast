@@ -645,7 +645,7 @@ app.post("/api/chat", async (req, reply) => {
   if (!parsed.success) {
     return reply.code(400).send({ error: "invalid question", detail: parsed.error.flatten() });
   }
-  const { question, history, policy, documentId } = parsed.data;
+  const { question, history, policy, documentId, language } = parsed.data;
 
   if (!bundle) bundle = await loadReference();
   let facts: Fact[];
@@ -676,7 +676,7 @@ app.post("/api/chat", async (req, reply) => {
   const memory = recall(await chatMemory(ref.db).catch(() => []), question);
 
   try {
-    return await answerChat({ question, history, facts, pages, memory });
+    return await answerChat({ question, history, facts, pages, memory, language });
   } catch (e) {
     // The provider's message only -- never the question, which is the family's.
     req.log.warn({ error: e instanceof Error ? e.message.slice(0, 300) : String(e) }, "chat failed");

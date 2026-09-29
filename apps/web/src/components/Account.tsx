@@ -13,6 +13,7 @@
  * who asks whether a given email has an account on a health claims site.
  */
 
+import { t } from "../i18n";
 import { useEffect, useState } from "react";
 import type { Session } from "@claimcast/contracts";
 import { claimAccount, signOut, whoami } from "../api";
@@ -58,7 +59,7 @@ export default function Account() {
       <div className="acct">
         <span className="acct-who">{me.email}</span>
         <button type="button" className="acct-link" onClick={() => void out()}>
-          Sign out
+          {t("Sign out")}
         </button>
       </div>
     );
@@ -70,7 +71,7 @@ export default function Account() {
         <input
           type="email"
           required
-          placeholder="Email"
+          placeholder={t("Email")}
           autoComplete="username"
           value={form.email}
           onChange={(ev) => setForm((f) => ({ ...f, email: ev.target.value }))}
@@ -79,16 +80,16 @@ export default function Account() {
           type="password"
           required
           minLength={10}
-          placeholder="Password, 10+ characters"
+          placeholder={t("Password, 10+ characters")}
           autoComplete="current-password"
           value={form.password}
           onChange={(ev) => setForm((f) => ({ ...f, password: ev.target.value }))}
         />
         <button type="submit" className="acct-go" disabled={form.busy}>
-          {form.busy ? "…" : "Sign in"}
+          {form.busy ? "…" : t("Sign in")}
         </button>
         <button type="button" className="acct-link" onClick={() => setForm(BLANK)}>
-          Cancel
+          {t("Cancel")}
         </button>
         {form.error && <div className="acct-err">{form.error}</div>}
       </form>
@@ -102,7 +103,7 @@ export default function Account() {
         className="acct-link"
         onClick={() => setForm({ ...BLANK, open: true })}
       >
-        Sign in with email
+        {t("Sign in with email")}
       </button>
     </div>
   );

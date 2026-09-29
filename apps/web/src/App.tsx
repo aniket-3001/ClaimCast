@@ -11,7 +11,8 @@ import { Learning } from "./components/Learning";
 import { ChatDock, chatRecords, type Turn } from "./components/ChatDock";
 import { SavedSessions } from "./components/SavedSessions";
 import { Login, type Role } from "./components/Login";
-import { ThemeToggle } from "./components/ThemeToggle";
+import { CornerControls } from "./components/ThemeToggle";
+import { lang, setLang, t, type Lang } from "./i18n";
 import { recordChoice, saveSession } from "./api";
 
 type Tab = "start" | "journey" | "working" | "database" | "learning";
@@ -98,6 +99,13 @@ function start(): CaseInput {
 
 export default function App() {
   const [role, setRoleState] = useState<Role | null>(rememberedRole);
+  // Held here so a change of language re-renders every screen from the top;
+  // the components read the language from i18n as they render.
+  const [, setLangState] = useState<Lang>(lang);
+  const changeLang = (l: Lang) => {
+    setLang(l);
+    setLangState(l);
+  };
   const [tab, setTab] = useState<Tab>(() => (rememberedRole() === "admin" ? "database" : "start"));
   const [input, setInput] = useState<CaseInput>(start);
   // The uploaded policy document, once there is one. Held here rather than in
@@ -174,7 +182,7 @@ export default function App() {
     return (
       <>
         <Login onPick={setRole} />
-        <ThemeToggle />
+        <CornerControls onLang={changeLang} />
       </>
     );
 
@@ -184,7 +192,11 @@ export default function App() {
         <div className="brand-block">
           <div className="brand">ClaimCast</div>
           <span className={`role-pill ${role}`}>
-            {role === "admin" ? "Team view" : name || policyholder ? `For ${name || policyholder}` : "Family view"}
+            {role === "admin"
+              ? t("Team view")
+              : name || policyholder
+                ? t("For {name}", { name: name || policyholder })
+                : t("Family view")}
           </span>
         </div>
         <div className="masthead-right">
@@ -192,14 +204,16 @@ export default function App() {
           {role === "user" && (
             <button className="save-session" onClick={() => void saveNow()} disabled={saving === "saving"}>
               {saving === "saving"
-                ? "Saving…"
+                ? t("Saving…")
                 : saved
-                  ? `Saved ${saved.at.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })} · save again`
-                  : "Save my session"}
+                  ? t("Saved {time} · save again", {
+                      time: saved.at.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+                    })
+                  : t("Save my session")}
             </button>
           )}
           <button className="switch-view" onClick={() => setRole(null)}>
-            Switch view
+            {t("Switch view")}
           </button>
           {saving !== "idle" && saving !== "saving" && <div className="warn-line">{saving}</div>}
         </div>
@@ -209,21 +223,21 @@ export default function App() {
           are a sequence — who you are, what you can still choose, the
           arithmetic behind it — rather than four unrelated views. */}
       <nav className="tabs" role="tablist">
-        {TABS[role].map((t, i) => (
+        {TABS[role].map((tb, i) => (
           <button
-            key={t.id}
+            key={tb.id}
             role="tab"
             className="tab"
-            aria-selected={tab === t.id}
+            aria-selected={tab === tb.id}
             onClick={() => {
-              setTab(t.id);
+              setTab(tb.id);
               window.scrollTo(0, 0);
             }}
           >
             <span className="tab-n" aria-hidden="true">
               {i + 1}
             </span>
-            {t.label}
+            {t(tb.label)}
           </button>
         ))}
       </nav>
@@ -266,11 +280,11 @@ export default function App() {
         <ChatDock e={e} documentId={documentId} turns={chatTurns} setTurns={setChatTurns} />
       )}
 
-      <ThemeToggle />
+      <CornerControls onLang={changeLang} />
 
       <footer className="foot">
         <span>ClaimCast · Team Rocket, IIIT-Delhi · GE HealthCare Precision Care Challenge 2026</span>
-        <span>Demo data only. Estimates, not guarantees. Not medical advice.</span>
+        <span>{t("Demo data only. Estimates, not guarantees. Not medical advice.")}</span>
       </footer>
     </div>
   );

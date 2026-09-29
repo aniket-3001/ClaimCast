@@ -156,6 +156,7 @@ export async function answerChat(args: {
   pages: string[] | null;
   /** Past answers from saved sessions most like this question. */
   memory?: ChatTurnRecord[];
+  language?: "en" | "hi";
 }): Promise<ChatAnswer> {
   const top = args.pages === null ? null : retrieve(chunkPages(args.pages), args.question, 5);
   const retrievedPages = top ? [...new Set(top.map((t) => t.chunk.page))].sort((a, b) => a - b) : [];
@@ -169,7 +170,13 @@ export async function answerChat(args: {
     : "";
 
   const memory = args.memory ?? [];
-  const system = buildPrompt(args.facts, top, memory);
+  const system =
+    buildPrompt(args.facts, top, memory) +
+    (args.language === "hi"
+      ? "\n\nThe family is reading in Hindi. Write \"answer\" in simple, everyday Hindi (Devanagari script). " +
+        "Write every rupee figure exactly as it appears in the facts, with the ₹ sign and digits (for example ₹1,26,900) -- " +
+        "never in words and never as lakh. Keep the JSON keys in English."
+      : "");
   // Open models occasionally answer in prose instead of the JSON asked for.
   // One more try, told so, before giving up; a second miss is a real failure.
   for (let attempt = 0; ; attempt++) {

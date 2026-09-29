@@ -2761,3 +2761,19 @@ button:not(.tab):not(.chat-fab):not(.login-card):not(.session-row):not(.chat-sta
   font-size: 13px;
   line-height: 1;
 }
+
+/* Theme and language, together in the bottom-left corner. */
+.corner-controls {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.corner-controls .theme-toggle {
+  position: static;
+}

@@ -8,6 +8,7 @@ import {
   type Evaluated,
   type Option,
 } from "@claimcast/engine";
+import { t, tx } from "../i18n";
 
 /**
  * The same admission, counted again under every choice still available.
@@ -25,20 +26,24 @@ export function Alternatives({ e, onPick }: { e: Evaluated; onPick: (next: CaseI
     <>
       <section className="section">
         <div className="section-head">
-          <h2>Every room class at {e.hospital.name}</h2>
-          <span className="aside">Room limit {e.result.roomCapPerDay === null ? "none" : `${fmt(e.result.roomCapPerDay)} / day`}</span>
+          <h2>{t("Every room class at {h}", { h: e.hospital.name })}</h2>
+          <span className="aside">
+            {t("Room limit {x}", {
+              x: e.result.roomCapPerDay === null ? t("none") : t("{x} / day", { x: fmt(e.result.roomCapPerDay) }),
+            })}
+          </span>
         </div>
         <Table
           options={rooms}
           onPick={(o) => onPick(o.next)}
-          emptyNote="This hospital has one room class."
+          emptyNote={t("This hospital has one room class.")}
         />
       </section>
 
       <section className="section">
         <div className="section-head">
-          <h2>Every hospital in the set</h2>
-          <span className="aside">Same room class where they stock it, nearest by tariff where they do not</span>
+          <h2>{t("Every hospital in the set")}</h2>
+          <span className="aside">{t("Same room class where they stock it, nearest by tariff where they do not")}</span>
         </div>
         <Table options={hospitals} onPick={(o) => onPick(o.next)} />
       </section>
@@ -46,9 +51,11 @@ export function Alternatives({ e, onPick }: { e: Evaluated; onPick: (next: CaseI
       {implants.length > 0 && (
         <section className="section">
           <div className="section-head">
-            <h2>Every device on offer</h2>
+            <h2>{t("Every device on offer")}</h2>
             <span className="aside">
-              Implant sub-limit {e.policy.implantSubLimit === null ? "none" : fmt(e.policy.implantSubLimit)}
+              {t("Implant sub-limit {x}", {
+                x: e.policy.implantSubLimit === null ? t("none") : fmt(e.policy.implantSubLimit),
+              })}
             </span>
           </div>
           <Table options={implants} onPick={(o) => onPick(o.next)} />
@@ -73,20 +80,20 @@ function Table({
       <table>
         <thead>
           <tr>
-            <th>Option</th>
-            <th className="num">Bill</th>
-            <th className="num">You pay</th>
-            <th className="num">Against now</th>
+            <th>{t("Option")}</th>
+            <th className="num">{t("Bill")}</th>
+            <th className="num">{t("You pay")}</th>
+            <th className="num">{t("Against now")}</th>
           </tr>
         </thead>
         <tbody>
           {options.map((o) => (
             <tr className="pick" key={o.key} onClick={() => onPick(o)}>
               <td>
-                {o.label}
-                {o.current && <span className="chip here" style={{ marginLeft: 8 }}>current</span>}
-                {!o.available && <span className="chip warn" style={{ marginLeft: 8 }}>no cashless</span>}
-                <div className="sub">{o.detail}</div>
+                {tx(o.label)}
+                {o.current && <span className="chip here" style={{ marginLeft: 8 }}>{t("current")}</span>}
+                {!o.available && <span className="chip warn" style={{ marginLeft: 8 }}>{t("no cashless")}</span>}
+                <div className="sub">{tx(o.detail)}</div>
               </td>
               <td className="num">{fmt(o.billTotal)}</td>
               <td className="num">{fmt(o.patientPays)}</td>

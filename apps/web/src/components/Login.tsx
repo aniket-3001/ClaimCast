@@ -7,6 +7,8 @@
  * it. The choice is a view, not an access control.
  */
 
+import { t } from "../i18n";
+
 export type Role = "user" | "admin";
 
 const SIDES: { role: Role; title: string; pitch: string; go: string }[] = [
@@ -31,15 +33,15 @@ export function Login({ onPick }: { onPick: (role: Role) => void }) {
     <div className="login">
       <div className="login-brand">
         <h1 className="brand login-title">ClaimCast</h1>
-        <p className="login-sub">Know what your hospital bill will cost you &mdash; before you are admitted.</p>
+        <p className="login-sub">{t("Know what your hospital bill will cost you — before you are admitted.")}</p>
       </div>
 
       <div className="login-sides">
         {SIDES.map((s) => (
           <button key={s.role} className="login-card" onClick={() => onPick(s.role)}>
-            <span className="login-role">{s.title}</span>
-            <span className="login-pitch">{s.pitch}</span>
-            <span className="login-go">{s.go} →</span>
+            <span className="login-role">{t(s.title)}</span>
+            <span className="login-pitch">{t(s.pitch)}</span>
+            <span className="login-go">{t(s.go)} →</span>
           </button>
         ))}
       </div>

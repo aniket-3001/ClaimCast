@@ -1,4 +1,5 @@
 import { fmt, pct, type LineKind, type Evaluated, registry } from "@claimcast/engine";
+import { lang, t, tx } from "../i18n";
 
 const KIND: Record<LineKind, { label: string; tone: string }> = {
   room: { label: "room", tone: "" },
@@ -29,67 +30,82 @@ export function BillView({ e }: { e: Evaluated }) {
   return (
     <>
       <p className="lede">
-        {e.procedure.name} at {e.hospital.name}, {e.hospital.city}. {e.policy.product} from{" "}
-        {e.policy.insurer}.
+        {t("{proc} at {hospital}, {city}. {product} from {insurer}.", {
+          proc: e.procedure.name,
+          hospital: e.hospital.name,
+          city: e.hospital.city,
+          product: e.policy.product,
+          insurer: e.policy.insurer,
+        })}
       </p>
 
       <div className="facts">
         <div className="fact">
-          <span className="k">Sum insured</span>
+          <span className="k">{t("Sum insured")}</span>
           <span className="v">{fmt(e.policy.sumInsured)}</span>
         </div>
         <div className="fact">
-          <span className="k">Room limit</span>
-          <span className="v">{r.roomCapPerDay === null ? "none" : `${fmt(r.roomCapPerDay)} / day`}</span>
+          <span className="k">{t("Room limit")}</span>
+          <span className="v">{r.roomCapPerDay === null ? t("none") : t("{x} / day", { x: fmt(r.roomCapPerDay) })}</span>
         </div>
         <div className="fact">
-          <span className="k">Rent charged</span>
+          <span className="k">{t("Rent charged")}</span>
           <span className="v">
             {(() => {
               const room = e.lines.find((l) => l.kind === "room");
-              return room ? `${fmt(room.perDay ?? 0)} / day` : "no room line";
+              return room ? t("{x} / day", { x: fmt(room.perDay ?? 0) }) : t("no room line");
             })()}
           </span>
         </div>
         <div className="fact">
-          <span className="k">Reduction ratio</span>
+          <span className="k">{t("Reduction ratio")}</span>
           <span className={`v ${r.roomRatio < 1 ? "loss" : ""}`}>{r.roomRatio.toFixed(2)}</span>
         </div>
         <div className="fact">
-          <span className="k">Co-payment</span>
-          <span className="v">{e.policy.copayPct ? pct(e.policy.copayPct) : "none"}</span>
+          <span className="k">{t("Co-payment")}</span>
+          <span className="v">{e.policy.copayPct ? pct(e.policy.copayPct) : t("none")}</span>
         </div>
         <div className="fact">
-          <span className="k">Implant sub-limit</span>
+          <span className="k">{t("Implant sub-limit")}</span>
           <span className="v">
-            {e.policy.implantSubLimit === null ? "none" : fmt(e.policy.implantSubLimit)}
+            {e.policy.implantSubLimit === null ? t("none") : fmt(e.policy.implantSubLimit)}
           </span>
         </div>
       </div>
 
       {r.roomRatio < 1 && (
         <div className="callout">
-          <h3>Reduction ratio {r.roomRatio.toFixed(2)}</h3>
-          Every charge marked <em>room-linked</em> is paid at {Math.round(r.roomRatio * 100)}% of what
-          the hospital billed. Charges marked <em>not room-linked</em>, and intensive care, are left
-          whole. <span className="cite">{CLAUSES.PROPORTIONATE.cite}</span>
+          <h3>{t("Reduction ratio {r}", { r: r.roomRatio.toFixed(2) })}</h3>
+          {lang() === "hi" ? (
+            t(
+              "Every charge marked “room-linked” is paid at {p}% of what the hospital billed. Charges marked “not room-linked”, and intensive care, are left whole.",
+              { p: Math.round(r.roomRatio * 100) },
+            )
+          ) : (
+            <>
+              Every charge marked <em>room-linked</em> is paid at {Math.round(r.roomRatio * 100)}% of what
+              the hospital billed. Charges marked <em>not room-linked</em>, and intensive care, are left
+              whole.
+            </>
+          )}{" "}
+          <span className="cite">{tx(CLAUSES.PROPORTIONATE.cite)}</span>
         </div>
       )}
 
       <section className="section">
         <div className="section-head">
-          <h2>The bill</h2>
-          <span className="aside">{e.lines.length} lines</span>
+          <h2>{t("The bill")}</h2>
+          <span className="aside">{t("{n} lines", { n: e.lines.length })}</span>
         </div>
         <div className="scroll">
           <table>
             <thead>
               <tr>
-                <th>Line</th>
-                <th>Treated as</th>
-                <th className="num">Billed</th>
-                <th className="num">Refused</th>
-                <th className="num">Allowed</th>
+                <th>{t("Line")}</th>
+                <th>{t("Treated as")}</th>
+                <th className="num">{t("Billed")}</th>
+                <th className="num">{t("Refused")}</th>
+                <th className="num">{t("Allowed")}</th>
               </tr>
             </thead>
             <tbody>
@@ -100,16 +116,16 @@ export function BillView({ e }: { e: Evaluated }) {
                 return (
                   <tr key={l.id}>
                     <td>
-                      {l.label}
+                      {tx(l.label)}
                       {ds.map((d, i) => (
                         <div className="sub" key={i}>
-                          {d.reason} <span className="cite">{CLAUSES[d.clause].cite}</span>
+                          {tx(d.reason)} <span className="cite">{tx(CLAUSES[d.clause].cite)}</span>
                         </div>
                       ))}
-                      {!ds.length && l.note && <div className="sub">{l.note}</div>}
+                      {!ds.length && l.note && <div className="sub">{tx(l.note)}</div>}
                     </td>
                     <td>
-                      <span className={`chip ${k.tone}`}>{k.label}</span>
+                      <span className={`chip ${k.tone}`}>{t(k.label)}</span>
                     </td>
                     <td className="num">{fmt(l.amount)}</td>
                     <td className="num">{cut ? <span style={{ color: "var(--loss)" }}>{fmt(cut)}</span> : "—"}</td>
@@ -124,31 +140,31 @@ export function BillView({ e }: { e: Evaluated }) {
 
       <section className="section">
         <div className="section-head">
-          <h2>Settlement</h2>
+          <h2>{t("Settlement")}</h2>
           <span className="aside">
             {e.input.route === "cashless"
-              ? `Cashless, pre-authorisation about ${e.hospital.preAuthHours} hours`
-              : `Reimbursement, about ${e.hospital.settlementDays} days`}
+              ? t("Cashless, pre-authorisation about {h} hours", { h: e.hospital.preAuthHours ?? "" })
+              : t("Reimbursement, about {d} days", { d: e.hospital.settlementDays })}
           </span>
         </div>
         <ul className="rows">
           <li className="row">
-            <span className="row-l">Hospital bill</span>
+            <span className="row-l">{t("Hospital bill")}</span>
             <span className="row-amt">{fmt(r.billTotal)}</span>
           </li>
           <li className="row">
-            <span className="row-l">Deductions</span>
+            <span className="row-l">{t("Deductions")}</span>
             <span className="row-amt loss">{fmt(-r.deductionTotal)}</span>
           </li>
           <li className="row">
-            <span className="row-l">Admissible</span>
+            <span className="row-l">{t("Admissible")}</span>
             <span className="row-amt">{fmt(r.admissible)}</span>
           </li>
           {r.copay > 0 && (
             <li className="row">
               <span className="row-l">
-                Co-payment at {pct(e.policy.copayPct)}
-                <span className="cite">{CLAUSES.COPAY.cite}</span>
+                {t("Co-payment at {p}", { p: pct(e.policy.copayPct) })}
+                <span className="cite">{tx(CLAUSES.COPAY.cite)}</span>
               </span>
               <span className="row-amt loss">{fmt(-r.copay)}</span>
             </li>
@@ -156,30 +172,33 @@ export function BillView({ e }: { e: Evaluated }) {
           {r.siShortfall > 0 && (
             <li className="row">
               <span className="row-l">
-                Above the sum insured
-                <span className="cite">{CLAUSES.SUM_INSURED.cite}</span>
+                {t("Above the sum insured")}
+                <span className="cite">{tx(CLAUSES.SUM_INSURED.cite)}</span>
               </span>
               <span className="row-amt loss">{fmt(-r.siShortfall)}</span>
             </li>
           )}
           <li className="row">
-            <span className="row-l">Insurer pays</span>
+            <span className="row-l">{t("Insurer pays")}</span>
             <span className="row-amt paid">{fmt(r.insurerPays)}</span>
           </li>
           <li className="row total">
-            <span className="row-l">You pay</span>
+            <span className="row-l">{t("You pay")}</span>
             <span className="row-amt loss">{fmt(r.patientPays)}</span>
           </li>
         </ul>
         {e.input.route === "reimbursement" && (
           <p className="note">
-            On this route the family pays {fmt(r.billTotal)} at discharge and is repaid{" "}
-            {fmt(r.insurerPays)} about {e.hospital.settlementDays} days later.
+            {t("On this route the family pays {bill} at discharge and is repaid {x} about {d} days later.", {
+              bill: fmt(r.billTotal),
+              x: fmt(r.insurerPays),
+              d: e.hospital.settlementDays,
+            })}
           </p>
         )}
         {r.notes.map((n, i) => (
           <p className="note" key={i}>
-            {n}
+            {tx(n)}
           </p>
         ))}
       </section>

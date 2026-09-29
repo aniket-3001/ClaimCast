@@ -621,6 +621,8 @@ export const ChatRequestSchema = z.object({
     .array(z.object({ role: z.enum(["user", "assistant"]), text: z.string().max(2000) }))
     .max(6)
     .default([]),
+  /** Which language to answer in. The figures stay as written either way. */
+  language: z.enum(["en", "hi"]).default("en"),
 });
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;
 

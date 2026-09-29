@@ -1,4 +1,5 @@
 import { rupees, registry, type CaseInput } from "@claimcast/engine";
+import { t } from "../i18n";
 
 /**
  * The givens.
@@ -25,7 +26,7 @@ export function Controls({
   return (
     <div className="givens">
       <div className="given wide">
-        <label htmlFor="c-proc">Procedure</label>
+        <label htmlFor="c-proc">{t("Procedure")}</label>
         <select
           id="c-proc"
           value={value.procedureId}
@@ -43,7 +44,7 @@ export function Controls({
       </div>
 
       <div className="given wide">
-        <label htmlFor="c-pol">Policy</label>
+        <label htmlFor="c-pol">{t("Policy")}</label>
         <select
           id="c-pol"
           value={value.policyId}
@@ -58,7 +59,7 @@ export function Controls({
       </div>
 
       <div className="given narrow">
-        <label htmlFor="c-days">Nights</label>
+        <label htmlFor="c-days">{t("Nights")}</label>
         <input
           id="c-days"
           type="number"
@@ -70,7 +71,7 @@ export function Controls({
       </div>
 
       <div className="given narrow">
-        <label htmlFor="c-icu">In ICU</label>
+        <label htmlFor="c-icu">{t("In ICU")}</label>
         <input
           id="c-icu"
           type="number"
@@ -82,7 +83,7 @@ export function Controls({
       </div>
 
       <div className="given">
-        <label htmlFor="c-si">Sum insured used</label>
+        <label htmlFor="c-si">{t("Sum insured used")}</label>
         <input
           id="c-si"
           type="number"

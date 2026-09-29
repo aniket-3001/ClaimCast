@@ -19,6 +19,7 @@ import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
 import { ChatDock } from "./components/ChatDock";
 import { Login } from "./components/Login";
+import { setLang } from "./i18n";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Intake } from "./components/Intake";
@@ -72,20 +73,27 @@ for (const h of HOSPITALS)
       preExisting: n % 5 === 0,
     });
 
-renderToString(<Login onPick={noop} />);
-
+// Every screen, in both languages: a translation that breaks a render fails here.
 let rendered = 0;
-for (const c of cases) {
-  const e = evaluate(c);
-  renderToString(<Controls value={c} onChange={noop} />);
-  renderToString(<Journey e={e} onPick={noop} />);
-  renderToString(<ChatDock e={e} documentId={null} turns={[]} setTurns={noop} />);
-  renderToString(<BillView e={e} />);
-  renderToString(<Alternatives e={e} onPick={noop} />);
-  rendered++;
+for (const l of ["en", "hi"] as const) {
+  setLang(l, false);
+  renderToString(<Login onPick={noop} />);
+  for (const c of cases) {
+    const e = evaluate(c);
+    renderToString(<Controls value={c} onChange={noop} />);
+    const path = renderToString(<Journey e={e} onPick={noop} />);
+    renderToString(<ChatDock e={e} documentId={null} turns={[]} setTurns={noop} />);
+    renderToString(<BillView e={e} />);
+    renderToString(<Alternatives e={e} onPick={noop} />);
+    if (l === "hi" && !/[\u0900-\u097F]/.test(path)) {
+      throw new Error("the path rendered with no Hindi in it with Hindi selected");
+    }
+    rendered++;
+  }
+  renderToString(
+    <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="" onPolicyholder={noop} onContinue={noop} />,
+  );
+  renderToString(<Database onOpen={noop} />);
 }
-renderToString(
-  <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="" onPolicyholder={noop} onContinue={noop} />,
-);
-renderToString(<Database onOpen={noop} />);
-console.log(`ok   ${rendered} cases rendered clean, plus the database tab`);
+setLang("en", false);
+console.log(`ok   ${rendered} cases rendered clean in English and Hindi, plus the database tab`);

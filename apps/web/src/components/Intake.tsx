@@ -2,6 +2,7 @@ import { useState } from "react";
 import { fmt, pct, registry, setRegistry, type CaseInput, type Policy } from "@claimcast/engine";
 import type { Extraction, ExtractedField, ShakyField } from "@claimcast/contracts";
 import { confirmDocument, extractPolicy } from "../api";
+import { plural, t } from "../i18n";
 
 /**
  * The front door, not the engine.
@@ -69,27 +70,27 @@ export function Intake({
     <>
       <div className="givens">
         <div className="given">
-          <label htmlFor="i-name">Your name</label>
+          <label htmlFor="i-name">{t("Your name")}</label>
           <input
             id="i-name"
             type="text"
-            placeholder="Optional"
+            placeholder={t("Optional")}
             value={name}
             onChange={(ev) => onName(ev.target.value)}
           />
         </div>
         <div className="given">
-          <label htmlFor="i-policyholder">Name on the policy</label>
+          <label htmlFor="i-policyholder">{t("Name on the policy")}</label>
           <input
             id="i-policyholder"
             type="text"
-            placeholder="Optional"
+            placeholder={t("Optional")}
             value={policyholder}
             onChange={(ev) => onPolicyholder(ev.target.value)}
           />
         </div>
         <div className="given wide">
-          <label htmlFor="i-policy">Your health insurance plan</label>
+          <label htmlFor="i-policy">{t("Your health insurance plan")}</label>
           <select
             id="i-policy"
             value={input.policyId}
@@ -113,7 +114,7 @@ export function Intake({
           their own, because a scheme is a way of paying, not a topic. */}
       <div className="givens">
         <div className="given narrow">
-          <label htmlFor="i-age">Patient&rsquo;s age</label>
+          <label htmlFor="i-age">{t("Patient's age")}</label>
           <input
             id="i-age"
             type="number"
@@ -124,68 +125,69 @@ export function Intake({
           />
         </div>
         <div className="given">
-          <label htmlFor="i-pmjay">Ayushman Bharat card at home?</label>
+          <label htmlFor="i-pmjay">{t("Ayushman Bharat card at home?")}</label>
           <select
             id="i-pmjay"
             value={input.hasPmjayCard ? "yes" : "no"}
             onChange={(ev) => set({ hasPmjayCard: ev.target.value === "yes" })}
           >
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
+            <option value="no">{t("No")}</option>
+            <option value="yes">{t("Yes")}</option>
           </select>
         </div>
         <div className="given">
-          <label htmlFor="i-cghs">Central govt. employee or pensioner?</label>
+          <label htmlFor="i-cghs">{t("Central govt. employee or pensioner?")}</label>
           <select
             id="i-cghs"
             value={input.govtEmployeeOrPensioner ? "yes" : "no"}
             onChange={(ev) => set({ govtEmployeeOrPensioner: ev.target.value === "yes" })}
           >
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
+            <option value="no">{t("No")}</option>
+            <option value="yes">{t("Yes")}</option>
           </select>
         </div>
         <div className="given">
-          <label htmlFor="i-esi">Covered by ESI at work?</label>
+          <label htmlFor="i-esi">{t("Covered by ESI at work?")}</label>
           <select
             id="i-esi"
             value={input.esiInsured ? "yes" : "no"}
             onChange={(ev) => set({ esiInsured: ev.target.value === "yes" })}
           >
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
+            <option value="no">{t("No")}</option>
+            <option value="yes">{t("Yes")}</option>
           </select>
         </div>
         <div className="given">
-          <label htmlFor="i-ped">Illness began before the policy?</label>
+          <label htmlFor="i-ped">{t("Illness began before the policy?")}</label>
           <select
             id="i-ped"
             value={input.preExisting ? "yes" : "no"}
             onChange={(ev) => set({ preExisting: ev.target.value === "yes" })}
           >
-            <option value="no">No</option>
-            <option value="yes">Yes</option>
+            <option value="no">{t("No")}</option>
+            <option value="yes">{t("Yes")}</option>
           </select>
         </div>
       </div>
 
       <section className="section">
         <div className="section-head">
-          <h2>Your policy schedule</h2>
+          <h2>{t("Your policy schedule")}</h2>
           <span className="aside">
-            {up.stage === "read" ? "Read from your PDF" : "Sample plan for this demo"}
+            {up.stage === "read" ? t("Read from your PDF") : t("Sample plan for this demo")}
           </span>
         </div>
 
         {up.stage === "idle" && (
           <label className="tnode start" style={{ cursor: "pointer", display: "block" }}>
-            <div className="tnode-k">Optional</div>
+            <div className="tnode-k">{t("Optional")}</div>
             <div className="tnode-v" style={{ fontSize: 20 }}>
-              Upload your policy document (PDF)
+              {t("Upload your policy document (PDF)")}
             </div>
             <div className="tnode-sub">
-              Click to choose the file. We read your limits from it for you to check. It is kept
-              private and deleted after a few days.
+              {t(
+                "Click to choose the file. We read your limits from it for you to check. It is kept private and deleted after a few days.",
+              )}
             </div>
             <input
               type="file"
@@ -201,12 +203,12 @@ export function Intake({
 
         {up.stage === "reading" && (
           <div className="tnode start">
-            <div className="tnode-k">Reading {up.filename}</div>
+            <div className="tnode-k">{t("Reading {file}", { file: up.filename })}</div>
             <div className="tnode-v" style={{ fontSize: 20 }}>
-              Reading your policy&hellip;
+              {t("Reading your policy…")}
             </div>
             <div className="tnode-sub">
-              Each detail comes with the exact line it was found on, so you can check it.
+              {t("Each detail comes with the exact line it was found on, so you can check it.")}
             </div>
           </div>
         )}
@@ -214,9 +216,9 @@ export function Intake({
         {up.stage === "refused" && (
           <>
             <div className="tnode start">
-              <div className="tnode-k">Could not read the file</div>
+              <div className="tnode-k">{t("Could not read the file")}</div>
               <div className="tnode-v" style={{ fontSize: 20 }}>
-                Please check your plan's details below
+                {t("Please check your plan's details below")}
               </div>
               <div className="tnode-sub">{up.reason}</div>
             </div>
@@ -246,8 +248,9 @@ export function Intake({
       </section>
 
       <p className="note" style={{ marginTop: 16 }}>
-        Nothing we read from your document is used until you have checked it. If you fix something,
-        ClaimCast learns to read that detail more carefully next time.
+        {t(
+          "Nothing we read from your document is used until you have checked it. If you fix something, ClaimCast learns to read that detail more carefully next time.",
+        )}
       </p>
     </>
   );
@@ -265,40 +268,40 @@ const FIELDS: HandRow[] = [
     label: "Room rent limit",
     value: (p) =>
       p.roomCapPerDay
-        ? `${fmt(p.roomCapPerDay)} / day`
+        ? t("{x} / day", { x: fmt(p.roomCapPerDay) })
         : p.roomCapPctOfSI
-          ? `${pct(p.roomCapPctOfSI)} of sum insured`
-          : "No limit",
+          ? t("{x} of sum insured", { x: pct(p.roomCapPctOfSI) })
+          : t("No limit"),
     clause: "Clause 4.1",
   },
   {
     label: "ICU limit",
     value: (p) =>
       p.icuCapPerDay
-        ? `${fmt(p.icuCapPerDay)} / day`
+        ? t("{x} / day", { x: fmt(p.icuCapPerDay) })
         : p.icuCapPctOfSI
-          ? `${pct(p.icuCapPctOfSI)} of sum insured`
-          : "No limit",
+          ? t("{x} of sum insured", { x: pct(p.icuCapPctOfSI) })
+          : t("No limit"),
     clause: "Clause 4.2",
   },
   {
     label: "Co-payment",
-    value: (p) => (p.copayPct ? pct(p.copayPct) : "None"),
+    value: (p) => (p.copayPct ? pct(p.copayPct) : t("None")),
     clause: "Clause 6.1",
   },
   {
     label: "Limit on implants",
-    value: (p) => (p.implantSubLimit ? fmt(p.implantSubLimit) : "No sub-limit"),
+    value: (p) => (p.implantSubLimit ? fmt(p.implantSubLimit) : t("No sub-limit")),
     clause: "Clause 4.5",
   },
   {
     label: "Costs covered before / after the stay",
-    value: (p) => `${p.preHospDays} / ${p.postHospDays} days`,
+    value: (p) => t("{a} / {b} days", { a: p.preHospDays, b: p.postHospDays }),
     clause: "Clause 7.1",
   },
   {
     label: "Short (day-care) procedures covered",
-    value: (p) => (p.dayCareCovered ? "Yes" : "No"),
+    value: (p) => (p.dayCareCovered ? t("Yes") : t("No")),
     clause: "Clause 3.3",
   },
 ];
@@ -306,7 +309,7 @@ const FIELDS: HandRow[] = [
 function HandEntered({ policy, onConfirm }: { policy: Policy; onConfirm: () => void }) {
   return (
     <div className="tnode fixed">
-      <div className="tnode-k">Your plan at a glance</div>
+      <div className="tnode-k">{t("Your plan at a glance")}</div>
       <ul className="rows">
         {FIELDS.map((f) => {
           const v = f.value(policy);
@@ -314,7 +317,7 @@ function HandEntered({ policy, onConfirm }: { policy: Policy; onConfirm: () => v
           return (
             <li className="row" key={f.label}>
               <span className="row-l">
-                <span>{f.label}</span>
+                <span>{t(f.label)}</span>
                 <span className="cite">{f.clause}</span>
               </span>
               <span className="row-amt">{v}</span>
@@ -323,7 +326,7 @@ function HandEntered({ policy, onConfirm }: { policy: Policy; onConfirm: () => v
         })}
       </ul>
       <button type="button" style={{ marginTop: 14 }} onClick={onConfirm}>
-        Confirm and continue
+        {t("Confirm and continue")}
       </button>
     </div>
   );
@@ -412,8 +415,8 @@ function fromDraft(kind: Kind, raw: string, was: Value): Value {
 
 /** Display form, for the fields that are read rather than edited. */
 function show(kind: Kind, v: Value): string {
-  if (v === null) return "Not stated";
-  if (kind === "bool") return v ? "Yes" : "No";
+  if (v === null) return t("Not stated");
+  if (kind === "bool") return v ? t("Yes") : t("No");
   if (kind === "money") return fmt(Number(v));
   if (kind === "pct") return pct(Number(v));
   return String(v);
@@ -499,16 +502,21 @@ function ExtractionPanel({
 
   return (
     <div className="tnode fixed">
-      <div className="tnode-k">Please check what we read</div>
+      <div className="tnode-k">{t("Please check what we read")}</div>
       <p className="note" style={{ marginTop: 0 }}>
-        We read {extraction.pages} pages of {extraction.filename}. Next to each detail is the line
-        we found it on &mdash; change anything that looks wrong.
+        {t(
+          "We read {pages} pages of {file}. Next to each detail is the line we found it on — change anything that looks wrong.",
+          { pages: extraction.pages, file: extraction.filename },
+        )}
       </p>
 
       {unverified > 0 && (
         <p className="warn-line">
-          {unverified} {unverified === 1 ? "detail" : "details"} could not be matched to a line in your
-          document. They are marked below &mdash; please check them against your copy.
+          {plural(
+            unverified,
+            "{n} detail could not be matched to a line in your document. It is marked below — please check it against your copy.",
+            "{n} details could not be matched to a line in your document. They are marked below — please check them against your copy.",
+          )}
         </p>
       )}
 
@@ -520,14 +528,14 @@ function ExtractionPanel({
           return (
             <li className="row read-row" key={r.field}>
               <span className="row-l">
-                <label htmlFor={id}>{r.label}</label>
+                <label htmlFor={id}>{t(r.label)}</label>
                 {got.span ? (
                   <span className={got.verified ? "cite" : "cite cite-bad"}>
-                    “{got.span.text}” — page {got.span.page}
-                    {got.verified ? "" : " · please check this one"}
+                    “{got.span.text}” — {t("page {n}", { n: got.span.page })}
+                    {got.verified ? "" : " · " + t("please check this one")}
                   </span>
                 ) : (
-                  <span className="cite cite-bad">not found in your document</span>
+                  <span className="cite cite-bad">{t("not found in your document")}</span>
                 )}
                 {/* What the reader had said, kept on screen beside the
                     change. A person who has just overwritten a figure is owed a
@@ -535,7 +543,7 @@ function ExtractionPanel({
                     the new value, that is about to be recorded. */}
                 {norm(confirmed[r.field]) !== norm(got.value) && (
                   <span className="cite cite-edited">
-                    we read {show(r.kind, got.value)} &mdash; you changed it
+                    {t("we read {v} — you changed it", { v: show(r.kind, got.value) })}
                   </span>
                 )}
                 {/* The correction loop, closing. Nothing was retrained
@@ -545,8 +553,10 @@ function ExtractionPanel({
                     weighed rather than obeyed. */}
                 {warn && (
                   <span className="cite cite-warn">
-                    others often correct this one ({warn.corrected} of {warn.seen} times) &mdash; worth a
-                    second look
+                    {t("others often correct this one ({a} of {b} times) — worth a second look", {
+                      a: warn.corrected,
+                      b: warn.seen,
+                    })}
                   </span>
                 )}
               </span>
@@ -557,8 +567,8 @@ function ExtractionPanel({
                     value={rawOf(r.field, r.kind)}
                     onChange={(ev) => setDraft({ ...draft, [r.field]: ev.target.value })}
                   >
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
+                    <option value="yes">{t("Yes")}</option>
+                    <option value="no">{t("No")}</option>
                   </select>
                 ) : (
                   <input
@@ -569,7 +579,7 @@ function ExtractionPanel({
                     onChange={(ev) => setDraft({ ...draft, [r.field]: ev.target.value })}
                   />
                 )}
-                {r.unit && <span className="unit">{r.unit}</span>}
+                {r.unit && <span className="unit">{t(r.unit)}</span>}
               </span>
             </li>
           );
@@ -577,7 +587,7 @@ function ExtractionPanel({
       </ul>
 
       <div className="given narrow" style={{ marginTop: 14 }}>
-        <label htmlFor="i-months">How many months you have had this cover</label>
+        <label htmlFor="i-months">{t("How many months you have had this cover")}</label>
         <input
           id="i-months"
           type="number"
@@ -588,8 +598,9 @@ function ExtractionPanel({
         />
       </div>
       <p className="note" style={{ marginTop: 6 }}>
-        Your document shows this year&rsquo;s dates, not how long you have been insured without a
-        break. Waiting periods depend on it, so please tell us.
+        {t(
+          "Your document shows this year's dates, not how long you have been insured without a break. Waiting periods depend on it, so please tell us.",
+        )}
       </p>
 
       {/* Asked here rather than in a settings screen nobody opens, and asked
@@ -603,13 +614,15 @@ function ExtractionPanel({
           onChange={(ev) => setKeepExamples(ev.target.checked)}
         />
         <span>
-          Help ClaimCast improve: keep the lines I corrected as examples. Only the details you changed
-          are kept.
+          {t(
+            "Help ClaimCast improve: keep the lines I corrected as examples. Only the details you changed are kept.",
+          )}
         </span>
       </label>
       <p className="note" style={{ marginTop: 6 }}>
-        Leave it unticked and nothing from your document is kept &mdash; only a count of which
-        details needed fixing, with nothing about you.
+        {t(
+          "Leave it unticked and nothing from your document is kept — only a count of which details needed fixing, with nothing about you.",
+        )}
       </p>
 
       <button
@@ -624,8 +637,8 @@ function ExtractionPanel({
         }
       >
         {edited === 0
-          ? "Confirm and continue"
-          : `Correct ${edited} ${edited === 1 ? "field" : "fields"} and continue`}
+          ? t("Confirm and continue")
+          : plural(edited, "Correct {n} field and continue", "Correct {n} fields and continue")}
       </button>
     </div>
   );

@@ -12,6 +12,7 @@ import {
   listITotal,
   registry,
 } from "@claimcast/engine";
+import { plural, t, tx } from "../i18n";
 
 type View = "admissions" | "hospitals" | "procedures" | "policies" | "lists" | "clauses";
 
@@ -38,13 +39,13 @@ export function Database({ onOpen }: { onOpen: (c: CaseInput) => void }) {
   return (
     <section className="section">
       <div className="section-head">
-        <h2>What ClaimCast knows</h2>
-        <span className="aside">The data behind every figure the family sees</span>
+        <h2>{t("What ClaimCast knows")}</h2>
+        <span className="aside">{t("The data behind every figure the family sees")}</span>
       </div>
       <div className="seg" style={{ marginBottom: 22 }}>
         {VIEWS.map((v) => (
           <button key={v.id} type="button" aria-pressed={view === v.id} onClick={() => setView(v.id)}>
-            {v.label}
+            {t(v.label)}
           </button>
         ))}
       </div>
@@ -79,9 +80,9 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
   if (rows.length === 0) {
     return (
       <p className="lede">
-        No past admissions recorded yet. We do not fill this table with made-up patients &mdash;
-        rows appear here only when real claims are settled. The families who used ClaimCast are
-        listed above, under Saved sessions.
+        {t(
+          "No past admissions recorded yet. We do not fill this table with made-up patients — rows appear here only when real claims are settled. The families who used ClaimCast are listed above, under Saved sessions.",
+        )}
       </p>
     );
   }
@@ -89,19 +90,20 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
   return (
     <>
       <p className="lede">
-        {rows.length} settled {rows.length === 1 ? "admission" : "admissions"}, adjudicated
-        from what this deployment holds. Open any row to carry it into the forecast.
+        {t("{n} settled admissions from this deployment. Open any row to see it as the family would.", {
+          n: rows.length,
+        })}
       </p>
       <div className="scroll">
         <table>
           <thead>
             <tr>
-              <th>No.</th>
-              <th>Admission</th>
-              <th>Policy</th>
-              <th className="num">Bill</th>
-              <th className="num">Family pays</th>
-              <th className="num">Room cut</th>
+              <th>{t("No.")}</th>
+              <th>{t("Admission")}</th>
+              <th>{t("Policy")}</th>
+              <th className="num">{t("Bill")}</th>
+              <th className="num">{t("Family pays")}</th>
+              <th className="num">{t("Room cut")}</th>
             </tr>
           </thead>
           <tbody>
@@ -136,9 +138,9 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                 <td>
                   {procedure(a.procedureId).name}
                   <div className="sub">
-                    {hospital(a.hospitalId).name} · {ROOM_LABEL[a.roomClass].toLowerCase()} · {days}{" "}
-                    {days === 1 ? "day" : "days"}
-                    {icuDays > 0 && `, ${icuDays} in ICU`} · {a.route}
+                    {hospital(a.hospitalId).name} · {tx(ROOM_LABEL[a.roomClass].toLowerCase())} ·{" "}
+                    {plural(days, "{n} day", "{n} days")}
+                    {icuDays > 0 && t(", {n} in ICU", { n: icuDays })} · {tx(a.route)}
                   </div>
                   {a.edgeCase && <div className="sub">{a.edgeCase}</div>}
                 </td>
@@ -151,7 +153,7 @@ function Admissions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                   {fmt(res.patientPays)}
                   {res.repudiated && (
                     <div className="sub">
-                      <span className="chip loss">refused</span>
+                      <span className="chip loss">{t("refused")}</span>
                     </div>
                   )}
                 </td>
@@ -170,21 +172,22 @@ function Hospitals() {
   return (
     <>
       <p className="lede">
-        Room prices are per day. &ldquo;Clinical&rdquo; shows how expensive the hospital&rsquo;s
-        treatment charges are compared with a big-city private hospital (1.00).
+        {t(
+          "Room prices are per day. “Clinical” shows how expensive the hospital’s treatment charges are compared with a big-city private hospital (1.00).",
+        )}
       </p>
       <div className="scroll">
         <table>
           <thead>
             <tr>
-              <th>Hospital</th>
-              <th>Price tier</th>
-              <th className="num">General</th>
-              <th className="num">Semi-private</th>
-              <th className="num">Private</th>
-              <th className="num">ICU</th>
-              <th className="num">Clinical</th>
-              <th className="num">Refund takes</th>
+              <th>{t("Hospital")}</th>
+              <th>{t("Price tier")}</th>
+              <th className="num">{t("General")}</th>
+              <th className="num">{t("Semi-private")}</th>
+              <th className="num">{t("Private")}</th>
+              <th className="num">{t("ICU")}</th>
+              <th className="num">{t("Clinical")}</th>
+              <th className="num">{t("Refund takes")}</th>
             </tr>
           </thead>
           <tbody>
@@ -195,14 +198,16 @@ function Hospitals() {
                   <td>
                     {h.name}
                     <div className="sub">
-                      {h.city} · {h.beds} beds ·{" "}
-                      {h.network.length ? `cashless with ${h.network.length} ${h.network.length === 1 ? "insurer" : "insurers"}` : "no cashless insurers"}
-                      {h.pmjayEmpanelled && " · accepts Ayushman Bharat"}
-                      {h.esicTieUp && " · accepts ESI"}
+                      {h.city} · {t("{n} beds", { n: h.beds })} ·{" "}
+                      {h.network.length
+                        ? plural(h.network.length, "cashless with {n} insurer", "cashless with {n} insurers")
+                        : t("no cashless insurers")}
+                      {h.pmjayEmpanelled && " · " + t("accepts Ayushman Bharat")}
+                      {h.esicTieUp && " · " + t("accepts ESI")}
                     </div>
                     {h.flags?.map((f) => (
                       <div className="sub" key={f}>
-                        {f}
+                        {tx(f)}
                       </div>
                     ))}
                   </td>
@@ -212,7 +217,7 @@ function Hospitals() {
                   <td className="num">{at("private") ? fmt(at("private")!.perDay) : "—"}</td>
                   <td className="num">{at("icu") ? fmt(at("icu")!.perDay) : "—"}</td>
                   <td className="num">{h.costIndex.toFixed(2)}</td>
-                  <td className="num">{h.settlementDays} d</td>
+                  <td className="num">{t("{n} d", { n: h.settlementDays })}</td>
                 </tr>
               );
             })}
@@ -228,19 +233,20 @@ function Procedures() {
   return (
     <>
       <p className="lede">
-        Public reference rates beside the private spread. Codes follow the NHA and CGHS registries;
-        values are illustrative.
+        {t(
+          "Public reference rates beside the private spread. Codes follow the NHA and CGHS registries; values are illustrative.",
+        )}
       </p>
       <div className="scroll">
         <table>
           <thead>
             <tr>
-              <th>Treatment</th>
-              <th>Code</th>
-              <th className="num">Govt. rate (PM-JAY)</th>
-              <th className="num">Govt. rate (CGHS)</th>
-              <th className="num">Private hospitals</th>
-              <th className="num">Stay</th>
+              <th>{t("Treatment")}</th>
+              <th>{t("Code")}</th>
+              <th className="num">{t("Govt. rate (PM-JAY)")}</th>
+              <th className="num">{t("Govt. rate (CGHS)")}</th>
+              <th className="num">{t("Private hospitals")}</th>
+              <th className="num">{t("Stay")}</th>
             </tr>
           </thead>
           <tbody>
@@ -250,8 +256,8 @@ function Procedures() {
                   {p.name}
                   <div className="sub">
                     {p.specialty}
-                    {p.dayCare && " · day-care listed"}
-                    {p.usesImplant && " · implant"}
+                    {p.dayCare && " · " + t("day-care listed")}
+                    {p.usesImplant && " · " + t("implant")}
                   </div>
                 </td>
                 <td>
@@ -263,7 +269,7 @@ function Procedures() {
                   {fmt(p.privateLow)} – {fmt(p.privateHigh)}
                 </td>
                 <td className="num">
-                  {p.medianStayDays} {p.medianStayDays === 1 ? "day" : "days"}
+                  {plural(p.medianStayDays, "{n} day", "{n} days")}
                 </td>
               </tr>
             ))}
@@ -279,19 +285,19 @@ function Policies() {
   return (
     <>
       <p className="lede">
-        Sample plans with invented names, built from the limits real Indian policies use.
+        {t("Sample plans with invented names, built from the limits real Indian policies use.")}
       </p>
       <div className="scroll">
         <table>
           <thead>
             <tr>
-              <th>Plan</th>
-              <th className="num">Cover</th>
-              <th className="num">Room limit</th>
-              <th className="num">ICU limit</th>
-              <th className="num">Co-pay</th>
-              <th className="num">Implant</th>
-              <th>Cuts other charges</th>
+              <th>{t("Plan")}</th>
+              <th className="num">{t("Cover")}</th>
+              <th className="num">{t("Room limit")}</th>
+              <th className="num">{t("ICU limit")}</th>
+              <th className="num">{t("Co-pay")}</th>
+              <th className="num">{t("Implant")}</th>
+              <th>{t("Cuts other charges")}</th>
             </tr>
           </thead>
           <tbody>
@@ -300,9 +306,12 @@ function Policies() {
                 <td>
                   {p.product}
                   <div className="sub">
-                    {p.insurer} · in force {p.monthsInForce} months · pre-existing wait{" "}
-                    {p.pedWaitingMonths} months
-                    {p.monthsInForce >= p.moratoriumMonths && " · past moratorium"}
+                    {p.insurer} ·{" "}
+                    {t("in force {a} months · pre-existing wait {b} months", {
+                      a: p.monthsInForce,
+                      b: p.pedWaitingMonths,
+                    })}
+                    {p.monthsInForce >= p.moratoriumMonths && " · " + t("past moratorium")}
                   </div>
                   {p.notes && <div className="sub">{p.notes}</div>}
                 </td>
@@ -313,9 +322,9 @@ function Policies() {
                 <td className="num">{p.implantSubLimit ? fmt(p.implantSubLimit) : "—"}</td>
                 <td>
                   {p.proportionateDeduction ? (
-                    <span className="chip loss">yes</span>
+                    <span className="chip loss">{t("yes")}</span>
                   ) : (
-                    <span className="chip paid">no</span>
+                    <span className="chip paid">{t("no")}</span>
                   )}
                 </td>
               </tr>
@@ -339,8 +348,9 @@ function Lists() {
   return (
     <>
       <p className="lede">
-        The insurance regulator (IRDAI) keeps four lists of items. Only the first &mdash; things no
-        policy ever pays for &mdash; ends up on the family&rsquo;s bill.
+        {t(
+          "The insurance regulator (IRDAI) keeps four lists of items. Only the first — things no policy ever pays for — ends up on the family’s bill.",
+        )}
       </p>
       <ul className="rows">
         {LIST_FRAMEWORK.map((l) => (
@@ -355,18 +365,18 @@ function Lists() {
 
       <section className="section">
         <div className="section-head">
-          <h2>Items no policy pays for</h2>
+          <h2>{t("Items no policy pays for")}</h2>
           <span className="aside">
-            {LIST_I.length} items · {fmt(listITotal())} on a five-day metro admission
+            {t("{n} items · {x} on a five-day metro admission", { n: LIST_I.length, x: fmt(listITotal()) })}
           </span>
         </div>
         <div className="scroll">
           <table>
             <thead>
               <tr>
-                <th>Item</th>
-                <th>Group</th>
-                <th className="num">Typical</th>
+                <th>{t("Item")}</th>
+                <th>{t("Group")}</th>
+                <th className="num">{t("Typical")}</th>
               </tr>
             </thead>
             <tbody>
@@ -383,7 +393,7 @@ function Lists() {
           </table>
         </div>
         <p className="note">
-          No choice of hospital, room or plan changes these.
+          {t("No choice of hospital, room or plan changes these.")}
         </p>
       </section>
     </>
@@ -395,13 +405,13 @@ function Clauses() {
   return (
     <>
       <p className="lede">
-        Every amount ClaimCast says will not be paid points to one of these rules.
+        {t("Every amount ClaimCast says will not be paid points to one of these rules.")}
       </p>
       <ul className="rows">
         {Object.values(CLAUSES).map((c) => (
           <li className="row" key={c.id}>
             <span className="row-l">
-              <span>{c.cite}</span>
+              <span>{tx(c.cite)}</span>
               <span className="chip">{c.source}</span>
               <span className="row-why">{c.text}</span>
             </span>

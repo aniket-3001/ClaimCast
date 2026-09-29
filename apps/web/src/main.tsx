@@ -18,9 +18,11 @@ import App from "./App";
 import { loadReference } from "./api";
 import "./styles.css";
 import { applyTheme, storedTheme } from "./components/ThemeToggle";
+import { setLang, storedLang } from "./i18n";
 
-// Before anything renders, so the first paint is already the chosen theme.
+// Before anything renders, so the first paint is already the chosen theme and language.
 applyTheme(storedTheme());
+setLang(storedLang(), false);
 
 const root = createRoot(document.getElementById("root")!);
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ChatAnswer } from "@claimcast/contracts";
 import type { Evaluated } from "@claimcast/engine";
 import { askChat } from "../api";
+import { lang, plural, t } from "../i18n";
 
 /**
  * The chatbox: a button in the corner of every tab, and a panel over the page.
@@ -65,6 +66,7 @@ export function ChatDock({
       ...(e.input.policyId === "pol-uploaded" ? { policy: e.policy } : {}),
       ...(documentId ? { documentId } : {}),
       history,
+      language: lang(),
     });
     setTurns((ts) => [...ts, r.ok ? { role: "assistant", answer: r.answer } : { role: "error", text: r.reason }]);
     setBusy(false);
@@ -72,24 +74,24 @@ export function ChatDock({
 
   if (!open) {
     return (
-      <button className="chat-fab" onClick={() => setOpen(true)} aria-label="Ask about this admission">
+      <button className="chat-fab" onClick={() => setOpen(true)} aria-label={t("Ask about this admission")}>
         <span className="chat-fab-dot" aria-hidden="true" />
-        Ask ClaimCast
+        {t("Ask ClaimCast")}
       </button>
     );
   }
 
   return (
-    <aside className="chat-panel" aria-label="Ask about this admission">
+    <aside className="chat-panel" aria-label={t("Ask about this admission")}>
       <header className="chat-head">
         <div>
-          <div className="chat-title">Ask ClaimCast</div>
+          <div className="chat-title">{t("Ask ClaimCast")}</div>
           <div className="chat-sub">
             {e.procedure.name} · {e.hospital.name}
-            {documentId ? " · your uploaded policy" : ""}
+            {documentId ? t(" · your uploaded policy") : ""}
           </div>
         </div>
-        <button className="chat-close" onClick={() => setOpen(false)} aria-label="Close">
+        <button className="chat-close" onClick={() => setOpen(false)} aria-label={t("Close")}>
           ×
         </button>
       </header>
@@ -98,14 +100,16 @@ export function ChatDock({
         {turns.length === 0 && (
           <div className="chat-empty">
             <p>
-              Ask anything about your bill{documentId ? " or your policy" : ""}. Amounts come straight
-              from ClaimCast&rsquo;s calculation, never guessed. We only help with money &mdash; please ask
-              your doctor about treatment.
+              {t(
+                documentId
+                  ? "Ask anything about your bill or your policy. Amounts come straight from ClaimCast’s calculation, never guessed. We only help with money — please ask your doctor about treatment."
+                  : "Ask anything about your bill. Amounts come straight from ClaimCast’s calculation, never guessed. We only help with money — please ask your doctor about treatment.",
+              )}
             </p>
             <div className="chat-starters">
               {STARTERS.map((s) => (
-                <button key={s} className="chat-starter" onClick={() => void ask(s)}>
-                  {s}
+                <button key={s} className="chat-starter" onClick={() => void ask(t(s))}>
+                  {t(s)}
                 </button>
               ))}
             </div>
@@ -125,7 +129,7 @@ export function ChatDock({
             <Answer key={i} a={t.answer} />
           ),
         )}
-        {busy && <div className="chat-msg assistant pending">Working it out…</div>}
+        {busy && <div className="chat-msg assistant pending">{t("Working it out…")}</div>}
         <div ref={end} />
       </div>
 
@@ -140,12 +144,12 @@ export function ChatDock({
           className="chat-input"
           value={draft}
           maxLength={500}
-          placeholder="Type your question…"
+          placeholder={t("Type your question…")}
           onChange={(ev) => setDraft(ev.target.value)}
           disabled={busy}
         />
         <button className="chat-send" type="submit" disabled={busy || !draft.trim()}>
-          Ask
+          {t("Ask")}
         </button>
       </form>
     </aside>
@@ -155,19 +159,23 @@ export function ChatDock({
 function Answer({ a }: { a: ChatAnswer }) {
   return (
     <div className="chat-msg assistant">
-      <div className="chat-answer">{a.answer || "No answer came back."}</div>
+      <div className="chat-answer">{a.answer || t("No answer came back.")}</div>
 
       {a.unsupportedFigures.length > 0 && (
         <div className="chat-warn">
-          Please ignore {a.unsupportedFigures.join(", ")} &mdash; {a.unsupportedFigures.length === 1 ? "that amount is" : "those amounts are"} not
-          from ClaimCast&rsquo;s calculation.
+          {t(
+            a.unsupportedFigures.length === 1
+              ? "Please ignore {x} — that amount is not from ClaimCast’s calculation."
+              : "Please ignore {x} — those amounts are not from ClaimCast’s calculation.",
+            { x: a.unsupportedFigures.join(", ") },
+          )}
         </div>
       )}
 
       {(a.facts.length > 0 || a.citations.length > 0) && (
         <details className="chat-basis">
           <summary>
-            Where this comes from
+            {t("Where this comes from")}
           </summary>
           <ul>
             {a.facts.map((f) => (
@@ -177,8 +185,8 @@ function Answer({ a }: { a: ChatAnswer }) {
             ))}
             {a.citations.map((c, i) => (
               <li key={"c" + i} className={c.verified ? "chat-quote" : "chat-quote bad"}>
-                &ldquo;{c.quote}&rdquo; <span className="cite">page {c.page}</span>
-                {!c.verified && <span className="cite-bad"> could not be found in your document</span>}
+                &ldquo;{c.quote}&rdquo; <span className="cite">{t("page {n}", { n: c.page })}</span>
+                {!c.verified && <span className="cite-bad"> {t("could not be found in your document")}</span>}
               </li>
             ))}
           </ul>
@@ -186,7 +194,11 @@ function Answer({ a }: { a: ChatAnswer }) {
       )}
       {a.memoryUsed > 0 && (
         <div className="chat-model">
-          Learned from {a.memoryUsed} similar {a.memoryUsed === 1 ? "question" : "questions"} other families asked
+          {plural(
+            a.memoryUsed,
+            "Learned from {n} similar question other families asked",
+            "Learned from {n} similar questions other families asked",
+          )}
         </div>
       )}
     </div>
