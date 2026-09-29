@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { SavedSessionDetail } from "@claimcast/contracts";
-import { fmt, registry, setRegistry, type CaseInput, type Evaluated } from "@claimcast/engine";
+import { fmt, isNoPolicy, registry, setRegistry, type CaseInput, type Evaluated } from "@claimcast/engine";
 import { mySessions } from "../api";
+import { policyShort } from "../labels";
 import { plural, t, tx, type Lang } from "../i18n";
 import Account from "./Account";
 import { LangToggle, ThemeToggle } from "./ThemeToggle";
@@ -106,10 +107,8 @@ export function Profile({
       <div className="profile-tiles">
         <div className="profile-tile">
           <span className="k">{t("My plan")}</span>
-          <span className="v small">{e.policy.product}</span>
-          <span className="s">
-            {e.policy.insurer} · {fmt(e.policy.sumInsured)}
-          </span>
+          <span className="v small">{policyShort(e.policy)}</span>
+          <span className="s">{isNoPolicy(e.policy) ? t("paying ourselves") : `${e.policy.insurer} · ${fmt(e.policy.sumInsured)}`}</span>
         </div>
         <div className="profile-tile">
           <span className="k">{t("Saved stays")}</span>

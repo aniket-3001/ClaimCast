@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { ChatAnswer } from "@claimcast/contracts";
 import type { Evaluated } from "@claimcast/engine";
 import { askChat } from "../api";
+import { policyTravels } from "../labels";
 import { lang, plural, t, type Lang } from "../i18n";
 import {
   listen,
@@ -115,7 +116,7 @@ export function ChatDock({
       case: e.input,
       // An uploaded, confirmed policy exists only in this browser, so it travels
       // with the question; a reference policy the server already has.
-      ...(e.input.policyId === "pol-uploaded" ? { policy: e.policy } : {}),
+      ...(policyTravels(e.policy) ? { policy: e.policy } : {}),
       ...(documentId ? { documentId } : {}),
       history,
       language: chatLang,

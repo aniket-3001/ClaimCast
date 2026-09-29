@@ -241,12 +241,23 @@ const ENGINE: Record<string, string> = {
   "One room class in the building. There is no cheaper room to move to.": "इमारत में एक ही तरह का कमरा है। सस्ते कमरे का विकल्प नहीं।",
   "Cheapest private room is nearly three times a 1%-of-sum-insured limit": "सबसे सस्ता प्राइवेट कमरा बीमा राशि की 1% सीमा का लगभग तीन गुना है",
   // Services
+  "No insurance chosen: the family pays the whole bill. Check whether a government scheme could pay instead.":
+    "कोई बीमा नहीं चुना: पूरा बिल परिवार देगा। देखें कि क्या कोई सरकारी योजना भुगतान कर सकती है।",
   "The cost model is not reachable.": "बिल अनुमान सेवा अभी उपलब्ध नहीं है।",
 };
 
 /** Screen text. Keys are the English exactly as written in the components. */
 const HI: Record<string, string> = {
   // Shell
+  "No insurance (we will pay ourselves)": "कोई बीमा नहीं (हम खुद भुगतान करेंगे)",
+  "No insurance": "कोई बीमा नहीं",
+  "paying ourselves": "खुद भुगतान",
+  "— None chosen —": "— कुछ नहीं चुना —",
+  "No procedure chosen": "कोई इलाज नहीं चुना",
+  "Pick the treatment above to see what it would cost and what your insurance would pay.":
+    "खर्च और बीमा का हिस्सा देखने के लिए ऊपर इलाज चुनें।",
+  "{proc} at {hospital}, {city}. No insurance: the family pays the whole bill.":
+    "{hospital}, {city} में {proc}। कोई बीमा नहीं: पूरा बिल परिवार देगा।",
   "Estimate my bill": "मेरे बिल का अनुमान लगाएँ",
   "When did this illness begin?": "यह बीमारी कब शुरू हुई?",
   "Date the illness began": "बीमारी शुरू होने की तारीख",

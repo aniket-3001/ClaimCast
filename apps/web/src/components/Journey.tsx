@@ -14,8 +14,10 @@ import {
   type Evaluated,
   type Stage,
   registry,
+  isNoPolicy,
 } from "@claimcast/engine";
 import { plural, t, tx } from "../i18n";
+import { policyShort } from "../labels";
 
 /**
  * The admission as a path, not a form.
@@ -65,8 +67,8 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
           <div className="tnode-v">{e.procedure.name}</div>
           <div className="tnode-sub">
             {plural(e.input.days, "{n} night", "{n} nights")}
-            {e.input.icuDays > 0 && t(", {n} in intensive care", { n: e.input.icuDays })} · {e.policy.product},{" "}
-            {t("{x} sum insured", { x: fmt(e.policy.sumInsured) })}
+            {e.input.icuDays > 0 && t(", {n} in intensive care", { n: e.input.icuDays })} · {policyShort(e.policy)}
+            {!isNoPolicy(e.policy) && <>, {t("{x} sum insured", { x: fmt(e.policy.sumInsured) })}</>}
           </div>
         </div>
 

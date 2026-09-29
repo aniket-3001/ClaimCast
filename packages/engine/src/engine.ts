@@ -1,5 +1,6 @@
 import type { BillLine, Policy } from "./types";
 import { ratioSplit, type Paise } from "./money";
+import { isNoPolicy } from "./nopolicy";
 
 export interface Deduction {
   lineId: string;
@@ -98,6 +99,23 @@ export function adjudicate(args: {
       roomCapPerDay: null,
       repudiated: args.repudiated,
       notes: ["Claim refused in full. Nothing below applies."],
+    };
+  }
+
+  if (isNoPolicy(policy)) {
+    return {
+      billTotal,
+      deductions: [],
+      deductionTotal: 0,
+      admissible: 0,
+      copay: 0,
+      siShortfall: 0,
+      insurerPays: 0,
+      patientPays: billTotal,
+      roomRatio: 1,
+      roomCapPerDay: null,
+      repudiated: null,
+      notes: ["No insurance chosen: the family pays the whole bill. Check whether a government scheme could pay instead."],
     };
   }
 

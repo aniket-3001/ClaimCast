@@ -1,4 +1,4 @@
-import { fmt, pct, type LineKind, type Evaluated, registry } from "@claimcast/engine";
+import { fmt, isNoPolicy, pct, type LineKind, type Evaluated, registry } from "@claimcast/engine";
 import { lang, t, tx } from "../i18n";
 
 const KIND: Record<LineKind, { label: string; tone: string }> = {
@@ -30,13 +30,19 @@ export function BillView({ e }: { e: Evaluated }) {
   return (
     <>
       <p className="lede">
-        {t("{proc} at {hospital}, {city}. {product} from {insurer}.", {
-          proc: e.procedure.name,
-          hospital: e.hospital.name,
-          city: e.hospital.city,
-          product: e.policy.product,
-          insurer: e.policy.insurer,
-        })}
+        {isNoPolicy(e.policy)
+          ? t("{proc} at {hospital}, {city}. No insurance: the family pays the whole bill.", {
+              proc: e.procedure.name,
+              hospital: e.hospital.name,
+              city: e.hospital.city,
+            })
+          : t("{proc} at {hospital}, {city}. {product} from {insurer}.", {
+              proc: e.procedure.name,
+              hospital: e.hospital.name,
+              city: e.hospital.city,
+              product: e.policy.product,
+              insurer: e.policy.insurer,
+            })}
       </p>
 
       <div className="facts">

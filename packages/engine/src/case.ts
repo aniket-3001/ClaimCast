@@ -3,6 +3,7 @@ import { adjudicate, type Adjudication } from "./engine";
 import { buildBill, ROOM_LABEL, tariff } from "./bill";
 import { fmt, rupees, type Paise } from "./money";
 import { hospital, policy, procedure, registry } from "./registry";
+import { isNoPolicy } from "./nopolicy";
 
 /** Below this, a deduction is true but not worth a decision. */
 export const MATERIALITY: Paise = rupees(10000);
@@ -420,7 +421,8 @@ export function journey(e: Evaluated): Stage[] {
     })),
   };
 
-  const stages: Omit<Stage, "step">[] = [where, which, how];
+  // With no insurance there is no claim to make, so no "how you claim" fork.
+  const stages: Omit<Stage, "step">[] = isNoPolicy(e.policy) ? [where, which] : [where, which, how];
 
   if (e.procedure.implantOptions && e.procedure.implantOptions.length > 1) {
     stages.push(implantStage(e));

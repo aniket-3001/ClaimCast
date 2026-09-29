@@ -7,7 +7,7 @@
  * markup rather than an exception. Run by `npm run check` alongside selfcheck.
  */
 import { renderToString } from "react-dom/server";
-import { evaluate, setRegistry, stayDays, type CaseInput } from "@claimcast/engine";
+import { NO_POLICY, evaluate, setRegistry, stayDays, type CaseInput } from "@claimcast/engine";
 import {
   ADMISSIONS,
   FIXTURES,
@@ -29,7 +29,7 @@ import { Database } from "./components/Database";
 // The components render whatever registry is installed. In the running app
 // that is what the API returned; here it is the hand-written set, so that
 // `npm run check` stays a check rather than something needing a database up.
-setRegistry(FIXTURES);
+setRegistry({ ...FIXTURES, policies: [...FIXTURES.policies, NO_POLICY] });
 
 const noop = () => {};
 let n = 0;
@@ -74,6 +74,10 @@ for (const h of HOSPITALS)
       preExisting: n % 5 === 0,
     });
 
+// With no insurance, at every hospital.
+for (const h of HOSPITALS)
+  cases.push({ ...cases[0], hospitalId: h.id, policyId: NO_POLICY.id, roomClass: h.rooms.find((r) => r.cls !== "icu")?.cls ?? "icu", route: "reimbursement" });
+
 // Every screen, in both languages: a translation that breaks a render fails here.
 let rendered = 0;
 for (const l of ["en", "hi"] as const) {
@@ -81,7 +85,7 @@ for (const l of ["en", "hi"] as const) {
   renderToString(<Login onPick={noop} />);
   for (const c of cases) {
     const e = evaluate(c);
-    renderToString(<Controls value={c} onChange={noop} />);
+    renderToString(<Controls value={c} onChange={noop} procNil={false} onProcNil={noop} />);
     const path = renderToString(<Journey e={e} onPick={noop} />);
     renderToString(<ChatDock e={e} documentId={null} turns={[]} setTurns={noop} />);
     renderToString(<BillView e={e} />);

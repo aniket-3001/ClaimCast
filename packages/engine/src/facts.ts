@@ -3,6 +3,7 @@ import { fmt, type Paise } from "./money";
 import { ROOM_LABEL } from "./bill";
 import { fixedRegardless, gate, journey, schemeOptions, type Evaluated } from "./case";
 import { registry, setRegistry } from "./registry";
+import { isNoPolicy } from "./nopolicy";
 
 /**
  * One thing the engine knows about this admission, written as a sentence.
@@ -47,7 +48,9 @@ export function caseFacts(e: Evaluated): Fact[] {
     null,
     [],
   );
-  add(
+  if (isNoPolicy(e.policy)) {
+    add("No health insurance was chosen: the family pays the whole bill unless a government scheme applies.", null, []);
+  } else add(
     `The policy: ${e.policy.product} from ${e.policy.insurer}, sum insured ${fmt(e.policy.sumInsured)}` +
       (r.roomCapPerDay !== null ? `, room rent limit ${fmt(r.roomCapPerDay)} a day` : ", no room rent limit") +
       (e.policy.copayPct ? `, co-payment ${Math.round(e.policy.copayPct * 100)}%` : ", no co-payment") +

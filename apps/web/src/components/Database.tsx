@@ -10,8 +10,7 @@ import {
   policy,
   stayDays,
   listITotal,
-  registry,
-} from "@claimcast/engine";
+  registry, isNoPolicy } from "@claimcast/engine";
 import { plural, t, tx } from "../i18n";
 
 type View = "admissions" | "hospitals" | "procedures" | "policies" | "lists" | "clauses";
@@ -301,7 +300,7 @@ function Policies() {
             </tr>
           </thead>
           <tbody>
-            {POLICIES.map((p) => (
+            {POLICIES.filter((p) => !isNoPolicy(p)).map((p) => (
               <tr key={p.id}>
                 <td>
                   {p.product}

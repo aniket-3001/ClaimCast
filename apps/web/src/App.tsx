@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { rupees, evaluate, registry, repair, type CaseInput } from "@claimcast/engine";
 import { isPreExisting } from "./illness";
+import { policyTravels } from "./labels";
 import { Intake } from "./components/Intake";
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
@@ -115,6 +116,8 @@ export default function App() {
   const [chatTurns, setChatTurns] = useState<Turn[]>([]);
   const [wizardStep, setWizardStep] = useState(0);
   const [illnessDate, setIllnessDate] = useState("");
+  // The path's "none" option for the procedure: nothing to price until one is picked.
+  const [procNil, setProcNil] = useState(false);
   // One saved record per sitting: the first save creates it, later ones update it.
   const [saved, setSaved] = useState<{ id: string; at: Date } | null>(null);
   const [saving, setSaving] = useState<"idle" | "saving" | string>("idle");
@@ -162,6 +165,7 @@ export default function App() {
   };
   // From the admin's Database: open a stored admission the way the family sees it.
   const open = (c: CaseInput) => {
+    setProcNil(false);
     pick(c);
     setRoleState("user");
     try {
@@ -180,7 +184,7 @@ export default function App() {
       ...(name ? { name } : {}),
       ...(policyholder ? { policyholder } : {}),
       case: e.input,
-      ...(e.input.policyId === "pol-uploaded" ? { policy: e.policy } : {}),
+      ...(policyTravels(e.policy) ? { policy: e.policy } : {}),
       ...(documentId ? { documentId } : {}),
       chat: chatRecords(chatTurns),
     });
@@ -268,7 +272,7 @@ export default function App() {
       </nav>
 
       {(tab === "journey" || tab === "working") && (
-        <Controls value={input} onChange={pick} />
+        <Controls value={input} onChange={pick} procNil={procNil} onProcNil={setProcNil} />
       )}
 
       {tab === "start" && (
@@ -304,8 +308,14 @@ export default function App() {
           onLang={changeLang}
         />
       )}
-      {tab === "journey" && <Journey e={e} onPick={pick} />}
-      {tab === "working" && (
+      {procNil && (tab === "journey" || tab === "working") && (
+        <div className="nil-card">
+          <div className="nil-k">{t("No procedure chosen")}</div>
+          <p>{t("Pick the treatment above to see what it would cost and what your insurance would pay.")}</p>
+        </div>
+      )}
+      {!procNil && tab === "journey" && <Journey e={e} onPick={pick} />}
+      {!procNil && tab === "working" && (
         <>
           <BillView e={e} />
           <Alternatives e={e} onPick={pick} />
@@ -319,7 +329,7 @@ export default function App() {
       )}
       {tab === "learning" && <Learning />}
 
-      {role === "user" && (
+      {role === "user" && !procNil && (
         <ChatDock e={e} documentId={documentId} turns={chatTurns} setTurns={setChatTurns} />
       )}
 

@@ -14,7 +14,7 @@
  * it came from a database.
  */
 
-import { setRegistry, type Registry } from "@claimcast/engine";
+import { NO_POLICY, setRegistry, type Registry } from "@claimcast/engine";
 import {
   SavedSessionDetailSchema,
   SavedSessionRowSchema,
@@ -103,6 +103,8 @@ export async function loadReference(): Promise<ReferenceBundle> {
     listFramework: bundle.listFramework,
     admissions: bundle.admissions,
   };
+  // The nil plan, "no insurance", lives only in the client and travels with any request that needs it.
+  registry.policies = [...registry.policies.filter((p) => p.id !== NO_POLICY.id), NO_POLICY];
   setRegistry(registry);
   return bundle;
 }

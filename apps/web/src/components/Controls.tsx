@@ -1,5 +1,6 @@
 import { rupees, registry, type CaseInput } from "@claimcast/engine";
 import { t } from "../i18n";
+import { policyLabel } from "../labels";
 
 /**
  * The givens.
@@ -16,9 +17,14 @@ import { t } from "../i18n";
 export function Controls({
   value,
   onChange,
+  procNil,
+  onProcNil,
 }: {
   value: CaseInput;
   onChange: (next: CaseInput) => void;
+  /** "No procedure chosen yet": the path shows nothing to price until one is. */
+  procNil: boolean;
+  onProcNil: (nil: boolean) => void;
 }) {
   const { procedures: PROCEDURES, policies: POLICIES } = registry();
   const set = (patch: Partial<CaseInput>) => onChange({ ...value, ...patch });
@@ -29,12 +35,18 @@ export function Controls({
         <label htmlFor="c-proc">{t("Procedure")}</label>
         <select
           id="c-proc"
-          value={value.procedureId}
+          value={procNil ? "" : value.procedureId}
           onChange={(ev) => {
+            if (!ev.target.value) {
+              onProcNil(true);
+              return;
+            }
             const p = PROCEDURES.find((x) => x.id === ev.target.value)!;
+            onProcNil(false);
             set({ procedureId: p.id, days: p.medianStayDays, icuDays: 0 });
           }}
         >
+          <option value="">{t("— None chosen —")}</option>
           {PROCEDURES.map((x) => (
             <option key={x.id} value={x.id}>
               {x.name}
@@ -52,7 +64,7 @@ export function Controls({
         >
           {POLICIES.map((x) => (
             <option key={x.id} value={x.id}>
-              {x.product} — {x.insurer}
+              {policyLabel(x)}
             </option>
           ))}
         </select>

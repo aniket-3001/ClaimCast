@@ -4,6 +4,7 @@ import type { Extraction, ExtractedField, ShakyField } from "@claimcast/contract
 import { confirmDocument, extractPolicy } from "../api";
 import { lang, plural, t } from "../i18n";
 import { checkIllness, showDate, todayIso } from "../illness";
+import { policyLabel } from "../labels";
 
 /**
  * The front door, not the engine.
@@ -157,7 +158,7 @@ export function Intake({
             >
               {POLICIES.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.product} — {p.insurer}
+                  {policyLabel(p)}
                 </option>
               ))}
             </select>
@@ -294,7 +295,7 @@ export function Intake({
             {[
               [t("Your name"), name || "—", 0],
               [t("Patient's age"), String(input.age), 0],
-              [t("Your health insurance plan"), `${e.policy.product} — ${e.policy.insurer}`, 1],
+              [t("Your health insurance plan"), policyLabel(e.policy), 1],
               [t("Ayushman Bharat card at home?"), input.hasPmjayCard ? t("Yes") : t("No"), 2],
               [t("Central govt. employee or pensioner?"), input.govtEmployeeOrPensioner ? t("Yes") : t("No"), 2],
               [t("Covered by ESI at work?"), input.esiInsured ? t("Yes") : t("No"), 2],

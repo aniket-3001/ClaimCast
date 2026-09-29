@@ -11,6 +11,7 @@ import { adjudicate } from "./engine";
 import { fmt, rupees as r } from "./money";
 import { admission, policy, setRegistry } from "./registry";
 import { ADMISSIONS, FIXTURES, HOSPITALS } from "./fixtures";
+import { NO_POLICY, NO_POLICY_ID } from "./nopolicy";
 
 // The engine has no data until something gives it some. These checks are the
 // one place that is allowed to hand it the hand-written set.
@@ -130,6 +131,24 @@ console.log("The two decisions added to the tree, on the same reference admissio
   } else {
     console.log("  ok   a condition that is not pre-existing is not held to the waiting period");
   }
+}
+
+console.log("No insurance, the nil option");
+{
+  setRegistry({ ...FIXTURES, policies: [...FIXTURES.policies, NO_POLICY] });
+  const self = evaluate(
+    repair({
+      hospitalId: "h-meridian", procedureId: "p-spine-fusion", policyId: NO_POLICY_ID, roomClass: "private",
+      route: "cashless", days: 5, icuDays: 0, siUsed: 0, implantId: "imported", admittedInpatient: true,
+      age: 45, hasPmjayCard: false, govtEmployeeOrPensioner: false, esiInsured: false, preExisting: false,
+    }),
+  );
+  eq("  the family pays the whole bill", self.result.patientPays, self.result.billTotal);
+  if (self.result.deductions.length) {
+    failures++;
+    console.log("FAIL  a self-paying family was shown refusals");
+  } else console.log("  ok   nothing is 'refused' when there is no policy to refuse it");
+  setRegistry(FIXTURES);
 }
 
 console.log("Invariants across all 16 admissions");
