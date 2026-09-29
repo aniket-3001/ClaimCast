@@ -2874,3 +2874,23 @@ button:not(.tab):not(.chat-fab):not(.login-card):not(.session-row):not(.chat-sta
 .profile-prefs .k { font-size: 12px; font-weight: 700; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; }
 .profile-prefs .theme-toggle { position: static; box-shadow: none; }
 @media (max-width: 720px) { .profile-tiles, .profile-prefs, .profile-edit { grid-template-columns: 1fr; } }
+
+/* ── Admin: searchable sessions table ────────────────────── */
+.stable-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.stable-search { flex: 1 1 280px; height: 46px; padding: 0 16px; border: 1px solid var(--hair); border-radius: 12px;
+  background: var(--bg); color: var(--ink); font: 16px var(--sans); }
+.stable-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-wash); }
+.stable-tools select { height: 46px; padding: 0 12px; border: 1px solid var(--hair); border-radius: 12px;
+  background: var(--bg); color: var(--ink); font: 14.5px var(--sans); }
+.stable-count { color: var(--ink-3); font-size: 13px; margin-left: auto; }
+.stable { width: 100%; font-size: 15px; }
+.stable td { padding-top: 13px; padding-bottom: 13px; vertical-align: top; }
+.stable tr.on > td { background: var(--accent-wash); }
+.stable-sort { min-height: 0; padding: 0; border: none; background: none; color: inherit; font: inherit;
+  letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+.stable-sort:hover:not(:disabled) { opacity: 1; color: var(--ink); }
+.stable-detail > td { padding: 0; background: var(--bg); }
+.stable .empty { text-align: center; color: var(--ink-3); padding: 24px; }
+.stable-tools .stable-search { width: auto; min-width: 0; }
+.stable-tools select { width: auto; flex: 0 0 230px; min-width: 0; }
+.stable-tools .stable-count { flex-basis: auto; }

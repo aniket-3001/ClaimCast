@@ -247,6 +247,13 @@ const ENGINE: Record<string, string> = {
 /** Screen text. Keys are the English exactly as written in the components. */
 const HI: Record<string, string> = {
   // Shell
+  "Search by family or hospital…": "परिवार या अस्पताल से खोजें…",
+  "All plans": "सभी प्लान",
+  "All hospitals": "सभी अस्पताल",
+  "{a} of {b}": "{b} में से {a}",
+  Questions: "सवाल",
+  "Saved on": "कब सहेजा",
+  "No saved session matches.": "कोई सहेजा गया सत्र मेल नहीं खाता।",
   "Your profile": "आपकी प्रोफ़ाइल",
   "Age {n}": "उम्र {n}",
   Done: "हो गया",

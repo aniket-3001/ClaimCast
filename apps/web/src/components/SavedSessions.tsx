@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import type { SavedSessionDetail, SavedSessionRow } from "@claimcast/contracts";
 import { fmt, registry, setRegistry, type CaseInput } from "@claimcast/engine";
 import { adminSession, adminSessions } from "../api";
@@ -15,6 +15,33 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
   const [rows, setRows] = useState<SavedSessionRow[] | null | "loading">("loading");
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<SavedSessionDetail | null>(null);
+  const [q, setQ] = useState("");
+  const [plan, setPlan] = useState("");
+  const [hosp, setHosp] = useState("");
+  const [sort, setSort] = useState<[Col, boolean]>(["saved", false]);
+  const sortBy = (c: Col) => setSort(([k, asc]) => [c, k === c ? !asc : c !== "saved"]);
+  const needle = q.trim().toLowerCase();
+  const shown = (Array.isArray(rows) ? rows : [])
+    .filter((r) => !plan || r.summary.policy === plan)
+    .filter((r) => !hosp || r.summary.hospital === hosp)
+    .filter(
+      (r) =>
+        !needle ||
+        [r.name, r.policyholder, r.summary.hospital, r.summary.procedure]
+          .filter(Boolean)
+          .some((x) => x!.toLowerCase().includes(needle)),
+    )
+    .sort((x, y) => {
+      const v = (r: SavedSessionRow): string | number =>
+        sort[0] === "family" ? (r.name || r.policyholder || "").toLowerCase()
+        : sort[0] === "stay" ? r.summary.procedure
+        : sort[0] === "plan" ? r.summary.policy
+        : sort[0] === "pays" ? r.summary.patientPays
+        : sort[0] === "q" ? r.chatTurns
+        : r.updatedAt;
+      const c = v(x) < v(y) ? -1 : v(x) > v(y) ? 1 : 0;
+      return sort[1] ? c : -c;
+    });
 
   const load = () => {
     setRows("loading");
@@ -60,25 +87,66 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
       )}
 
       {Array.isArray(rows) && rows.length > 0 && (
-        <div className="sessions">
-          {rows.map((r) => (
-            <div key={r.id} className={`session ${openId === r.id ? "open" : ""}`}>
-              <button className="session-row" onClick={() => setOpenId(openId === r.id ? null : r.id)}>
-                <span className="session-who">
-                  {r.name || r.policyholder || t("Unnamed")}
-                  <span className="session-when">{new Date(r.updatedAt).toLocaleString("en-IN")}</span>
-                </span>
-                <span className="session-what">
-                  {r.summary.procedure} · {r.summary.hospital} · {r.summary.policy}
-                  {r.uploadedPolicy ? t(" · own policy uploaded") : ""}
-                </span>
-                <span className="session-pays">
-                  {t("pays")} <b className="loss">{fmt(r.summary.patientPays)}</b> {t("of")} {fmt(r.summary.billTotal)}
-                  {r.chatTurns > 0 && <span className="session-chat"> · {plural(r.chatTurns, "{n} question asked", "{n} questions asked")}</span>}
-                </span>
-              </button>
+        <div className="stable-tools">
+          <input
+            className="stable-search"
+            type="search"
+            placeholder={t("Search by family or hospital…")}
+            value={q}
+            onChange={(ev) => setQ(ev.target.value)}
+          />
+          <select value={plan} onChange={(ev) => setPlan(ev.target.value)}>
+            <option value="">{t("All plans")}</option>
+            {[...new Set(rows.map((r) => r.summary.policy))].sort().map((x) => (
+              <option key={x}>{x}</option>
+            ))}
+          </select>
+          <select value={hosp} onChange={(ev) => setHosp(ev.target.value)}>
+            <option value="">{t("All hospitals")}</option>
+            {[...new Set(rows.map((r) => r.summary.hospital))].sort().map((x) => (
+              <option key={x}>{x}</option>
+            ))}
+          </select>
+          <span className="stable-count">{t("{a} of {b}", { a: shown.length, b: rows.length })}</span>
+        </div>
+      )}
 
+      {Array.isArray(rows) && rows.length > 0 && (
+        <div className="scroll">
+        <table className="stable">
+          <thead>
+            <tr>
+              {COLS.map(([key, label]) => (
+                <th key={key} className={key === "pays" || key === "q" ? "num" : ""}>
+                  <button type="button" className="stable-sort" onClick={() => sortBy(key)}>
+                    {t(label)} {sort[0] === key ? (sort[1] ? "↑" : "↓") : ""}
+                  </button>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+          {shown.map((r) => (
+            <Fragment key={r.id}>
+              <tr className={`pick ${openId === r.id ? "on" : ""}`} onClick={() => setOpenId(openId === r.id ? null : r.id)}>
+                <td>
+                  <b>{r.name || r.policyholder || t("Unnamed")}</b>
+                  {r.uploadedPolicy && <div className="sub">{t(" · own policy uploaded").replace(" · ", "")}</div>}
+                </td>
+                <td>
+                  {r.summary.procedure}
+                  <div className="sub">{r.summary.hospital}</div>
+                </td>
+                <td>{r.summary.policy}</td>
+                <td className="num">
+                  <b className="loss">{fmt(r.summary.patientPays)}</b>
+                  <div className="sub">{t("of")} {fmt(r.summary.billTotal)}</div>
+                </td>
+                <td className="num">{r.chatTurns}</td>
+                <td>{new Date(r.updatedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</td>
+              </tr>
               {openId === r.id && (
+                <tr className="stable-detail"><td colSpan={6}>
                 <div className="session-detail">
                   {!detail ? (
                     <p className="note">{t("Loading…")}</p>
@@ -155,11 +223,29 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                     </>
                   )}
                 </div>
+                </td></tr>
               )}
-            </div>
+            </Fragment>
           ))}
+          {shown.length === 0 && (
+            <tr>
+              <td colSpan={6} className="empty">{t("No saved session matches.")}</td>
+            </tr>
+          )}
+          </tbody>
+        </table>
         </div>
       )}
     </section>
   );
 }
+
+type Col = "family" | "stay" | "plan" | "pays" | "q" | "saved";
+const COLS: [Col, string][] = [
+  ["family", "Family"],
+  ["stay", "Hospital stay"],
+  ["plan", "Plan"],
+  ["pays", "Family pays"],
+  ["q", "Questions"],
+  ["saved", "Saved on"],
+];
