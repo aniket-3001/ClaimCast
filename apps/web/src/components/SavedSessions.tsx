@@ -28,7 +28,7 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
     .filter(
       (r) =>
         !needle ||
-        [r.name, r.policyholder, r.summary.hospital, r.summary.procedure, ...r.people.flatMap((p) => [p.name, p.uid])]
+        [r.name, r.policyholder, r.summary.hospital, r.summary.procedure, r.health?.diagnosis, ...r.people.flatMap((p) => [p.name, p.uid])]
           .filter(Boolean)
           .some((x) => x!.toLowerCase().includes(needle)),
     )
@@ -229,6 +229,37 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                             ))}
                           </tbody>
                         </table>
+                      )}
+
+                      {detail.health && (
+                        <>
+                          <div className="session-k">{t("Health report")}</div>
+                          <table className="people-table">
+                            <tbody>
+                              <tr>
+                                <td>{t("Diagnosis")}</td>
+                                <td>{detail.health.diagnosis ?? "—"}</td>
+                              </tr>
+                              <tr>
+                                <td>{t("Tests and scans")}</td>
+                                <td>
+                                  {detail.health.tests.length
+                                    ? detail.health.tests.map((x) => `${x.asWritten} (CGHS ${x.code})`).join(", ")
+                                    : "—"}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td>{t("Operation or hospital treatment")}</td>
+                                <td>
+                                  {detail.health.treatment ?? "—"}
+                                  {detail.health.procedureId
+                                    ? ` → ${registry().procedures.find((p) => p.id === detail.health!.procedureId)?.name ?? detail.health.procedureId}`
+                                    : ""}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </>
                       )}
 
                       <div className="session-k">{t("Questions they asked")}</div>

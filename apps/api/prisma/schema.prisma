@@ -47,6 +47,7 @@ model Source {
 
   hospitals   Hospital[]
   tariffRates TariffRate[]
+  diagnosticTests DiagnosticTest[]
   nonPayables NonPayableItem[]
   policies    Policy[]
   clauses     Clause[]
@@ -230,6 +231,24 @@ model TariffRate {
 
   @@unique([procedureId, scheme, cityTier, nabh, basis, bedCategory, effectiveFrom])
   @@map("tariff_rates")
+}
+
+/// A priced investigation from the CGHS rate list: a scan, an X-ray, a blood
+/// test, a consultation. Read out of the same Office Memorandum as the
+/// procedure rates, so a scan on a health report can be priced against a
+/// published government rate rather than a guess. Paise, semi-private ward,
+/// X (Tier I) city, as the document prints them.
+model DiagnosticTest {
+  code      String @id
+  name      String
+  specialty String
+  nonNabh   Int
+  nabh      Int
+  page      Int
+  sourceId  String
+  source    Source @relation(fields: [sourceId], references: [id])
+
+  @@map("diagnostic_tests")
 }
 
 enum TariffBasis {
@@ -621,6 +640,10 @@ model SavedSession {
   summary      Json
   /// Chat turns: question, answer, facts used, flagged figures, model.
   chat         Json
+  /// The health report the family confirmed: diagnosis, the tests and scans
+  /// matched to CGHS codes, and the treatment matched to a procedure. What was
+  /// confirmed, never the file itself, which is not kept.
+  health       Json?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

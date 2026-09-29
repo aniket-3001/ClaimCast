@@ -11,7 +11,7 @@
     "prisma:generate": "prisma generate",
     "migrate": "prisma migrate dev",
     "seed": "tsx prisma/seed.ts",
-    "check": "tsx prisma/verify.ts && tsx src/extract.check.ts && tsx src/session.check.ts && tsx src/learning.check.ts && tsx src/rag.check.ts && tsx src/chat.check.ts && tsx src/sessions.check.ts",
+    "check": "tsx prisma/verify.ts && tsx src/extract.check.ts && tsx src/session.check.ts && tsx src/learning.check.ts && tsx src/rag.check.ts && tsx src/chat.check.ts && tsx src/sessions.check.ts && tsx src/health.check.ts",
     "extract:live": "tsx src/extract.live.ts"
   },
   "prisma": {

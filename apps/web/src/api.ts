@@ -14,8 +14,11 @@
  * it came from a database.
  */
 
-import { NO_POLICY, setRegistry, type Registry } from "@claimcast/engine";
+import { NO_POLICY, setRegistry, type DiagnosticTest, type Registry } from "@claimcast/engine";
 import {
+  DiagnosticTestSchema,
+  HealthReadingSchema,
+  type HealthReading,
   SavedPersonSchema,
   type SavedPerson,
   SavedSessionDetailSchema,
@@ -420,4 +423,41 @@ export async function mySessions(): Promise<SavedSessionDetail[] | null> {
   const res = await fetch(BASE + "/api/sessions/mine", { credentials: CREDS }).catch(() => null);
   if (!res || !res.ok) return null;
   return SavedSessionDetailSchema.array().safeParse(await res.json().catch(() => null)).data ?? null;
+}
+
+/**
+ * Read a health report or prescription: a PDF or photo, or the lines typed out.
+ * What comes back is a proposal for the family to check, never a price.
+ */
+export async function readHealthReport(
+  what: File | string,
+): Promise<{ ok: true; reading: HealthReading } | { ok: false; reason: string }> {
+  const init: RequestInit =
+    typeof what === "string"
+      ? { headers: { "content-type": "application/json" }, body: JSON.stringify({ text: what }) }
+      : { body: fileForm(what) };
+  const res = await fetch(BASE + "/api/health/read", { method: "POST", credentials: CREDS, ...init }).catch(() => null);
+  if (!res) return { ok: false, reason: "The server is not reachable." };
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    return { ok: false, reason: body.detail ?? "The report could not be read." };
+  }
+  const parsed = HealthReadingSchema.safeParse(await res.json());
+  return parsed.success ? { ok: true, reading: parsed.data } : { ok: false, reason: "The report could not be read." };
+}
+
+/** CGHS tests closest to what was typed, to add or correct a test by hand. */
+export async function searchTests(q: string): Promise<DiagnosticTest[]> {
+  try {
+    const body = await get<{ tests: unknown }>("/api/diagnostics?q=" + encodeURIComponent(q));
+    return DiagnosticTestSchema.array().parse(body.tests);
+  } catch {
+    return [];
+  }
+}
+
+function fileForm(file: File): FormData {
+  const form = new FormData();
+  form.append("file", file);
+  return form;
 }

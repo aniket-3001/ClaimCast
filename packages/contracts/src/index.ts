@@ -14,7 +14,7 @@
  */
 
 import { z } from "zod";
-import type { CaseInput, Hospital, Policy, Procedure } from "@claimcast/engine";
+import type { CaseInput, DiagnosticTest, Hospital, Policy, Procedure } from "@claimcast/engine";
 
 /** Fails the build if `Got` and `Want` have drifted apart in either direction. */
 type Exact<Got, Want> = [Got] extends [Want] ? ([Want] extends [Got] ? true : never) : never;
@@ -600,6 +600,88 @@ export const PolicyQaAnswerSchema = z.object({
 });
 export type PolicyQaAnswer = z.infer<typeof PolicyQaAnswerSchema>;
 
+// ── Health reports ────────────────────────────────────────────────────────
+
+/** One priced investigation from the CGHS list. */
+export const DiagnosticTestSchema = z.object({
+  code: z.string().min(1).max(20),
+  name: z.string().min(1).max(400),
+  specialty: z.string().max(120),
+  nonNabh: Paise,
+  nabh: Paise,
+});
+export const _diagnosticTestMatchesEngine: Exact<z.infer<typeof DiagnosticTestSchema>, DiagnosticTest> = true;
+
+/** Where in the report a reading came from, and whether that line is really there. */
+export const ReportQuoteSchema = z.object({
+  text: z.string().min(1).max(500),
+  page: z.number().int().min(1).nullable(),
+  verified: z.boolean(),
+});
+
+export const ReadTestSchema = z.object({
+  /** As the doctor wrote it. */
+  asWritten: z.string().min(1).max(200),
+  quote: ReportQuoteSchema.nullable(),
+  /** The CGHS test it was matched to, for the family to check; null when nothing fitted. */
+  match: DiagnosticTestSchema.nullable(),
+  /** Other close CGHS tests, so a wrong match is one click to fix. */
+  candidates: z.array(DiagnosticTestSchema).max(8),
+});
+
+/**
+ * What was read off a health report or prescription: a proposal, exactly as
+ * an extracted policy is. Nothing in it prices anything until the family has
+ * looked at it beside the lines it came from and confirmed.
+ */
+export const HealthReadingSchema = z.object({
+  filename: z.string().max(200),
+  source: z.enum(["pdf", "image", "text"]),
+  /** Which model read it, or "rules" when none was configured. */
+  model: z.string().max(200),
+  readAt: z.string(),
+  patient: z.object({
+    name: z.string().max(120).nullable(),
+    age: z.number().int().min(0).max(120).nullable(),
+  }),
+  /** When the injury or illness began, where the report says. YYYY-MM-DD. */
+  onsetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
+  diagnosis: z.object({ text: z.string().min(1).max(300), quote: ReportQuoteSchema.nullable() }).nullable(),
+  tests: z.array(ReadTestSchema).max(20),
+  treatment: z
+    .object({
+      text: z.string().min(1).max(300),
+      quote: ReportQuoteSchema.nullable(),
+      /** The priced procedure it matches, when one does. */
+      procedureId: z.string().nullable(),
+    })
+    .nullable(),
+  medicines: z.array(z.string().max(200)).max(30),
+  /** Readings whose quoted line could not be found in the report. */
+  unverified: z.number().int().min(0),
+});
+export type HealthReading = z.infer<typeof HealthReadingSchema>;
+export type ReadTest = z.infer<typeof ReadTestSchema>;
+
+/** A test the family kept, with what the doctor wrote beside the CGHS test it was matched to. */
+export const ConfirmedTestSchema = DiagnosticTestSchema.extend({ asWritten: z.string().max(200) });
+export type ConfirmedTest = z.infer<typeof ConfirmedTestSchema>;
+
+/** The health report as the family confirmed it. This, never the file, is what is kept. */
+export const ConfirmedHealthSchema = z.object({
+  filename: z.string().max(200).nullable(),
+  diagnosis: z.string().max(300).nullable(),
+  tests: z.array(ConfirmedTestSchema).max(20),
+  treatment: z.string().max(300).nullable(),
+  /** The priced procedure the operation was matched to; null when the report calls for none. */
+  procedureId: z.string().nullable(),
+  medicines: z.array(z.string().max(200)).max(30).default([]),
+});
+export type ConfirmedHealth = z.infer<typeof ConfirmedHealthSchema>;
+
+/** Typed instead of uploaded: what the doctor wrote, as the family reads it. */
+export const HealthTextSchema = z.object({ text: z.string().trim().min(3).max(8000) });
+
 // ── The chatbox ───────────────────────────────────────────────────────────
 
 /**
@@ -623,6 +705,8 @@ export const ChatRequestSchema = z.object({
     .default([]),
   /** Which language to answer in. The figures stay as written either way. */
   language: z.enum(["en", "hi"]).default("en"),
+  /** The confirmed health report, so the chat can say where each scan is cheapest. */
+  health: ConfirmedHealthSchema.optional(),
 });
 export type ChatRequest = z.infer<typeof ChatRequestSchema>;
 
@@ -691,6 +775,7 @@ export const SaveSessionSchema = z.object({
   documentId: z.string().optional(),
   chat: z.array(ChatTurnRecordSchema).max(100).default([]),
   people: z.array(PersonSchema).max(30).default([]),
+  health: ConfirmedHealthSchema.nullable().optional(),
 });
 /** What a client sends: `chat` and `people` may be left out. */
 export type SaveSessionRequest = z.input<typeof SaveSessionSchema>;
@@ -721,6 +806,8 @@ export const SavedSessionRowSchema = z.object({
   uploadedPolicy: z.boolean(),
   /** Everyone named in the session, with their UUIDs. */
   people: z.array(SavedPersonSchema).default([]),
+  /** The confirmed health report, when one was added. */
+  health: ConfirmedHealthSchema.nullable().default(null),
 });
 export type SavedSessionRow = z.infer<typeof SavedSessionRowSchema>;
 

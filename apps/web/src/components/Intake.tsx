@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { evaluate, fmt, pct, registry, setRegistry, type CaseInput, type Policy } from "@claimcast/engine";
-import type { Extraction, ExtractedField, ShakyField } from "@claimcast/contracts";
+import type { ConfirmedHealth, Extraction, ExtractedField, ShakyField } from "@claimcast/contracts";
 import { confirmDocument, extractPolicy } from "../api";
 import { lang, plural, t } from "../i18n";
 import { checkIllness, showDate, todayIso } from "../illness";
 import { policyLabel } from "../labels";
+import { HealthReport } from "./HealthReport";
 import { newMember, RELATION_LABEL, RELATIONS, shortId, type Member, type People, type Relation } from "../people";
 
 /**
@@ -31,6 +32,8 @@ export function Intake({
   onIllnessDate,
   people,
   onPeople,
+  health,
+  onHealth,
 }: {
   input: CaseInput;
   onChange: (next: CaseInput) => void;
@@ -49,6 +52,9 @@ export function Intake({
   onIllnessDate: (iso: string) => void;
   people: People;
   onPeople: (p: People) => void;
+  /** The confirmed health report, or null. Optional: without one the app prices as it always did. */
+  health: ConfirmedHealth | null;
+  onHealth: (h: ConfirmedHealth | null) => void;
 }) {
   const { policies: POLICIES } = registry();
   const policy = POLICIES.find((p) => p.id === input.policyId)!;
@@ -371,6 +377,15 @@ export function Intake({
             />
           </label>
           <IllnessNote iso={illnessDate} policy={policy} />
+          <HealthReport
+            input={input}
+            health={health}
+            onConfirm={onHealth}
+            onRemove={() => onHealth(null)}
+            illnessDate={illnessDate}
+            onIllnessDate={onIllnessDate}
+            onAge={(age) => set({ age })}
+          />
         </div>
       )}
 
@@ -404,6 +419,13 @@ export function Intake({
                 illnessDate
                   ? `${showDate(new Date(illnessDate + "T00:00:00"), lang())}${input.preExisting ? " · " + t("pre-existing") : ""}`
                   : t("Not given"),
+                3,
+              ],
+              [
+                t("Health report"),
+                health
+                  ? [health.diagnosis ?? t("Report added"), plural(health.tests.length, "{n} test or scan", "{n} tests or scans")].join(" · ")
+                  : t("Not added"),
                 3,
               ],
             ].map(([k, v, s]) => (

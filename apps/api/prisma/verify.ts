@@ -132,7 +132,7 @@ async function main() {
     else pass("IRDAI List " + list + ": " + want + " items as published");
   }
   // PM-JAY rates, which came off a published document for the first time in
-  // Phase 3. The count is checked because the shape is easy to get wrong -- ten
+  // Phase 3. The count is checked because the shape is easy to get wrong -- eleven
   // packages priced per episode across four tiers, plus three medical
   // admissions priced per bed-day across four tiers and four bed categories --
   // and the attribution is checked because that is the whole point of having
@@ -141,10 +141,10 @@ async function main() {
   const pmjay = await ref.db.tariffRate.findMany({ where: { scheme: "PMJAY" } });
   const perEpisode = pmjay.filter((t) => t.basis === "PACKAGE");
   const perDay = pmjay.filter((t) => t.basis === "PER_DAY");
-  if (perEpisode.length !== 40) {
-    fail("PM-JAY package rates", perEpisode.length + " rows, expected 40");
+  if (perEpisode.length !== 44) {
+    fail("PM-JAY package rates", perEpisode.length + " rows, expected 44");
   } else {
-    pass("PM-JAY package rates: 10 procedures across 4 tiers, as published");
+    pass("PM-JAY package rates: 11 procedures across 4 tiers, as published");
   }
   if (perDay.length !== 48) {
     fail("PM-JAY bed-day rates", perDay.length + " rows, expected 48");

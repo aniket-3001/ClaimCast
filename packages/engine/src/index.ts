@@ -22,3 +22,4 @@ export * from "./case";
 export * from "./registry";
 export * from "./facts";
 export * from "./nopolicy";
+export * from "./care";

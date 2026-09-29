@@ -23,7 +23,7 @@ import fastifyStatic from "@fastify/static";
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { caseFacts, evaluate, repair, setRegistry, withPolicy, type Fact, type Registry } from "@claimcast/engine";
+import { careFacts, caseFacts, evaluate, repair, setRegistry, withPolicy, type Fact, type Registry } from "@claimcast/engine";
 import {
   AskPdfSchema,
   ChatRequestSchema,
@@ -36,6 +36,7 @@ import {
   ExtractionSchema,
   ForecastRequestSchema,
   ForecastResponseSchema,
+  HealthTextSchema,
   OutcomeSchema,
   SaveCaseSchema,
   type ReferenceBundle,
@@ -54,6 +55,7 @@ import {
 import { chosen } from "./models.js";
 import { answerFromPolicyPdf } from "./rag.js";
 import { answerChat } from "./chat.js";
+import { catalogue, matchTests, pdfLines, readReport, transcribe, type Catalogue } from "./health.js";
 import { chatMemory, listSessions, mySessions, recall, saveSession, sessionDetail } from "./sessions.js";
 import * as session from "./session.js";
 import { attempt } from "./throttle.js";
@@ -645,12 +647,18 @@ app.post("/api/chat", async (req, reply) => {
   if (!parsed.success) {
     return reply.code(400).send({ error: "invalid question", detail: parsed.error.flatten() });
   }
-  const { question, history, policy, documentId, language } = parsed.data;
+  const { question, history, policy, documentId, language, health } = parsed.data;
 
   if (!bundle) bundle = await loadReference();
   let facts: Fact[];
   try {
-    const run = () => caseFacts(evaluate(repair(parsed.data.case)));
+    const run = () => {
+      const e = evaluate(repair(parsed.data.case));
+      const f = caseFacts(e);
+      // The confirmed health report: where each scan and the operation are
+      // cheapest for this family, as facts the answer can be checked against.
+      return health ? [...f, ...careFacts(e, health.diagnosis, health.tests, health.procedureId !== null)] : f;
+    };
     facts = policy ? withPolicy(policy, run) : run();
   } catch (e) {
     return reply.code(404).send({ error: e instanceof Error ? e.message : "unknown reference" });
@@ -690,6 +698,96 @@ app.post("/api/chat", async (req, reply) => {
           : "The question could not be answered. Try asking it another way.",
     });
   }
+});
+
+/**
+ * The CGHS investigation list, read once. It changes when the seed changes it,
+ * which is never while the process is up.
+ */
+let tests: Catalogue | null = null;
+async function testCatalogue(): Promise<Catalogue> {
+  if (!tests) {
+    const rows = await ref.db.diagnosticTest.findMany({ orderBy: { code: "asc" } });
+    tests = catalogue(rows.map((r) => ({ code: r.code, name: r.name, specialty: r.specialty, nonNabh: r.nonNabh, nabh: r.nabh })));
+  }
+  return tests;
+}
+
+/** What each accepted file starts with. The declared type is the uploader's claim; these bytes are the file's own. */
+const MAGIC: { mime: string; test: (b: Buffer) => boolean }[] = [
+  { mime: "application/pdf", test: (b) => b.subarray(0, 5).toString("latin1") === "%PDF-" },
+  { mime: "image/jpeg", test: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  { mime: "image/png", test: (b) => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) },
+  { mime: "image/webp", test: (b) => b.subarray(0, 4).toString("latin1") === "RIFF" && b.subarray(8, 12).toString("latin1") === "WEBP" },
+];
+
+/**
+ * Read a health report or prescription: a PDF, a photo, or the lines typed out.
+ *
+ * Read in memory and dropped. Unlike a policy schedule, which the chat goes on
+ * searching, a report is needed once -- to propose what the doctor asked for --
+ * and a family's medical record is not something this server has any reason to
+ * hold. Nothing about it is logged. What comes back is a proposal the family
+ * confirms line by line; only the confirmed summary is ever saved, and only if
+ * they press save.
+ */
+app.post("/api/health/read", async (req, reply) => {
+  if (!bundle) bundle = await loadReference();
+  const cat = await testCatalogue();
+  const { procedures } = bundle;
+
+  let pages: string[];
+  let filename = "typed report";
+  let source: "pdf" | "image" | "text" = "text";
+  try {
+    if (req.isMultipart()) {
+      const part = await req.file();
+      if (!part) return reply.code(400).send({ error: "no file", detail: "Send the report as a file." });
+      const bytes = await part.toBuffer();
+      const kind = MAGIC.find((m) => m.test(bytes));
+      if (!kind) {
+        return reply.code(415).send({
+          error: "not readable",
+          detail: "Upload the report as a PDF or a photo (JPG, PNG or WebP).",
+        });
+      }
+      filename = (part.filename || "report").slice(0, 200);
+      if (kind.mime === "application/pdf") {
+        source = "pdf";
+        pages = await pdfLines(bytes);
+        // A scanned PDF has pages but no text in them: read it the way a photo is read.
+        if (pages.join("").replace(/\s/g, "").length < 20) pages = [await transcribe(bytes, kind.mime)];
+      } else {
+        source = "image";
+        pages = [await transcribe(bytes, kind.mime)];
+      }
+    } else {
+      const parsed = HealthTextSchema.safeParse(req.body);
+      if (!parsed.success) return reply.code(400).send({ error: "nothing to read", detail: "Type the report's lines, or upload it." });
+      pages = [parsed.data.text];
+    }
+    return await readReport(pages, { filename, source }, cat, procedures, (m) =>
+      req.log.warn({ error: m }, "health report model failed; read by rules"),
+    );
+  } catch (e) {
+    const raw = (e as { status?: unknown }).status;
+    const status = typeof raw === "number" ? raw : 502;
+    req.log.warn({ status }, "health report could not be read");
+    return reply.code(status).send({
+      error: "could not read",
+      detail:
+        status === 503
+          ? "Reading photos needs a vision model, which is not configured on this server. Upload a PDF, or type what the report says."
+          : "The report could not be read. Try a clearer photo, or type what the report says.",
+    });
+  }
+});
+
+/** The CGHS tests closest to what someone typed, for adding or correcting a test by hand. */
+app.get<{ Querystring: { q?: string } }>("/api/diagnostics", async (req) => {
+  const q = (req.query.q ?? "").slice(0, 120);
+  if (q.trim().length < 2) return { tests: [] };
+  return { tests: matchTests(await testCatalogue(), q, 8).map((m) => m.test) };
 });
 
 /**

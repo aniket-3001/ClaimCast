@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { ChatAnswer } from "@claimcast/contracts";
+import type { ChatAnswer, ConfirmedHealth } from "@claimcast/contracts";
 import type { Evaluated } from "@claimcast/engine";
 import { askChat } from "../api";
 import { policyTravels } from "../labels";
@@ -42,9 +42,12 @@ export function ChatDock({
   documentId,
   turns,
   setTurns,
+  health,
 }: {
   e: Evaluated;
   documentId: string | null;
+  /** The confirmed health report, so questions about scans can be answered. */
+  health?: ConfirmedHealth | null;
   /** Held by the app, so "Save my session" can keep the conversation. */
   turns: Turn[];
   setTurns: (update: (ts: Turn[]) => Turn[]) => void;
@@ -120,6 +123,7 @@ export function ChatDock({
       ...(documentId ? { documentId } : {}),
       history,
       language: chatLang,
+      ...(health ? { health } : {}),
     });
     setTurns((ts) => [...ts, r.ok ? { role: "assistant", answer: r.answer } : { role: "error", text: r.reason }]);
     // The question went in at turns.length, so the answer lands one after it.

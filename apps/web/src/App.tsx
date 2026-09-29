@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { rupees, evaluate, registry, repair, type CaseInput } from "@claimcast/engine";
+import type { ConfirmedHealth } from "@claimcast/contracts";
 import { isPreExisting } from "./illness";
 import { policyTravels } from "./labels";
 import { EMPTY_PEOPLE, toPersons, withUids, type People } from "./people";
 import { Intake } from "./components/Intake";
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
+import { CarePlan } from "./components/CarePlan";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Database } from "./components/Database";
@@ -120,6 +122,9 @@ export default function App() {
   // The path's "none" option for the procedure: nothing to price until one is picked.
   const [procNil, setProcNil] = useState(false);
   const [people, setPeople] = useState<People>(EMPTY_PEOPLE);
+  // The health report, as the family confirmed it. Null without one, and then
+  // every screen is exactly what it was before reports existed.
+  const [health, setHealthState] = useState<ConfirmedHealth | null>(null);
   // One saved record per sitting: the first save creates it, later ones update it.
   const [saved, setSaved] = useState<{ id: string; at: Date } | null>(null);
   const [saving, setSaving] = useState<"idle" | "saving" | string>("idle");
@@ -179,6 +184,19 @@ export default function App() {
     window.scrollTo(0, 0);
   };
 
+  // Confirming a report moves the path to the operation it asks for -- at that
+  // operation's usual length of stay -- or, when it asks for tests only, to the
+  // "no procedure" state, so nothing on the path prices an operation nobody advised.
+  const setHealth = (h: ConfirmedHealth | null) => {
+    setHealthState(h);
+    if (!h) return;
+    const p = h.procedureId ? registry().procedures.find((x) => x.id === h.procedureId) : undefined;
+    if (p) {
+      setProcNil(false);
+      pick({ ...input, procedureId: p.id, days: p.medianStayDays, icuDays: 0 });
+    } else setProcNil(true);
+  };
+
   const saveNow = async () => {
     setSaving("saving");
     const r = await saveSession({
@@ -190,6 +208,7 @@ export default function App() {
       ...(documentId ? { documentId } : {}),
       chat: chatRecords(chatTurns),
       people: toPersons(people, name, input.age),
+      health,
     });
     if (r.ok) {
       setSaved({ id: r.id, at: new Date() });
@@ -294,6 +313,8 @@ export default function App() {
           onIllnessDate={setIllnessDate}
           people={people}
           onPeople={setPeople}
+          health={health}
+          onHealth={setHealth}
           onContinue={() => {
             setTab("journey");
             window.scrollTo(0, 0);
@@ -315,6 +336,7 @@ export default function App() {
           people={people}
         />
       )}
+      {health && tab === "journey" && <CarePlan e={e} health={health} surgery={!procNil} onPick={pick} />}
       {procNil && (tab === "journey" || tab === "working") && (
         <div className="nil-card">
           <div className="nil-k">{t("No procedure chosen")}</div>
@@ -337,7 +359,7 @@ export default function App() {
       {tab === "learning" && <Learning />}
 
       {role === "user" && !procNil && (
-        <ChatDock e={e} documentId={documentId} turns={chatTurns} setTurns={setChatTurns} />
+        <ChatDock e={e} documentId={documentId} turns={chatTurns} setTurns={setChatTurns} health={health} />
       )}
 
       <CornerControls onLang={changeLang} />

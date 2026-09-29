@@ -244,6 +244,25 @@ async function main() {
       if (rates.length) await tx.tariffRate.createMany({ data: rates });
     }
 
+    // Every investigation CGHS prices -- scans, X-rays, blood tests, the OPD
+    // consultation -- so a test on a health report is priced off a published
+    // rate. Rewritten wholesale, like the rest, so a code the Memorandum
+    // dropped does not linger.
+    await tx.diagnosticTest.deleteMany({});
+    await tx.diagnosticTest.createMany({
+      data: CGHS.rates
+        .filter((r) => /Investigation/.test(r.specialty) || r.specialty === "Consultation")
+        .map((r) => ({
+          code: r.code,
+          name: r.name,
+          specialty: r.specialty,
+          nonNabh: r.nonNabh,
+          nabh: r.nabh,
+          page: r.page,
+          sourceId: "cghs-rates",
+        })),
+    });
+
     for (const pol of POLICIES) {
       const row = {
         insurer: pol.insurer,

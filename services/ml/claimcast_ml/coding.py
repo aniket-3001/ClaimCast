@@ -56,6 +56,7 @@ CODING: dict[str, Coding] = {
     "p-cabg": Coding("cardio-vascular"),
     "p-angioplasty": Coding("cardio-vascular"),
     "p-tkr": Coding("musculo-skeletal"),
+    "p-ankle-orif": Coding("musculo-skeletal"),
     "p-chole": Coding("gastro-intestinal"),
     "p-appendix": Coding("gastro-intestinal"),
     "p-pneumonia": Coding("respiratory"),

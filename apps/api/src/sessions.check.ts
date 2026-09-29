@@ -94,6 +94,22 @@ const back = await sessionDetail(db, s1.id);
 ok(back?.people.length === 2 && back.people[0].name === "Ravi Kumar", "the admin detail does not show the people saved");
 await db.savedSession.deleteMany({ where: { id: { in: [s1.id, other.id] } } });
 
+// A confirmed health report is kept with the session, and saving without one clears it.
+const health = {
+  filename: "report.pdf",
+  diagnosis: "Bimalleolar fracture, left ankle",
+  tests: [{ code: "RI110", name: "MRI Ankle Single joint - Without contrast", specialty: "Radiological Investigation", nonNabh: 297500, nabh: 350000, asWritten: "MRI Lt ankle" }],
+  treatment: "ORIF",
+  procedureId: null,
+  medicines: [],
+};
+const h1 = await saveSession(db, null, { name: MARK, case: input, health });
+const hBack = await sessionDetail(db, h1.id);
+ok(hBack?.health?.tests[0]?.code === "RI110" && hBack.health.diagnosis === health.diagnosis, "the health report did not come back with the session");
+await saveSession(db, null, { id: h1.id, name: MARK, case: input, health: null });
+ok((await sessionDetail(db, h1.id))?.health === null, "removing the health report and saving again did not clear it");
+await db.savedSession.delete({ where: { id: h1.id } });
+
 await db.savedSession.delete({ where: { id: first.id } });
 await db.$disconnect();
 
@@ -102,4 +118,4 @@ if (failures.length) {
   console.error("sessions — " + failures.length + " failed");
   process.exit(1);
 }
-console.log("sessions — saved with the engine's outcome, updated not duplicated, everyone given a stable unique UUID, and only clean answers remembered");
+console.log("sessions — saved with the engine's outcome, updated not duplicated, everyone given a stable unique UUID, the health report kept and cleared, and only clean answers remembered");

@@ -12,6 +12,7 @@ import { fmt, rupees as r } from "./money";
 import { admission, policy, setRegistry } from "./registry";
 import { ADMISSIONS, FIXTURES, HOSPITALS } from "./fixtures";
 import { NO_POLICY, NO_POLICY_ID } from "./nopolicy";
+import { carePlan, surgeryOptions, testOptions, type DiagnosticTest } from "./care";
 
 // The engine has no data until something gives it some. These checks are the
 // one place that is allowed to hand it the hand-written set.
@@ -219,6 +220,73 @@ console.log("\nThe claim the tree makes");
   } else {
     console.log("  ok   the unavoidable deductions survive every hospital and every room class");
   }
+}
+
+console.log("A health report: scans and the operation, priced and paid for");
+{
+  const mri: DiagnosticTest = { code: "RI110", name: "MRI Ankle Single joint - Without contrast", specialty: "Radiological Investigation", nonNabh: 297500, nabh: 350000 };
+  const ankle: CaseInput = repair({
+    hospitalId: "h-meridian", procedureId: "p-ankle-orif", policyId: "pol-classic", roomClass: "private",
+    route: "cashless", days: 3, icuDays: 0, siUsed: 0, implantId: "imported", admittedInpatient: true,
+    age: 45, hasPmjayCard: false, govtEmployeeOrPensioner: false, esiInsured: false, preExisting: false,
+  });
+  const check = (ok: boolean, good: string, bad: string) => {
+    if (!ok) failures++;
+    console.log(ok ? `  ok   ${good}` : `FAIL  ${bad}`);
+  };
+  const e = evaluate(ankle);
+  const alone = testOptions(e, mri, false);
+  check(
+    alone.every((a) => a.price >= a.cghsRate && a.payer === "self" && a.youPay === a.price),
+    "a scan with no operation and no scheme is the family's, and never priced under the CGHS rate",
+    "a stand-alone scan was paid by someone, or priced below the government rate",
+  );
+  const before = testOptions(e, mri, true);
+  const pol = e.policy;
+  check(
+    pol.preHospDays > 0 && before.every((a) => a.payer === "policy" && a.youPay === Math.round(a.price * pol.copayPct)),
+    "a scan before a covered operation is repaid by the policy, less its co-payment",
+    "a pre-hospitalisation scan was not repaid by the policy",
+  );
+  // A policy three months old, so a pre-existing illness is still inside its wait.
+  setRegistry({ ...FIXTURES, policies: [...FIXTURES.policies, { ...policy("pol-classic"), id: "pol-young", monthsInForce: 3 }] });
+  const refused = evaluate({ ...ankle, policyId: "pol-young", preExisting: true });
+  const refusedScans = testOptions(refused, mri, true);
+  setRegistry(FIXTURES);
+  check(
+    refused.result.insurerPays === 0 && refusedScans.every((a) => a.payer === "self"),
+    "when the admission is refused for a waiting period, the scans before it are not repaid either",
+    "scans were repaid for an admission the policy refuses",
+  );
+  const esi = testOptions(evaluate({ ...ankle, esiInsured: true }), mri, false);
+  check(
+    esi.filter((a) => a.hospital.esicTieUp).every((a) => a.youPay === 0 && a.payer === "esi") &&
+      esi.filter((a) => !a.hospital.esicTieUp).every((a) => a.payer !== "esi"),
+    "ESI pays for a scan only at a hospital with an ESIC tie-up",
+    "ESI was applied at a hospital without a tie-up, or missed at one with",
+  );
+  const card = evaluate({ ...ankle, hasPmjayCard: true });
+  check(
+    testOptions(card, mri, false).every((a) => a.payer !== "pmjay") &&
+      testOptions(card, mri, true).filter((a) => a.hospital.pmjayEmpanelled).every((a) => a.payer === "pmjay" && a.youPay === 0),
+    "PM-JAY pays for a scan only inside an operation package, never on its own",
+    "PM-JAY was shown paying for an out-patient scan, or missed inside a package",
+  );
+  const ops = surgeryOptions(card);
+  check(
+    ops.length === HOSPITALS.length - 0 &&
+      ops.every((o, i) => o.youPay <= o.withPolicy && (i === 0 || ops[i - 1].youPay <= o.youPay)) &&
+      ops.filter((o) => o.hospital.pmjayEmpanelled).every((o) => o.youPay === 0),
+    "the operation is compared at every hospital, cheapest first, and a scheme only ever lowers the bill",
+    "the surgery comparison is out of order, or a scheme raised what the family pays",
+  );
+  const plan = carePlan(card, [mri], true);
+  const top = plan.oneStop[0];
+  check(
+    top.total === top.scans + (top.surgery ?? 0) && plan.oneStop.every((o, i) => i === 0 || plan.oneStop[i - 1].total <= o.total),
+    "the one-hospital plan adds scans and operation at the same place, cheapest first",
+    "the one-hospital totals do not add up",
+  );
 }
 
 console.log(failures ? `\n${failures} failed` : "\nall checks passed");

@@ -9,9 +9,10 @@
  */
 
 import { randomUUID } from "node:crypto";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import {
   ChatTurnRecordSchema,
+  ConfirmedHealthSchema,
   type ChatTurnRecord,
   type SaveSessionRequest,
   type SavedSessionDetail,
@@ -55,6 +56,9 @@ export async function saveSession(db: PrismaClient, userId: string | null, req: 
     documentId: req.documentId ?? null,
     summary: summarise(req) as unknown as Prisma.InputJsonValue,
     chat: (req.chat ?? []) as unknown as Prisma.InputJsonValue,
+    // The confirmed summary, never the report itself. Removing the report and
+    // saving again clears it.
+    health: req.health ? (req.health as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
   };
   // Updating is only ever of this browser's own record; anything else starts a new one.
   let row: { id: string; createdAt: Date } | null = null;
@@ -112,6 +116,7 @@ function toRow(r: Row): SavedSessionRow {
     summary: r.summary as SavedSessionRow["summary"],
     chatTurns: Array.isArray(r.chat) ? r.chat.length : 0,
     uploadedPolicy: r.policy !== null,
+    health: ConfirmedHealthSchema.nullable().catch(null).parse(r.health ?? null),
     people: r.people.map((p) => ({
       uid: p.id,
       role: p.role as "self" | "patient" | "family",

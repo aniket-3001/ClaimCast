@@ -25,6 +25,21 @@ import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
 import { Intake } from "./components/Intake";
 import { Database } from "./components/Database";
+import { CarePlan } from "./components/CarePlan";
+import type { ConfirmedHealth } from "@claimcast/contracts";
+
+// A confirmed report for a broken ankle: an X-ray, an MRI, and the fixation.
+const HEALTH: ConfirmedHealth = {
+  filename: "ortho-note.pdf",
+  diagnosis: "Bimalleolar fracture, right ankle",
+  tests: [
+    { code: "RI037", name: "X Ray Extremities (Hand/Leg/Feet/Finger/Toe) bones & Joints (Hip/ Knee/Ankle / shoulder/ Wrist / fingers/Toes, etc) AP & Lateral views", specialty: "Radiological Investigation", nonNabh: 32300, nabh: 38000, asWritten: "X-ray Rt ankle AP/Lat" },
+    { code: "RI110", name: "MRI Ankle Single joint - Without contrast", specialty: "Radiological Investigation", nonNabh: 297500, nabh: 350000, asWritten: "MRI Rt ankle" },
+  ],
+  treatment: "ORIF with plating",
+  procedureId: "p-ankle-orif",
+  medicines: ["Tab Zerodol-SP", "Tab Pantop 40 mg"],
+};
 
 // The components render whatever registry is installed. In the running app
 // that is what the API returned; here it is the hand-written set, so that
@@ -90,14 +105,26 @@ for (const l of ["en", "hi"] as const) {
     renderToString(<ChatDock e={e} documentId={null} turns={[]} setTurns={noop} />);
     renderToString(<BillView e={e} />);
     renderToString(<Alternatives e={e} onPick={noop} />);
+    for (const surgery of [true, false]) {
+      const care = renderToString(<CarePlan e={e} health={HEALTH} surgery={surgery} onPick={noop} />);
+      if (l === "hi" && /Our recommendation|Who pays|You pay about/.test(care)) {
+        throw new Error("the health report plan has English left in it with Hindi selected");
+      }
+    }
     if (l === "hi" && !/[\u0900-\u097F]/.test(path)) {
       throw new Error("the path rendered with no Hindi in it with Hindi selected");
     }
     rendered++;
   }
-  renderToString(
-    <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="" onPolicyholder={noop} onContinue={noop} step={0} onStep={noop} illnessDate="" onIllnessDate={noop} people={{ selfAge: 40, patientName: "Sita", family: [{ key: "a", relation: "son", name: "Ravi", age: 9 }] }} onPeople={noop} />,
-  );
+  for (const step of [0, 1, 2, 3, 4])
+    for (const health of [null, HEALTH]) {
+      const html = renderToString(
+        <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="" onPolicyholder={noop} onContinue={noop} step={step} onStep={noop} illnessDate="" onIllnessDate={noop} people={{ selfAge: 40, patientName: "Sita", family: [{ key: "a", relation: "son", name: "Ravi", age: 9 }] }} onPeople={noop} health={health} onHealth={noop} />,
+      );
+      if (l === "hi" && step === 3 && /Add your health report|Your health report|Remove report/.test(html)) {
+        throw new Error("the health report step has English left in it with Hindi selected");
+      }
+    }
   renderToString(<Database onOpen={noop} />);
   renderToString(
     <Profile e={evaluate(cases[0])} name="Asha Rao" onName={noop} policyholder="" onPolicyholder={noop} onAge={noop} questionsNow={2} onOpen={noop} onBack={noop} onLang={noop} people={{ selfAge: 40, patientName: "Sita", family: [] }} />,
