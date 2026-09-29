@@ -128,7 +128,10 @@ SLIDES = [
                     "scan at every hospital, the surgery at every hospital, and who pays.",
                     "<b>Example.</b> A 68-year-old with a broken ankle on Health Shield Classic: X-ray, MRI, blood "
                     "tests and ECG, then ankle fixation. Cheapest overall: Navjeevan District Hospital, Rewa, about "
-                    "₹9,300 for the family; the same at Meridian, Delhi: ₹53,600."],
+                    "₹9,300 for the family; the same at Meridian, Delhi: ₹53,600.",
+                    "<b>Show it live</b> with the specimen pack: upload Senior Shield 60+ (Sita Kumar's policy) on Your "
+                    "insurance and the Navjeevan X-ray bill on Your health. The figures then follow her policy's 20% "
+                    "co-payment rather than the slide's example (see “The specimen documents pack” below)."],
         "numbers": ["Scan prices are ClaimCast estimates: about twice the CGHS rate, adjusted for each hospital's "
                     "cost level and never below the CGHS rate; the site shows them as “about”.",
                     "Who pays a scan: ESI at hospitals with an ESIC tie-up; CGHS at empanelled centres; PM-JAY only "
@@ -213,7 +216,10 @@ SLIDES = [
                     "<b>E · Family analysis — Meena, 42, family floater.</b> Every member with an ID; the patient "
                     "separate from the policyholder; “Sum insured used” on the path accounts for what other members "
                     "already claimed this year; age 70+ unlocks Vay Vandana.",
-                    "The WHERE line on each card is where to show it in a live demo."],
+                    "The WHERE line on each card is where to show it in a live demo. Documents from the specimen "
+                    "pack that fit each persona: C, any policy PDF (every quote is checked with its page); E, the "
+                    "Parivar Floater with Savitri Sharma's Vay Vandana summary and knee X-ray bill; A, B and D, ask "
+                    "about any of them in the chat, by typing, in Hindi, or by voice."],
         "abbr": ["<b>Family floater</b> — one policy whose sum insured is shared by the whole family.",
                  "<b>Screen reader</b> — software that reads the screen aloud for blind users."],
     }),
@@ -307,7 +313,84 @@ SLIDES = [
     }),
 ]
 
+PACK = "presentation deck/mockup documents/ClaimCast - Specimen Documents.pdf"
+
+# (document, pages in the pack, what it contains, what to show with it)
+DOCS = [
+    ("1 · Suraksha Plus — Sanrakshan General", "2–3",
+     "Ravi Kumar, 40. ₹3 lakh; room ₹3,000/day; ICU ₹6,000/day; 10% co-pay; implants up to ₹50,000; "
+     "30/60 days before/after; 36-month wait.",
+     "A tight room limit plus a co-pay: the room-rent trap at its sharpest."),
+    ("2 · Arogya Gold — Nivaran Insurance", "4–5",
+     "Priya Nair, 35. ₹10 lakh; room 1% and ICU 2% of cover per day; no co-pay; no implant limit; 60/90 days; "
+     "24-month wait.",
+     "Limits written as a percentage of the sum insured, which the reader must turn into a daily figure."),
+    ("3 · Vaayu Complete — Vaayu Health", "6–7",
+     "Arjun Mehta, 29. ₹7.5 lakh; any room; no ICU limit; no proportionate deduction; implants up to "
+     "₹2 lakh; 60/180 days. Insured since Jul 2026.",
+     "The contrast case: the room choice costs nothing extra. Also a new policy, so an old illness is still "
+     "inside its 36-month wait."),
+    ("4 · Senior Shield 60+ — Setu Assurance", "8–9",
+     "Sita Kumar, 68. ₹5 lakh; room ₹4,000/day; ICU ₹8,000/day; 20% co-pay; implants up to ₹75,000; "
+     "30/60 days; 12-month wait. Declared hypertension and diabetes.",
+     "The ankle story on slide 5, with the Navjeevan X-ray bill."),
+    ("5 · Parivar Floater — Prabha Life", "10–11",
+     "Meena Sharma's family of five: Meena 42, Rajesh 45, Aarav 14, Isha 10, Savitri 71. ₹15 lakh shared; "
+     "room ₹7,500/day; ICU ₹15,000/day; no co-pay except 20% for members 61+.",
+     "Persona E: family profile with IDs, the floater's shared cover, “Sum insured used”."),
+    ("6 · Ayushman Vay Vandana summary", "12",
+     "Savitri Sharma, 71. The published scheme terms: ₹5 lakh a year, no premium, illnesses already present "
+     "covered from day one, 3 days before and 15 after a stay, in-patient only.",
+     "Age 70+ unlocking Vay Vandana; a scheme is an alternative to the policy, never a top-up."),
+    ("7 · X-ray bill — Navjeevan District Hospital, Rewa", "13",
+     "Sita Kumar. Left ankle AP and lateral (₹340, CGHS RI037). Bimalleolar fracture. Total ₹450.",
+     "Upload on Your health: a report becomes a plan. The ₹340 matches the site's estimate there."),
+    ("8 · X-ray bill — Meridian Institute, New Delhi", "14",
+     "Savitri Sharma. Both knees standing and chest PA, with an out-patient consultation. Knee "
+     "osteoarthritis, grade 3. Total ₹1,920.",
+     "A tests-only report: out-patient tests are the family's to pay unless an admission follows."),
+]
+
+DEMO = [
+    "<b>Before you start:</b> the separate files are in <i>presentation deck/mockup documents/specimens/</i>; "
+    "upload one file at a time. The combined PDF is for reading and printing.",
+    "<b>1 · Sita's policy.</b> Log in as Patient / Caregiver. In Start, About you: patient Sita Kumar, age 68. "
+    "Your insurance: upload <i>4-setu-senior-shield.pdf</i>. Every detail appears with the line it came from; "
+    "set “months you have had this cover” to 23 (insured since Oct 2024) and confirm.",
+    "<b>2 · Her X-ray.</b> Your health: upload <i>7-xray-bill-navjeevan.pdf</i>. The reader finds the "
+    "bimalleolar fracture and the ankle X-ray (CGHS RI037). The bill only says “orthopaedic opinion advised”, so "
+    "choose <i>Ankle fracture fixation (ORIF)</i> under “Price it as”, then confirm.",
+    "<b>3 · The plan.</b> Estimate my bill. Expected: the recommendation is Navjeevan District Hospital, Rewa, "
+    "about ₹25,476 in all (X-ray ₹68 after the 20% co-pay, operation ₹25,408), against ₹81,668 at Meridian.",
+    "<b>4 · The family.</b> Back in About you, add Rajesh, Aarav, Isha and Savitri with + Add and save: five "
+    "unique IDs. Upload <i>5-prabha-parivar-floater.pdf</i> and make Savitri (71) the patient. On The path, “Who pays for "
+    "this admission” now offers Ayushman Vay Vandana (for a priced operation at a PM-JAY empanelled hospital, "
+    "such as Meridian). Page 12 of the pack is her cover summary to hold up.",
+    "<b>5 · Tests only.</b> Upload <i>8-xray-bill-meridian.pdf</i> on Your health and keep “No operation — "
+    "tests only”. The path shows where each X-ray is cheapest and that the family pays for out-patient tests.",
+    "<b>6 · The contrast.</b> Upload <i>3-vaayu-complete.pdf</i>: with no room limit and no proportionate "
+    "deduction, a private room no longer cuts the other charges.",
+]
+
+WATCH = [
+    "<b>Check every rupee on the confirm screen.</b> In testing, Llama 3.3 read each detail and every quote "
+    "checked out, but it sometimes returned rupee limits in the wrong unit (₹4,000 a day showed as ₹40). Correct "
+    "any figure that does not match the page before confirming. This is what the confirmation step is for, "
+    "and each correction is counted by the learning loop on slide 7.",
+    "<b>Co-payment on the floater</b> is read as 20%, which applies only to members aged 61+. Set it to 0 unless "
+    "the patient is Savitri.",
+    "<b>Scan prices are estimates</b> (about twice the CGHS rate, adjusted per hospital), shown as “about” on "
+    "the site; the bills in the pack use the same figures.",
+    "<b>Everything in the pack is synthetic</b> and marked SPECIMEN. The scheme page says plainly that it is not "
+    "a government document; it summarises the published Vay Vandana terms for a made-up person.",
+]
+
 GLOSSARY = [
+    ("Co-payment", "The share of every admissible claim the policyholder pays, e.g. 20%."),
+    ("Moratorium period", "After this many months of continuous cover, the insurer can no longer contest a claim except for fraud."),
+    ("PED", "Pre-existing disease: an illness diagnosed or treated before the policy began; covered only after a waiting period."),
+    ("Specimen", "A made-up sample document, marked as such, used to demonstrate the app."),
+    ("UHID", "Unique health identification number a hospital gives each patient."),
     ("CBC / ECG / MRI", "Complete blood count / electrocardiogram (heart trace) / magnetic resonance imaging scan."),
     ("Family floater", "One policy whose sum insured is shared by the whole family."),
     ("Gemini", "Google's AI models; Gemini 2.5 Pro reads policy PDFs, Gemini 2.5 Flash transcribes report photos."),
@@ -375,7 +458,8 @@ def build():
                             bottomMargin=20 * mm, title="ClaimCast — Presenter Notes", author="Team Rocket")
     story = [Paragraph("ClaimCast — Presenter Notes", H1),
              Paragraph("What each slide of the pitch deck is saying, how to explain it, where every number comes "
-                       "from, and what every short form means. A full glossary is at the end.", SUB)]
+                       "from, and what every short form means. After the slides: the specimen documents pack and how to use it in "
+                       "a live demo. A full glossary is at the end.", SUB)]
     for i, (head, d) in enumerate(SLIDES):
         block = [Paragraph(head, H2), Paragraph("What this slide says", H3), Paragraph(d["says"], BODY),
                  Paragraph("How to explain it", H3), *bullets(d["explain"])]
@@ -384,6 +468,22 @@ def build():
         if d.get("abbr"):
             block += [Paragraph("Short forms on this slide", H3), *bullets(d["abbr"])]
         story += [KeepTogether(block[:3]), *block[3:], Spacer(1, 12)]
+    story += [PageBreak(), Paragraph("The specimen documents pack", H2),
+              Paragraph("Eight synthetic documents in one 14-page PDF (<i>%s</i>), each also saved on its own for "
+                        "uploading. The five policies share one template, as do the two bills; only the contents "
+                        "differ. Page 1 of the pack is a contents page." % PACK, BODY)]
+    rows = [[Paragraph("<b>Document</b>", SMALL), Paragraph("<b>Pages</b>", SMALL), Paragraph("<b>What it contains</b>", SMALL),
+             Paragraph("<b>Show with it</b>", SMALL)]]
+    rows += [[Paragraph("<b>%s</b>" % d, SMALL), Paragraph(pg, SMALL), Paragraph(c, SMALL), Paragraph(w, SMALL)]
+             for d, pg, c, w in DOCS]
+    t = Table(rows, colWidths=[38 * mm, 15 * mm, 60 * mm, A4[0] - 40 * mm - 113 * mm], repeatRows=1)
+    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
+                           ("ROWBACKGROUNDS", (0, 0), (-1, -1), [PALE, HexColor("#FFFFFF")]),
+                           ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                           ("LEFTPADDING", (0, 0), (-1, -1), 5)]))
+    story += [Spacer(1, 4), t,
+              Paragraph("A live demo with the pack", H3), *bullets(DEMO),
+              Paragraph("What to watch for", H3), *bullets(WATCH)]
     story += [PageBreak(), Paragraph("Glossary of abbreviations and terms", H2)]
     rows = [[Paragraph("<b>%s</b>" % k, BODY), Paragraph(v, BODY)] for k, v in sorted(GLOSSARY, key=lambda g: (not g[0].startswith("₹"), g[0].lower()))]
     tbl = Table(rows, colWidths=[42 * mm, A4[0] - 40 * mm - 42 * mm])
