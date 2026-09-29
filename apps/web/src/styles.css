@@ -2597,3 +2597,21 @@ button:not(.tab):not(.chat-fab):not(.login-card):not(.session-row):not(.chat-sta
 .wrap {
   padding-bottom: 90px;
 }
+
+/* Login: the name is the title, the promise is the subheading. */
+.login-brand .login-title {
+  margin: 0;
+  font-size: clamp(56px, 8vw, 88px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.login-sub {
+  margin: 14px 0 0;
+  max-width: 40ch;
+  color: var(--ink-2);
+  font-family: var(--serif);
+  font-size: clamp(20px, 2.4vw, 26px);
+  line-height: 1.35;
+}
