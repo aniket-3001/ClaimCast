@@ -11,6 +11,7 @@ import { Learning } from "./components/Learning";
 import { ChatDock, chatRecords, type Turn } from "./components/ChatDock";
 import { SavedSessions } from "./components/SavedSessions";
 import { Login, type Role } from "./components/Login";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { recordChoice, saveSession } from "./api";
 
 type Tab = "start" | "journey" | "working" | "database" | "learning";
@@ -169,7 +170,13 @@ export default function App() {
     } else setSaving(r.reason);
   };
 
-  if (!role) return <Login onPick={setRole} />;
+  if (!role)
+    return (
+      <>
+        <Login onPick={setRole} />
+        <ThemeToggle />
+      </>
+    );
 
   return (
     <div className="wrap">
@@ -258,6 +265,8 @@ export default function App() {
       {role === "user" && (
         <ChatDock e={e} documentId={documentId} turns={chatTurns} setTurns={setChatTurns} />
       )}
+
+      <ThemeToggle />
 
       <footer className="foot">
         <span>ClaimCast · Team Rocket, IIIT-Delhi · GE HealthCare Precision Care Challenge 2026</span>

@@ -2642,3 +2642,122 @@ button:not(.tab):not(.chat-fab):not(.login-card):not(.session-row):not(.chat-sta
   width: 100%;
   max-width: 900px;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   Light theme (the default). Dark is the palette above; this block only
+   swaps the tokens and the handful of colours that were written out
+   directly, so every screen follows. The toggle sets data-theme on <html>.
+   ════════════════════════════════════════════════════════════════════ */
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface-2: #f1f4f8;
+  --ink: #111827;
+  --ink-2: #4a5462;
+  --ink-3: #6b7482;
+  --hair: #dce2e9;
+  --hair-2: #e8ecf1;
+  --accent: #005eb8;
+  --accent-pale: #b9d3ee;
+  --accent-wash: #e9f2fb;
+  --on-accent: #ffffff;
+  --loss: #c8102e;
+  --paid: #00774f;
+  --warn: #9a5c00;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 8px 24px rgba(16, 24, 40, 0.06);
+}
+
+[data-theme="light"] body {
+  background:
+    radial-gradient(1100px 520px at 50% -200px, rgba(0, 94, 184, 0.08), transparent 70%),
+    radial-gradient(700px 400px at 100% 0, rgba(0, 119, 79, 0.05), transparent 70%),
+    var(--bg);
+}
+
+[data-theme="light"] .masthead {
+  background: rgba(255, 255, 255, 0.86);
+}
+
+[data-theme="light"] .brand {
+  background: linear-gradient(90deg, #0b2545 0%, #005eb8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+[data-theme="light"] .save-session {
+  background: linear-gradient(180deg, #0a9a66, #00774f);
+  box-shadow: 0 4px 14px rgba(0, 119, 79, 0.22);
+  color: #ffffff;
+}
+
+[data-theme="light"] .role-pill.admin,
+[data-theme="light"] .login-badge.admin {
+  background: rgba(154, 92, 0, 0.08);
+  border-color: rgba(154, 92, 0, 0.3);
+}
+
+[data-theme="light"] .chat-fab {
+  background: linear-gradient(180deg, #1a74cc, #005eb8);
+  color: #ffffff;
+  box-shadow: 0 10px 28px rgba(0, 94, 184, 0.28);
+}
+
+[data-theme="light"] .chat-fab-dot {
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] .chat-panel {
+  box-shadow: 0 16px 48px rgba(16, 24, 40, 0.16);
+}
+
+[data-theme="light"] .chat-msg.user {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+[data-theme="light"] .login-card:hover,
+[data-theme="light"] .login-card:focus-visible {
+  box-shadow: 0 14px 34px rgba(16, 24, 40, 0.12), 0 0 0 1px var(--accent-pale);
+}
+
+/* ── The theme toggle: bottom-left on every page ─────────── */
+
+.theme-toggle {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 45;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+  height: 38px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 13px var(--sans);
+  box-shadow: var(--shadow);
+  cursor: pointer;
+}
+
+.theme-toggle:hover:not(:disabled) {
+  opacity: 1;
+  border-color: var(--accent-pale);
+}
+
+.theme-toggle-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1;
+}

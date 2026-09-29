@@ -17,6 +17,10 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { loadReference } from "./api";
 import "./styles.css";
+import { applyTheme, storedTheme } from "./components/ThemeToggle";
+
+// Before anything renders, so the first paint is already the chosen theme.
+applyTheme(storedTheme());
 
 const root = createRoot(document.getElementById("root")!);
 
