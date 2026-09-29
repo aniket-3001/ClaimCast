@@ -2,7 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import type { ChatAnswer } from "@claimcast/contracts";
 import type { Evaluated } from "@claimcast/engine";
 import { askChat } from "../api";
-import { lang, plural, t } from "../i18n";
+import { lang, plural, t, type Lang } from "../i18n";
+import {
+  listen,
+  rememberReadAloud,
+  speak,
+  speechInputSupported,
+  speechOutputSupported,
+  stopSpeaking,
+  storedReadAloud,
+} from "../speech";
 
 /**
  * The chatbox: a button in the corner of every tab, and a panel over the page.
@@ -43,6 +52,49 @@ export function ChatDock({
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const end = useRef<HTMLDivElement>(null);
+  // The language the chat listens and answers in. Starts as the page's, and
+  // can be switched here without changing the rest of the site.
+  const [chatLang, setChatLang] = useState<Lang>(lang);
+  const [listening, setListening] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
+  const stopListening = useRef<(() => void) | null>(null);
+  const [readAloud, setReadAloud] = useState<boolean>(storedReadAloud);
+  const [speaking, setSpeaking] = useState<number | null>(null);
+  const canListen = speechInputSupported();
+  const canSpeak = speechOutputSupported();
+
+  useEffect(() => () => {
+    stopListening.current?.();
+    stopSpeaking();
+  }, []);
+
+  const say = (text: string, index: number) => {
+    setSpeaking(index);
+    speak(text, chatLang, () => setSpeaking((cur) => (cur === index ? null : cur)));
+  };
+
+  const mic = () => {
+    if (listening) {
+      stopListening.current?.();
+      return;
+    }
+    stopSpeaking();
+    setMicError(null);
+    setListening(true);
+    stopListening.current = listen(chatLang, {
+      onInterim: (text) => setDraft(text),
+      onFinal: (text) => void ask(text),
+      onEnd: () => setListening(false),
+      onError: (code) =>
+        setMicError(
+          code === "not-allowed" || code === "service-not-allowed"
+            ? t("Microphone permission was refused. Allow it in the browser to speak your question.")
+            : code === "no-speech"
+              ? t("Didn’t hear anything. Tap the microphone and try again.")
+              : t("Voice input stopped. You can type your question instead."),
+        ),
+    });
+  };
 
   useEffect(() => {
     end.current?.scrollIntoView({ block: "end" });
@@ -66,9 +118,11 @@ export function ChatDock({
       ...(e.input.policyId === "pol-uploaded" ? { policy: e.policy } : {}),
       ...(documentId ? { documentId } : {}),
       history,
-      language: lang(),
+      language: chatLang,
     });
     setTurns((ts) => [...ts, r.ok ? { role: "assistant", answer: r.answer } : { role: "error", text: r.reason }]);
+    // The question went in at turns.length, so the answer lands one after it.
+    if (readAloud) say(r.ok ? r.answer.answer : r.reason, turns.length + 1);
     setBusy(false);
   }
 
@@ -91,12 +145,54 @@ export function ChatDock({
             {documentId ? t(" · your uploaded policy") : ""}
           </div>
         </div>
-        <button className="chat-close" onClick={() => setOpen(false)} aria-label={t("Close")}>
-          ×
-        </button>
+        <div className="chat-tools">
+          <div className="chat-lang" role="group" aria-label={t("Chat language, for voice and answers")}>
+            {(["en", "hi"] as const).map((l) => (
+              <button
+                key={l}
+                type="button"
+                aria-pressed={chatLang === l}
+                lang={l}
+                onClick={() => setChatLang(l)}
+              >
+                {l === "en" ? "EN" : "हि"}
+              </button>
+            ))}
+          </div>
+          {canSpeak && (
+            <button
+              type="button"
+              className="chat-icon"
+              aria-pressed={readAloud}
+              aria-label={readAloud ? t("Stop reading answers aloud") : t("Read answers aloud")}
+              title={readAloud ? t("Stop reading answers aloud") : t("Read answers aloud")}
+              onClick={() => {
+                const on = !readAloud;
+                setReadAloud(on);
+                rememberReadAloud(on);
+                if (!on) {
+                  stopSpeaking();
+                  setSpeaking(null);
+                }
+              }}
+            >
+              {readAloud ? "🔊" : "🔈"}
+            </button>
+          )}
+          <button
+            className="chat-close"
+            onClick={() => {
+              stopSpeaking();
+              setOpen(false);
+            }}
+            aria-label={t("Close")}
+          >
+            ×
+          </button>
+        </div>
       </header>
 
-      <div className="chat-log">
+      <div className="chat-log" aria-live="polite" aria-relevant="additions">
         {turns.length === 0 && (
           <div className="chat-empty">
             <p>
@@ -126,7 +222,21 @@ export function ChatDock({
               {t.text}
             </div>
           ) : (
-            <Answer key={i} a={t.answer} />
+            <Answer
+              key={i}
+              a={t.answer}
+              speaking={speaking === i}
+              onListen={
+                canSpeak
+                  ? () => {
+                      if (speaking === i) {
+                        stopSpeaking();
+                        setSpeaking(null);
+                      } else say(t.answer.answer, i);
+                    }
+                  : undefined
+              }
+            />
           ),
         )}
         {busy && <div className="chat-msg assistant pending">{t("Working it out…")}</div>}
@@ -144,21 +254,61 @@ export function ChatDock({
           className="chat-input"
           value={draft}
           maxLength={500}
-          placeholder={t("Type your question…")}
+          placeholder={listening ? t("Listening… speak now") : t("Type or speak your question…")}
+          aria-label={t("Your question")}
           onChange={(ev) => setDraft(ev.target.value)}
           disabled={busy}
         />
+        {canListen && (
+          <button
+            type="button"
+            className={`chat-mic ${listening ? "on" : ""}`}
+            onClick={mic}
+            disabled={busy}
+            aria-pressed={listening}
+            aria-label={
+              listening
+                ? t("Stop listening")
+                : chatLang === "hi"
+                  ? t("Speak your question in Hindi")
+                  : t("Speak your question in English")
+            }
+            title={chatLang === "hi" ? t("Speak your question in Hindi") : t("Speak your question in English")}
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+              <path
+                fill="currentColor"
+                d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-2.08A7 7 0 0 0 19 12h-2Z"
+              />
+            </svg>
+          </button>
+        )}
         <button className="chat-send" type="submit" disabled={busy || !draft.trim()}>
           {t("Ask")}
         </button>
       </form>
+      {micError && (
+        <div className="chat-micerr" role="alert">
+          {micError}
+        </div>
+      )}
     </aside>
   );
 }
 
-function Answer({ a }: { a: ChatAnswer }) {
+function Answer({ a, speaking, onListen }: { a: ChatAnswer; speaking: boolean; onListen?: () => void }) {
   return (
     <div className="chat-msg assistant">
+      {onListen && (
+        <button
+          type="button"
+          className={`chat-listen ${speaking ? "on" : ""}`}
+          onClick={onListen}
+          aria-label={speaking ? t("Stop reading") : t("Listen to this answer")}
+        >
+          {speaking ? "■ " + t("Stop") : "🔊 " + t("Listen")}
+        </button>
+      )}
       <div className="chat-answer">{a.answer || t("No answer came back.")}</div>
 
       {a.unsupportedFigures.length > 0 && (

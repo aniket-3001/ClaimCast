@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { rupees, evaluate, registry, repair, type CaseInput } from "@claimcast/engine";
+import { isPreExisting } from "./illness";
 import { Intake } from "./components/Intake";
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
@@ -113,12 +114,22 @@ export default function App() {
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [chatTurns, setChatTurns] = useState<Turn[]>([]);
   const [wizardStep, setWizardStep] = useState(0);
+  const [illnessDate, setIllnessDate] = useState("");
   // One saved record per sitting: the first save creates it, later ones update it.
   const [saved, setSaved] = useState<{ id: string; at: Date } | null>(null);
   const [saving, setSaving] = useState<"idle" | "saving" | string>("idle");
   const [name, setName] = useState("");
   const [policyholder, setPolicyholder] = useState("");
   const e = useMemo(() => evaluate(input), [input]);
+
+  // The illness date decides "pre-existing", against whichever policy is chosen
+  // now -- so changing the plan later, on any tab, re-checks it.
+  useEffect(() => {
+    const pol = registry().policies.find((p) => p.id === input.policyId);
+    if (!pol) return;
+    const pre = isPreExisting(illnessDate, pol);
+    if (pre !== input.preExisting) setInput((cur) => ({ ...cur, preExisting: pre }));
+  }, [illnessDate, input.policyId, input.preExisting]);
 
   // One entry point for every change, so no unreachable combination is ever
   // put on screen — a hospital that has no private room, a cashless route at a
@@ -271,6 +282,8 @@ export default function App() {
           onDocument={setDocumentId}
           step={wizardStep}
           onStep={setWizardStep}
+          illnessDate={illnessDate}
+          onIllnessDate={setIllnessDate}
           onContinue={() => {
             setTab("journey");
             window.scrollTo(0, 0);

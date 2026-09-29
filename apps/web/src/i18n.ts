@@ -247,6 +247,38 @@ const ENGINE: Record<string, string> = {
 /** Screen text. Keys are the English exactly as written in the components. */
 const HI: Record<string, string> = {
   // Shell
+  "Estimate my bill": "मेरे बिल का अनुमान लगाएँ",
+  "When did this illness begin?": "यह बीमारी कब शुरू हुई?",
+  "Date the illness began": "बीमारी शुरू होने की तारीख",
+  "pre-existing": "पहले से मौजूद",
+  "Not given": "नहीं दी गई",
+  "Leave it blank if there is no illness you already had. You can come back and add it.":
+    "अगर कोई पुरानी बीमारी नहीं है तो इसे खाली छोड़ दें। आप बाद में लौटकर जोड़ सकते हैं।",
+  "That date is in the future. Please pick the day the illness began.": "यह तारीख भविष्य की है। कृपया वह दिन चुनें जब बीमारी शुरू हुई।",
+  "Your policy started around {start}. This illness began after that, so it is covered like any new illness.":
+    "आपकी पॉलिसी लगभग {start} को शुरू हुई। यह बीमारी उसके बाद शुरू हुई, इसलिए यह किसी भी नई बीमारी की तरह कवर है।",
+  "Your policy started around {start}. This illness began before that, so it counts as pre-existing.":
+    "आपकी पॉलिसी लगभग {start} को शुरू हुई। यह बीमारी उससे पहले शुरू हुई, इसलिए यह पहले से मौजूद बीमारी मानी जाएगी।",
+  "The {n}-month wait ended on {date}, so it is now covered.": "{n} महीने का इंतज़ार {date} को पूरा हुआ, इसलिए अब यह कवर है।",
+  "It is covered only from {date} — about {m} more months. Until then this admission would be refused.":
+    "यह केवल {date} से कवर होगी — लगभग {m} महीने और। तब तक यह भर्ती नामंज़ूर होगी।",
+  "Chat language, for voice and answers": "चैट की भाषा, आवाज़ और जवाबों के लिए",
+  "Read answers aloud": "जवाब ज़ोर से पढ़ें",
+  "Stop reading answers aloud": "जवाब पढ़ना बंद करें",
+  "Listening… speak now": "सुन रहे हैं… अब बोलें",
+  "Type or speak your question…": "अपना सवाल लिखें या बोलें…",
+  "Your question": "आपका सवाल",
+  "Stop listening": "सुनना बंद करें",
+  "Speak your question in Hindi": "अपना सवाल हिंदी में बोलें",
+  "Speak your question in English": "अपना सवाल अंग्रेज़ी में बोलें",
+  "Microphone permission was refused. Allow it in the browser to speak your question.":
+    "माइक्रोफ़ोन की अनुमति नहीं मिली। सवाल बोलने के लिए ब्राउज़र में अनुमति दें।",
+  "Didn’t hear anything. Tap the microphone and try again.": "कुछ सुनाई नहीं दिया। माइक्रोफ़ोन दबाकर फिर कोशिश करें।",
+  "Voice input stopped. You can type your question instead.": "आवाज़ से इनपुट रुक गया। आप सवाल लिख भी सकते हैं।",
+  "Stop reading": "पढ़ना बंद करें",
+  "Listen to this answer": "यह जवाब सुनें",
+  Stop: "रोकें",
+  Listen: "सुनें",
   "Search by family or hospital…": "परिवार या अस्पताल से खोजें…",
   "All plans": "सभी प्लान",
   "All hospitals": "सभी अस्पताल",

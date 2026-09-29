@@ -2894,3 +2894,26 @@ button:not(.tab):not(.chat-fab):not(.login-card):not(.session-row):not(.chat-sta
 .stable-tools .stable-search { width: auto; min-width: 0; }
 .stable-tools select { width: auto; flex: 0 0 230px; min-width: 0; }
 .stable-tools .stable-count { flex-basis: auto; }
+
+/* ── Chat: voice in, voice out ───────────────────────────── */
+.chat-tools { display: flex; align-items: center; gap: 8px; }
+.chat-lang { display: inline-flex; padding: 2px; border: 1px solid var(--hair); border-radius: 999px; background: var(--bg); }
+.chat-lang button { min-height: 0; height: 26px; padding: 0 10px; border: none; border-radius: 999px;
+  background: none; color: var(--ink-2); font: 600 12.5px var(--sans); }
+.chat-lang button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.chat-icon { min-height: 0; width: 32px; height: 32px; padding: 0; border-radius: 50%; border: 1px solid var(--hair);
+  background: var(--bg); font-size: 15px; line-height: 1; }
+.chat-icon[aria-pressed="true"] { background: var(--accent-wash); border-color: var(--accent); }
+.chat-mic { min-height: 0; width: var(--control-h); height: var(--control-h); padding: 0; border-radius: 50%;
+  display: grid; place-items: center; background: var(--surface-2); color: var(--accent); border: 1px solid var(--hair); }
+.chat-mic.on { background: var(--loss); border-color: var(--loss); color: #fff; animation: mic-pulse 1.2s ease-in-out infinite; }
+@keyframes mic-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(200, 16, 46, 0.45); } 50% { box-shadow: 0 0 0 8px rgba(200, 16, 46, 0); } }
+.chat-micerr { padding: 0 16px 12px; font-size: 12.5px; color: var(--warn); }
+.chat-listen { float: right; min-height: 0; height: 26px; margin: -2px -4px 4px 8px; padding: 0 10px; border-radius: 999px;
+  border: 1px solid var(--hair); background: var(--surface); color: var(--accent); font: 600 12px var(--sans); }
+.chat-listen.on { background: var(--accent); color: var(--on-accent); }
+@media (prefers-reduced-motion: reduce) { .chat-mic.on { animation: none; } }
+.wiz-note { max-width: 520px; margin: 4px auto 0; padding: 14px 16px; border-radius: 12px;
+  background: var(--surface-2); color: var(--ink-2); font-size: 15px; line-height: 1.5; }
+.wiz-note.good { background: rgba(0, 119, 79, 0.08); color: var(--ink); border: 1px solid rgba(0, 119, 79, 0.25); }
+.wiz-note.bad { background: rgba(200, 16, 46, 0.07); color: var(--ink); border: 1px solid rgba(200, 16, 46, 0.25); }

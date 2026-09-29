@@ -2,7 +2,8 @@ import { useState } from "react";
 import { evaluate, fmt, pct, registry, setRegistry, type CaseInput, type Policy } from "@claimcast/engine";
 import type { Extraction, ExtractedField, ShakyField } from "@claimcast/contracts";
 import { confirmDocument, extractPolicy } from "../api";
-import { plural, t } from "../i18n";
+import { lang, plural, t } from "../i18n";
+import { checkIllness, showDate, todayIso } from "../illness";
 
 /**
  * The front door, not the engine.
@@ -24,6 +25,8 @@ export function Intake({
   onContinue,
   step,
   onStep,
+  illnessDate,
+  onIllnessDate,
 }: {
   input: CaseInput;
   onChange: (next: CaseInput) => void;
@@ -37,6 +40,9 @@ export function Intake({
   /** Which wizard step is showing; held by the app so it survives a tab change. */
   step: number;
   onStep: (n: number) => void;
+  /** When the illness began, YYYY-MM-DD or "". The app turns it into pre-existing or not. */
+  illnessDate: string;
+  onIllnessDate: (iso: string) => void;
 }) {
   const { policies: POLICIES } = registry();
   const policy = POLICIES.find((p) => p.id === input.policyId)!;
@@ -257,11 +263,20 @@ export function Intake({
 
       {step === 3 && (
         <div className="wiz-card">
-          <h1 className="wiz-q">{t("Illness began before the policy?")}</h1>
+          <h1 className="wiz-q">{t("When did this illness begin?")}</h1>
           <p className="wiz-hint">
             {t("Policies wait a while before covering an illness you already had. We check that wait for you.")}
           </p>
-          <div className="wiz-yn big">{yesNo(input.preExisting, (v) => set({ preExisting: v }))}</div>
+          <label className="wiz-field">
+            <span>{t("Date the illness began")}</span>
+            <input
+              type="date"
+              max={todayIso()}
+              value={illnessDate}
+              onChange={(ev) => onIllnessDate(ev.target.value)}
+            />
+          </label>
+          <IllnessNote iso={illnessDate} policy={policy} />
         </div>
       )}
 
@@ -283,7 +298,13 @@ export function Intake({
               [t("Ayushman Bharat card at home?"), input.hasPmjayCard ? t("Yes") : t("No"), 2],
               [t("Central govt. employee or pensioner?"), input.govtEmployeeOrPensioner ? t("Yes") : t("No"), 2],
               [t("Covered by ESI at work?"), input.esiInsured ? t("Yes") : t("No"), 2],
-              [t("Illness began before the policy?"), input.preExisting ? t("Yes") : t("No"), 3],
+              [
+                t("Date the illness began"),
+                illnessDate
+                  ? `${showDate(new Date(illnessDate + "T00:00:00"), lang())}${input.preExisting ? " · " + t("pre-existing") : ""}`
+                  : t("Not given"),
+                3,
+              ],
             ].map(([k, v, s]) => (
               <li key={String(k)}>
                 <span>{k}</span>
@@ -311,7 +332,7 @@ export function Intake({
           </button>
         ) : (
           <button type="button" className="wiz-next" onClick={onContinue}>
-            {t("See my bill")} →
+            {t("Estimate my bill")} →
           </button>
         )}
       </div>
@@ -765,4 +786,37 @@ function asPolicy(
     exclusions: str("exclusions", "") || null,
     notes: `Read from ${e.filename} on ${e.extractedAt.slice(0, 10)} and confirmed field by field.`,
   };
+}
+
+/** What the illness date means under this policy, said plainly. */
+function IllnessNote({ iso, policy }: { iso: string; policy: Policy }) {
+  const c = checkIllness(iso, policy);
+  const l = lang();
+  if (c.kind === "none")
+    return <p className="wiz-note">{t("Leave it blank if there is no illness you already had. You can come back and add it.")}</p>;
+  if (c.kind === "future") return <p className="wiz-note bad">{t("That date is in the future. Please pick the day the illness began.")}</p>;
+  if (c.kind === "after-start")
+    return (
+      <p className="wiz-note good">
+        {t("Your policy started around {start}. This illness began after that, so it is covered like any new illness.", {
+          start: showDate(c.start, l),
+        })}
+      </p>
+    );
+  return (
+    <p className={`wiz-note ${c.waitOver ? "good" : "bad"}`}>
+      {t("Your policy started around {start}. This illness began before that, so it counts as pre-existing.", {
+        start: showDate(c.start, l),
+      })}{" "}
+      {c.waitOver
+        ? t("The {n}-month wait ended on {date}, so it is now covered.", {
+            n: policy.pedWaitingMonths,
+            date: showDate(c.coveredFrom, l),
+          })
+        : t("It is covered only from {date} — about {m} more months. Until then this admission would be refused.", {
+            date: showDate(c.coveredFrom, l),
+            m: c.monthsLeft,
+          })}
+    </p>
+  );
 }
