@@ -96,11 +96,11 @@ for (const l of ["en", "hi"] as const) {
     rendered++;
   }
   renderToString(
-    <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="" onPolicyholder={noop} onContinue={noop} step={0} onStep={noop} illnessDate="" onIllnessDate={noop} />,
+    <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="" onPolicyholder={noop} onContinue={noop} step={0} onStep={noop} illnessDate="" onIllnessDate={noop} people={{ selfAge: 40, patientName: "Sita", family: [{ key: "a", relation: "son", name: "Ravi", age: 9 }] }} onPeople={noop} />,
   );
   renderToString(<Database onOpen={noop} />);
   renderToString(
-    <Profile e={evaluate(cases[0])} name="Asha Rao" onName={noop} policyholder="" onPolicyholder={noop} onAge={noop} questionsNow={2} onOpen={noop} onBack={noop} onLang={noop} />,
+    <Profile e={evaluate(cases[0])} name="Asha Rao" onName={noop} policyholder="" onPolicyholder={noop} onAge={noop} questionsNow={2} onOpen={noop} onBack={noop} onLang={noop} people={{ selfAge: 40, patientName: "Sita", family: [] }} />,
   );
 }
 setLang("en", false);

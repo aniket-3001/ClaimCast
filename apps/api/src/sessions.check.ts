@@ -70,6 +70,30 @@ ok(!memory.some((t) => t.answer.includes("9,99,999")), "an answer with an invent
 const hit = recall(memory, "why was the room rent cut?");
 ok(hit[0]?.question === "Why is my room rent refused?", "recall did not bring back the most similar past question");
 
+// ── Everyone gets a UUID, kept across saves, never shared ─────────────────
+const fam = [
+  { role: "self" as const, name: "Ravi Kumar", age: 40 },
+  { role: "patient" as const, name: "Sita Kumar", age: 68 },
+  { role: "family" as const, relation: "son" as const, name: "Ravi", age: 12 },
+  { role: "family" as const, relation: "son" as const, name: "Ravi", age: 9 },
+];
+const s1 = await saveSession(db, null, { name: MARK, case: input, people: fam });
+const uids = s1.people.map((p) => p.uid);
+ok(new Set(uids).size === 4, "four people did not get four different UUIDs");
+ok(uids.every((u) => /^[0-9a-f-]{36}$/.test(u)), "a person id is not a UUID");
+// Save again with the uids: same people, same ids; one son removed.
+const s2 = await saveSession(db, null, { id: s1.id, name: MARK, case: input, people: s1.people.slice(0, 3) });
+ok(JSON.stringify(s2.people.map((p) => p.uid)) === JSON.stringify(uids.slice(0, 3)), "re-saving changed someone's UUID");
+ok((await db.person.count({ where: { sessionId: s1.id } })) === 3, "a removed family member was not deleted");
+// A uid sent twice, or borrowed from another session, is replaced rather than shared.
+const other = await saveSession(db, null, { name: MARK, case: input, people: [{ role: "self", uid: uids[0], name: "X", age: 30 }] });
+ok(other.people[0].uid !== uids[0], "a UUID from another session was reused");
+const dup = await saveSession(db, null, { id: s1.id, name: MARK, case: input, people: [s2.people[0], s2.people[0]] });
+ok(dup.people[0].uid !== dup.people[1].uid, "the same UUID was given to two people");
+const back = await sessionDetail(db, s1.id);
+ok(back?.people.length === 2 && back.people[0].name === "Ravi Kumar", "the admin detail does not show the people saved");
+await db.savedSession.deleteMany({ where: { id: { in: [s1.id, other.id] } } });
+
 await db.savedSession.delete({ where: { id: first.id } });
 await db.$disconnect();
 
@@ -78,4 +102,4 @@ if (failures.length) {
   console.error("sessions — " + failures.length + " failed");
   process.exit(1);
 }
-console.log("sessions — saved with the engine's outcome, updated not duplicated, and only clean answers are remembered and recalled");
+console.log("sessions — saved with the engine's outcome, updated not duplicated, everyone given a stable unique UUID, and only clean answers remembered");

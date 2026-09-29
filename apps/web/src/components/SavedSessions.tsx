@@ -3,6 +3,7 @@ import type { SavedSessionDetail, SavedSessionRow } from "@claimcast/contracts";
 import { fmt, registry, setRegistry, type CaseInput } from "@claimcast/engine";
 import { adminSession, adminSessions } from "../api";
 import { plural, t, tx } from "../i18n";
+import { RELATION_LABEL, type Relation } from "../people";
 
 /**
  * Every session a family chose to save, as the admin sees it.
@@ -27,7 +28,7 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
     .filter(
       (r) =>
         !needle ||
-        [r.name, r.policyholder, r.summary.hospital, r.summary.procedure]
+        [r.name, r.policyholder, r.summary.hospital, r.summary.procedure, ...r.people.flatMap((p) => [p.name, p.uid])]
           .filter(Boolean)
           .some((x) => x!.toLowerCase().includes(needle)),
     )
@@ -38,6 +39,7 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
         : sort[0] === "plan" ? r.summary.policy
         : sort[0] === "pays" ? r.summary.patientPays
         : sort[0] === "q" ? r.chatTurns
+        : sort[0] === "people" ? r.people.length
         : r.updatedAt;
       const c = v(x) < v(y) ? -1 : v(x) > v(y) ? 1 : 0;
       return sort[1] ? c : -c;
@@ -91,7 +93,7 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
           <input
             className="stable-search"
             type="search"
-            placeholder={t("Search by family or hospital…")}
+            placeholder={t("Search by name, hospital or ID…")}
             value={q}
             onChange={(ev) => setQ(ev.target.value)}
           />
@@ -117,7 +119,7 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
           <thead>
             <tr>
               {COLS.map(([key, label]) => (
-                <th key={key} className={key === "pays" || key === "q" ? "num" : ""}>
+                <th key={key} className={key === "pays" || key === "q" || key === "people" ? "num" : ""}>
                   <button type="button" className="stable-sort" onClick={() => sortBy(key)}>
                     {t(label)} {sort[0] === key ? (sort[1] ? "↑" : "↓") : ""}
                   </button>
@@ -142,11 +144,12 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                   <b className="loss">{fmt(r.summary.patientPays)}</b>
                   <div className="sub">{t("of")} {fmt(r.summary.billTotal)}</div>
                 </td>
+                <td className="num">{r.people.length}</td>
                 <td className="num">{r.chatTurns}</td>
                 <td>{new Date(r.updatedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</td>
               </tr>
               {openId === r.id && (
-                <tr className="stable-detail"><td colSpan={6}>
+                <tr className="stable-detail"><td colSpan={7}>
                 <div className="session-detail">
                   {!detail ? (
                     <p className="note">{t("Loading…")}</p>
@@ -194,6 +197,40 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                         </div>
                       </div>
 
+                      <div className="session-k">{t("People in this session")}</div>
+                      {detail.people.length === 0 ? (
+                        <p className="note" style={{ marginTop: 4 }}>{t("Saved before people were recorded.")}</p>
+                      ) : (
+                        <table className="people-table">
+                          <thead>
+                            <tr>
+                              <th>{t("Who")}</th>
+                              <th>{t("Name")}</th>
+                              <th className="num">{t("Age")}</th>
+                              <th>{t("Unique ID (UUID)")}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detail.people.map((p) => (
+                              <tr key={p.uid}>
+                                <td>
+                                  {p.role === "self"
+                                    ? t("Using ClaimCast")
+                                    : p.role === "patient"
+                                      ? t("Patient")
+                                      : t(RELATION_LABEL[(p.relation ?? "other") as Relation])}
+                                </td>
+                                <td>{p.name || "—"}</td>
+                                <td className="num">{p.age ?? "—"}</td>
+                                <td>
+                                  <code className="uuid">{p.uid}</code>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )}
+
                       <div className="session-k">{t("Questions they asked")}</div>
                       {detail.chat.length === 0 ? (
                         <p className="note" style={{ marginTop: 4 }}>{t("No questions asked.")}</p>
@@ -229,7 +266,7 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
           ))}
           {shown.length === 0 && (
             <tr>
-              <td colSpan={6} className="empty">{t("No saved session matches.")}</td>
+              <td colSpan={7} className="empty">{t("No saved session matches.")}</td>
             </tr>
           )}
           </tbody>
@@ -240,12 +277,13 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
   );
 }
 
-type Col = "family" | "stay" | "plan" | "pays" | "q" | "saved";
+type Col = "family" | "stay" | "plan" | "pays" | "people" | "q" | "saved";
 const COLS: [Col, string][] = [
   ["family", "Family"],
   ["stay", "Hospital stay"],
   ["plan", "Plan"],
   ["pays", "Family pays"],
+  ["people", "People"],
   ["q", "Questions"],
   ["saved", "Saved on"],
 ];

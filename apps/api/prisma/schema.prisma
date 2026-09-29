@@ -624,8 +624,34 @@ model SavedSession {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user   User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  people Person[]
 
   @@index([createdAt])
   @@map("saved_sessions")
+}
+
+/// Everyone named in a saved session: the person using ClaimCast, the patient,
+/// and each family member they added. The id is a UUID the server assigns the
+/// first time the session is saved and keeps on every later save, so two
+/// family members who share a name are never confused, and the primary key
+/// makes a duplicate id impossible.
+model Person {
+  id        String   @id @db.Uuid
+  sessionId String
+  /// "self", "patient" or "family".
+  role      String
+  /// For family members: husband, wife, son, daughter, father, mother, other.
+  relation  String?
+  name      String?
+  age       Int?
+  /// Order on the screen.
+  position  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  session SavedSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@map("people")
 }

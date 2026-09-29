@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { rupees, evaluate, registry, repair, type CaseInput } from "@claimcast/engine";
 import { isPreExisting } from "./illness";
 import { policyTravels } from "./labels";
+import { EMPTY_PEOPLE, toPersons, withUids, type People } from "./people";
 import { Intake } from "./components/Intake";
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
@@ -118,6 +119,7 @@ export default function App() {
   const [illnessDate, setIllnessDate] = useState("");
   // The path's "none" option for the procedure: nothing to price until one is picked.
   const [procNil, setProcNil] = useState(false);
+  const [people, setPeople] = useState<People>(EMPTY_PEOPLE);
   // One saved record per sitting: the first save creates it, later ones update it.
   const [saved, setSaved] = useState<{ id: string; at: Date } | null>(null);
   const [saving, setSaving] = useState<"idle" | "saving" | string>("idle");
@@ -187,9 +189,11 @@ export default function App() {
       ...(policyTravels(e.policy) ? { policy: e.policy } : {}),
       ...(documentId ? { documentId } : {}),
       chat: chatRecords(chatTurns),
+      people: toPersons(people, name, input.age),
     });
     if (r.ok) {
       setSaved({ id: r.id, at: new Date() });
+      setPeople((p) => withUids(p, r.people));
       setSaving("idle");
     } else setSaving(r.reason);
   };
@@ -288,6 +292,8 @@ export default function App() {
           onStep={setWizardStep}
           illnessDate={illnessDate}
           onIllnessDate={setIllnessDate}
+          people={people}
+          onPeople={setPeople}
           onContinue={() => {
             setTab("journey");
             window.scrollTo(0, 0);
@@ -306,6 +312,7 @@ export default function App() {
           onOpen={open}
           onBack={() => setTab("start")}
           onLang={changeLang}
+          people={people}
         />
       )}
       {procNil && (tab === "journey" || tab === "working") && (

@@ -2921,3 +2921,33 @@ button:not(.tab):not(.chat-fab):not(.login-card):not(.session-row):not(.chat-sta
   border-radius: 20px; background: var(--accent-wash); }
 .nil-k { font-family: var(--serif); font-size: 26px; margin-bottom: 8px; }
 .nil-card p { margin: 0; color: var(--ink-2); font-size: 16px; }
+
+/* ── Family on the Start page, the profile and the admin ─── */
+.wiz-pair { display: grid; grid-template-columns: 1fr 150px; gap: 0 14px; max-width: 520px; margin: 0 auto; }
+.wiz-pair .wiz-field { max-width: none; margin-bottom: 14px; }
+.wiz-pair .person-id { grid-column: 1 / -1; margin: -8px 0 12px; }
+.wiz-link { display: block; min-height: 0; margin: -4px auto 18px; max-width: 520px; width: 100%; padding: 0;
+  border: none; background: none; color: var(--accent); font: 600 14px var(--sans); text-align: left; }
+.wiz-family { max-width: 520px; margin: 8px auto 0; padding-top: 16px; border-top: 1px solid var(--hair-2); }
+.wiz-family-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+  font-weight: 600; font-size: 15px; }
+.wiz-add { min-height: 0; height: 38px; padding: 0 16px; border-radius: 999px; font: 700 15px var(--sans); }
+.wiz-member { display: grid; grid-template-columns: 130px 1fr 80px 38px; gap: 8px; align-items: center; margin-bottom: 8px; }
+.wiz-member select, .wiz-member input { height: 46px; padding: 0 12px; border: 1px solid var(--hair); border-radius: 10px;
+  background: var(--bg); color: var(--ink); font: 15px var(--sans); min-width: 0; }
+.wiz-member .person-id { grid-column: 1 / -1; margin-top: -2px; }
+.wiz-remove { min-height: 0; width: 38px; height: 38px; padding: 0; border-radius: 50%; border: 1px solid var(--hair);
+  background: var(--surface); color: var(--ink-2); font-size: 20px; line-height: 1; }
+.wiz-empty { margin: 6px 0; color: var(--ink-3); font-size: 13.5px; }
+.person-id { font-family: var(--num); font-size: 11.5px; color: var(--ink-3); }
+.avatar.small { width: 34px; height: 34px; font-size: 12px; cursor: default; flex: none; }
+.family-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.family-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 10px 14px;
+  border: 1px solid var(--hair-2); border-radius: 12px; background: var(--surface-2); }
+.fam-who { display: flex; flex-direction: column; }
+.fam-who span { color: var(--ink-3); font-size: 13px; }
+.people-table { width: 100%; margin: 4px 0 8px; font-size: 14px; }
+.uuid { font-family: var(--num); font-size: 12px; color: var(--ink-2); word-break: break-all; }
+@media (max-width: 640px) { .wiz-pair { grid-template-columns: 1fr; } .wiz-member { grid-template-columns: 1fr 70px 38px; } .wiz-member select { grid-column: 1 / -1; } }
+.wiz-pair .wiz-field { margin: 0 0 14px; }
+.wiz-pair .person-id { margin: -8px 0 12px; }

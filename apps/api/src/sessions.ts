@@ -8,6 +8,7 @@
  * input is kept too, so reopening re-prices with the engine as it is now.
  */
 
+import { randomUUID } from "node:crypto";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import {
   ChatTurnRecordSchema,
@@ -53,21 +54,53 @@ export async function saveSession(db: PrismaClient, userId: string | null, req: 
     policy: (req.policy ?? undefined) as Prisma.InputJsonValue | undefined,
     documentId: req.documentId ?? null,
     summary: summarise(req) as unknown as Prisma.InputJsonValue,
-    chat: req.chat as unknown as Prisma.InputJsonValue,
+    chat: (req.chat ?? []) as unknown as Prisma.InputJsonValue,
   };
   // Updating is only ever of this browser's own record; anything else starts a new one.
+  let row: { id: string; createdAt: Date } | null = null;
+  let updated = false;
   if (req.id) {
     const hit = await db.savedSession.updateMany({ where: { id: req.id, userId }, data });
     if (hit.count === 1) {
-      const row = await db.savedSession.findUniqueOrThrow({ where: { id: req.id } });
-      return { id: row.id, createdAt: row.createdAt.toISOString(), updated: true };
+      row = await db.savedSession.findUniqueOrThrow({ where: { id: req.id } });
+      updated = true;
     }
   }
-  const row = await db.savedSession.create({ data: { ...data, userId } });
-  return { id: row.id, createdAt: row.createdAt.toISOString(), updated: false };
+  if (!row) row = await db.savedSession.create({ data: { ...data, userId } });
+  const people = await savePeople(db, row.id, req.people ?? []);
+  return { id: row.id, createdAt: row.createdAt.toISOString(), updated, people };
 }
 
-type Row = Awaited<ReturnType<PrismaClient["savedSession"]["findFirstOrThrow"]>>;
+/**
+ * Give everyone in the session a UUID, and keep it.
+ *
+ * A person keeps the uid the browser sends back only if that uid already
+ * belongs to this session; anything else -- a new person, a uid copied from
+ * another session, the same uid sent twice -- gets a fresh one from the
+ * server. People no longer in the list are removed.
+ */
+export async function savePeople(db: PrismaClient, sessionId: string, people: NonNullable<SaveSessionRequest["people"]>) {
+  const existing = new Set(
+    (await db.person.findMany({ where: { sessionId }, select: { id: true } })).map((p) => p.id),
+  );
+  const used = new Set<string>();
+  const saved = people.map((p, position) => {
+    const uid = p.uid && existing.has(p.uid) && !used.has(p.uid) ? p.uid : randomUUID();
+    used.add(uid);
+    return { uid, role: p.role, relation: p.relation ?? null, name: p.name ?? "", age: p.age ?? null, position };
+  });
+  await db.$transaction([
+    db.person.deleteMany({ where: { sessionId, id: { notIn: saved.map((p) => p.uid) } } }),
+    ...saved.map((p) => {
+      const fields = { role: p.role, relation: p.relation, name: p.name || null, age: p.age, position: p.position };
+      return db.person.upsert({ where: { id: p.uid }, create: { id: p.uid, sessionId, ...fields }, update: fields });
+    }),
+  ]);
+  return saved.map(({ position: _position, ...p }) => p);
+}
+
+const withPeople = { people: { orderBy: { position: "asc" as const } } };
+type Row = Prisma.SavedSessionGetPayload<{ include: typeof withPeople }>;
 
 function toRow(r: Row): SavedSessionRow {
   return {
@@ -79,18 +112,30 @@ function toRow(r: Row): SavedSessionRow {
     summary: r.summary as SavedSessionRow["summary"],
     chatTurns: Array.isArray(r.chat) ? r.chat.length : 0,
     uploadedPolicy: r.policy !== null,
+    people: r.people.map((p) => ({
+      uid: p.id,
+      role: p.role as "self" | "patient" | "family",
+      relation: (p.relation ?? null) as SavedSessionRow["people"][number]["relation"],
+      name: p.name ?? "",
+      age: p.age,
+    })),
   };
 }
 
 export async function listSessions(db: PrismaClient, take = 200): Promise<SavedSessionRow[]> {
-  const rows = await db.savedSession.findMany({ orderBy: { updatedAt: "desc" }, take });
+  const rows = await db.savedSession.findMany({ orderBy: { updatedAt: "desc" }, take, include: withPeople });
   return rows.map(toRow);
 }
 
 /** This browser's own saved sessions, newest first, in full, for the profile page. */
 export async function mySessions(db: PrismaClient, userId: string | null): Promise<SavedSessionDetail[]> {
   if (!userId) return [];
-  const rows = await db.savedSession.findMany({ where: { userId }, orderBy: { updatedAt: "desc" }, take: 50 });
+  const rows = await db.savedSession.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    take: 50,
+    include: withPeople,
+  });
   return rows.map((r) => ({
     ...toRow(r),
     input: r.input as SavedSessionDetail["input"],
@@ -100,7 +145,7 @@ export async function mySessions(db: PrismaClient, userId: string | null): Promi
 }
 
 export async function sessionDetail(db: PrismaClient, id: string): Promise<SavedSessionDetail | null> {
-  const r = await db.savedSession.findUnique({ where: { id } });
+  const r = await db.savedSession.findUnique({ where: { id }, include: withPeople });
   if (!r) return null;
   return {
     ...toRow(r),

@@ -3,6 +3,7 @@ import type { SavedSessionDetail } from "@claimcast/contracts";
 import { fmt, isNoPolicy, registry, setRegistry, type CaseInput, type Evaluated } from "@claimcast/engine";
 import { mySessions } from "../api";
 import { policyShort } from "../labels";
+import { RELATION_LABEL, type People } from "../people";
 import { plural, t, tx, type Lang } from "../i18n";
 import Account from "./Account";
 import { LangToggle, ThemeToggle } from "./ThemeToggle";
@@ -23,6 +24,7 @@ export function Profile({
   onOpen,
   onBack,
   onLang,
+  people,
 }: {
   e: Evaluated;
   name: string;
@@ -35,6 +37,7 @@ export function Profile({
   onOpen: (c: CaseInput) => void;
   onBack: () => void;
   onLang: (l: Lang) => void;
+  people: People;
 }) {
   const [stays, setStays] = useState<SavedSessionDetail[] | null | "loading">("loading");
   const [editing, setEditing] = useState(false);
@@ -121,6 +124,34 @@ export function Profile({
           <span className="s">{t("to Ask ClaimCast")}</span>
         </div>
       </div>
+
+      <section className="section">
+        <div className="section-head">
+          <h2>{t("My family")}</h2>
+          <span className="aside">{t("Each person has their own ID once saved")}</span>
+        </div>
+        <ul className="family-list">
+          {[
+            { who: t("You"), name: name, age: people.selfAge, uid: people.selfUid },
+            { who: t("Patient"), name: people.patientName, age: e.input.age, uid: people.patientUid },
+            ...people.family.map((m) => ({ who: t(RELATION_LABEL[m.relation]), name: m.name, age: m.age, uid: m.uid })),
+          ].map((p, i) => (
+            <li key={i}>
+              <span className="avatar small">{initials(p.name)}</span>
+              <span className="fam-who">
+                <b>{p.name || "—"}</b>
+                <span>
+                  {p.who}
+                  {p.age !== null ? ` · ${t("Age {n}", { n: p.age })}` : ""}
+                </span>
+              </span>
+              <span className="person-id" title={p.uid ?? ""}>
+                {p.uid ? "ID " + p.uid : t("ID given when saved")}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="section">
         <div className="section-head">

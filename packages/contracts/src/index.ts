@@ -670,6 +670,18 @@ export type ChatTurnRecord = z.infer<typeof ChatTurnRecordSchema>;
  * "Save my session". `id`, when given, updates that session rather than
  * starting another, so pressing save twice keeps one record per sitting.
  */
+/** One person in a saved session. `uid` is absent until the server has assigned one. */
+export const PersonSchema = z.object({
+  uid: z.string().uuid().optional(),
+  role: z.enum(["self", "patient", "family"]),
+  relation: z.enum(["husband", "wife", "son", "daughter", "father", "mother", "other"]).nullable().default(null),
+  name: z.string().trim().max(120).default(""),
+  age: z.number().int().min(0).max(120).nullable().default(null),
+});
+export type Person = z.infer<typeof PersonSchema>;
+export const SavedPersonSchema = PersonSchema.extend({ uid: z.string().uuid() });
+export type SavedPerson = z.infer<typeof SavedPersonSchema>;
+
 export const SaveSessionSchema = z.object({
   id: z.string().optional(),
   name: z.string().max(120).optional(),
@@ -678,8 +690,10 @@ export const SaveSessionSchema = z.object({
   policy: PolicySchema.optional(),
   documentId: z.string().optional(),
   chat: z.array(ChatTurnRecordSchema).max(100).default([]),
+  people: z.array(PersonSchema).max(30).default([]),
 });
-export type SaveSessionRequest = z.infer<typeof SaveSessionSchema>;
+/** What a client sends: `chat` and `people` may be left out. */
+export type SaveSessionRequest = z.input<typeof SaveSessionSchema>;
 
 /** What the engine worked out, frozen at the moment of saving. */
 export const SessionSummarySchema = z.object({
@@ -705,6 +719,8 @@ export const SavedSessionRowSchema = z.object({
   summary: SessionSummarySchema,
   chatTurns: z.number().int().min(0),
   uploadedPolicy: z.boolean(),
+  /** Everyone named in the session, with their UUIDs. */
+  people: z.array(SavedPersonSchema).default([]),
 });
 export type SavedSessionRow = z.infer<typeof SavedSessionRowSchema>;
 

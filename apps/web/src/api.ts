@@ -16,6 +16,8 @@
 
 import { NO_POLICY, setRegistry, type Registry } from "@claimcast/engine";
 import {
+  SavedPersonSchema,
+  type SavedPerson,
   SavedSessionDetailSchema,
   SavedSessionRowSchema,
   type SaveSessionRequest,
@@ -385,7 +387,7 @@ export async function askChat(
 /** "Save my session": keep this sitting in the database, or update it if already saved. */
 export async function saveSession(
   req: SaveSessionRequest,
-): Promise<{ ok: true; id: string } | { ok: false; reason: string }> {
+): Promise<{ ok: true; id: string; people: SavedPerson[] } | { ok: false; reason: string }> {
   const res = await fetch(BASE + "/api/sessions", {
     method: "POST",
     credentials: CREDS,
@@ -393,8 +395,9 @@ export async function saveSession(
     body: JSON.stringify(req),
   }).catch(() => null);
   if (!res) return { ok: false, reason: "The server is not reachable." };
-  const body = (await res.json().catch(() => ({}))) as { id?: string; error?: string };
-  return res.ok && body.id ? { ok: true, id: body.id } : { ok: false, reason: body.error ?? "Could not save." };
+  const body = (await res.json().catch(() => ({}))) as { id?: string; error?: string; people?: unknown };
+  const people = SavedPersonSchema.array().safeParse(body.people ?? []).data ?? [];
+  return res.ok && body.id ? { ok: true, id: body.id, people } : { ok: false, reason: body.error ?? "Could not save." };
 }
 
 /** Every saved session, newest first, for the admin side. */

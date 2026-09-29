@@ -5,6 +5,7 @@ import { confirmDocument, extractPolicy } from "../api";
 import { lang, plural, t } from "../i18n";
 import { checkIllness, showDate, todayIso } from "../illness";
 import { policyLabel } from "../labels";
+import { newMember, RELATION_LABEL, RELATIONS, shortId, type Member, type People, type Relation } from "../people";
 
 /**
  * The front door, not the engine.
@@ -28,6 +29,8 @@ export function Intake({
   onStep,
   illnessDate,
   onIllnessDate,
+  people,
+  onPeople,
 }: {
   input: CaseInput;
   onChange: (next: CaseInput) => void;
@@ -44,6 +47,8 @@ export function Intake({
   /** When the illness began, YYYY-MM-DD or "". The app turns it into pre-existing or not. */
   illnessDate: string;
   onIllnessDate: (iso: string) => void;
+  people: People;
+  onPeople: (p: People) => void;
 }) {
   const { policies: POLICIES } = registry();
   const policy = POLICIES.find((p) => p.id === input.policyId)!;
@@ -117,11 +122,60 @@ export function Intake({
       {step === 0 && (
         <div className="wiz-card">
           <h1 className="wiz-q">{t("Tell us about you")}</h1>
-          <p className="wiz-hint">{t("Only the age matters for the bill. Names are optional.")}</p>
-          <label className="wiz-field">
-            <span>{t("Your name")}</span>
-            <input type="text" placeholder={t("Optional")} value={name} onChange={(ev) => onName(ev.target.value)} />
-          </label>
+          <p className="wiz-hint">{t("Only the patient’s age matters for the bill. Names are optional.")}</p>
+
+          <div className="wiz-pair">
+            <label className="wiz-field">
+              <span>{t("Your name")}</span>
+              <input type="text" placeholder={t("Optional")} value={name} onChange={(ev) => onName(ev.target.value)} />
+            </label>
+            <label className="wiz-field">
+              <span>{t("Your age")}</span>
+              <input
+                type="number"
+                min={0}
+                max={120}
+                placeholder={t("Optional")}
+                value={people.selfAge ?? ""}
+                onChange={(ev) => onPeople({ ...people, selfAge: ev.target.value === "" ? null : clamp(ev.target.value, 0, 120) })}
+              />
+            </label>
+            <PersonId uid={people.selfUid} />
+          </div>
+
+          <div className="wiz-pair">
+            <label className="wiz-field">
+              <span>{t("Patient’s name")}</span>
+              <input
+                type="text"
+                placeholder={t("Optional")}
+                value={people.patientName}
+                onChange={(ev) => onPeople({ ...people, patientName: ev.target.value })}
+              />
+            </label>
+            <label className="wiz-field">
+              <span>{t("Patient’s age")}</span>
+              <input
+                type="number"
+                min={0}
+                max={120}
+                value={input.age}
+                onChange={(ev) => set({ age: clamp(ev.target.value, 0, 120) })}
+              />
+            </label>
+            <PersonId uid={people.patientUid} />
+          </div>
+          <button
+            type="button"
+            className="wiz-link"
+            onClick={() => {
+              onPeople({ ...people, patientName: name });
+              if (people.selfAge !== null) set({ age: people.selfAge });
+            }}
+          >
+            {t("The patient is me")}
+          </button>
+
           <label className="wiz-field">
             <span>{t("Name on the policy")}</span>
             <input
@@ -131,16 +185,55 @@ export function Intake({
               onChange={(ev) => onPolicyholder(ev.target.value)}
             />
           </label>
-          <label className="wiz-field narrow">
-            <span>{t("Patient's age")}</span>
-            <input
-              type="number"
-              min={0}
-              max={120}
-              value={input.age}
-              onChange={(ev) => set({ age: clamp(ev.target.value, 0, 120) })}
-            />
-          </label>
+
+          <div className="wiz-family">
+            <div className="wiz-family-head">
+              <span>{t("Family members")}</span>
+              <button
+                type="button"
+                className="wiz-add"
+                onClick={() => onPeople({ ...people, family: [...people.family, newMember()] })}
+                aria-label={t("Add a family member")}
+              >
+                + {t("Add")}
+              </button>
+            </div>
+            {people.family.length === 0 && <p className="wiz-empty">{t("Add a husband, wife, children or parents with the + button.")}</p>}
+            {people.family.map((m, i) => {
+              const put = (patch: Partial<Member>) =>
+                onPeople({ ...people, family: people.family.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
+              return (
+                <div className="wiz-member" key={m.key}>
+                  <select value={m.relation} onChange={(ev) => put({ relation: ev.target.value as Relation })} aria-label={t("Relation")}>
+                    {RELATIONS.map((r) => (
+                      <option key={r} value={r}>
+                        {t(RELATION_LABEL[r])}
+                      </option>
+                    ))}
+                  </select>
+                  <input type="text" placeholder={t("Name")} value={m.name} onChange={(ev) => put({ name: ev.target.value })} />
+                  <input
+                    type="number"
+                    min={0}
+                    max={120}
+                    placeholder={t("Age")}
+                    value={m.age ?? ""}
+                    onChange={(ev) => put({ age: ev.target.value === "" ? null : clamp(ev.target.value, 0, 120) })}
+                  />
+                  <button
+                    type="button"
+                    className="wiz-remove"
+                    aria-label={t("Remove")}
+                    onClick={() => onPeople({ ...people, family: people.family.filter((_, j) => j !== i) })}
+                  >
+                    ×
+                  </button>
+                  <PersonId uid={m.uid} />
+                </div>
+              );
+            })}
+            <p className="wiz-empty">{t("Everyone gets their own ID when you press “Save my session”, so no two people are ever mixed up.")}</p>
+          </div>
         </div>
       )}
 
@@ -294,7 +387,14 @@ export function Intake({
           <ul className="wiz-review">
             {[
               [t("Your name"), name || "—", 0],
-              [t("Patient's age"), String(input.age), 0],
+              [t("Patient"), `${people.patientName || "—"} · ${t("Age {n}", { n: input.age })}`, 0],
+              [
+                t("Family members"),
+                people.family.length
+                  ? people.family.map((m) => `${m.name || "—"} (${t(RELATION_LABEL[m.relation])})`).join(", ")
+                  : t("None added"),
+                0,
+              ],
               [t("Your health insurance plan"), policyLabel(e.policy), 1],
               [t("Ayushman Bharat card at home?"), input.hasPmjayCard ? t("Yes") : t("No"), 2],
               [t("Central govt. employee or pensioner?"), input.govtEmployeeOrPensioner ? t("Yes") : t("No"), 2],
@@ -819,5 +919,15 @@ function IllnessNote({ iso, policy }: { iso: string; policy: Policy }) {
             m: c.monthsLeft,
           })}
     </p>
+  );
+}
+
+/** A person's UUID, shortened, once the server has given one. */
+function PersonId({ uid }: { uid?: string }) {
+  if (!uid) return null;
+  return (
+    <span className="person-id" title={uid}>
+      ID {shortId(uid)}
+    </span>
   );
 }
