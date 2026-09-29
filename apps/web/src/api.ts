@@ -409,3 +409,10 @@ export async function adminSession(id: string): Promise<SavedSessionDetail | nul
   if (!res || !res.ok) return null;
   return SavedSessionDetailSchema.safeParse(await res.json().catch(() => null)).data ?? null;
 }
+
+/** Sessions this browser saved, for the profile page. */
+export async function mySessions(): Promise<SavedSessionDetail[] | null> {
+  const res = await fetch(BASE + "/api/sessions/mine", { credentials: CREDS }).catch(() => null);
+  if (!res || !res.ok) return null;
+  return SavedSessionDetailSchema.array().safeParse(await res.json().catch(() => null)).data ?? null;
+}

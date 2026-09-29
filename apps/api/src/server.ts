@@ -54,7 +54,7 @@ import {
 import { chosen } from "./models.js";
 import { answerFromPolicyPdf } from "./rag.js";
 import { answerChat } from "./chat.js";
-import { chatMemory, listSessions, recall, saveSession, sessionDetail } from "./sessions.js";
+import { chatMemory, listSessions, mySessions, recall, saveSession, sessionDetail } from "./sessions.js";
 import * as session from "./session.js";
 import { attempt } from "./throttle.js";
 
@@ -740,6 +740,9 @@ app.post("/api/sessions", async (req, reply) => {
  * here is synthetic or volunteered by whoever pressed save.
  */
 app.get("/api/admin/sessions", async () => listSessions(ref.db));
+
+/** The profile page: only the sessions this browser saved. */
+app.get("/api/sessions/mine", async (req, reply) => mySessions(ref.db, await session.current(req, reply)));
 
 app.get<{ Params: { id: string } }>("/api/admin/sessions/:id", async (req, reply) => {
   const s = await sessionDetail(ref.db, req.params.id);

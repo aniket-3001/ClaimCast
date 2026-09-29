@@ -19,6 +19,7 @@ import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
 import { ChatDock } from "./components/ChatDock";
 import { Login } from "./components/Login";
+import { Profile } from "./components/Profile";
 import { setLang } from "./i18n";
 import { BillView } from "./components/BillView";
 import { Alternatives } from "./components/Alternatives";
@@ -94,6 +95,9 @@ for (const l of ["en", "hi"] as const) {
     <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="" onPolicyholder={noop} onContinue={noop} step={0} onStep={noop} />,
   );
   renderToString(<Database onOpen={noop} />);
+  renderToString(
+    <Profile e={evaluate(cases[0])} name="Asha Rao" onName={noop} policyholder="" onPolicyholder={noop} onAge={noop} questionsNow={2} onOpen={noop} onBack={noop} onLang={noop} />,
+  );
 }
 setLang("en", false);
 console.log(`ok   ${rendered} cases rendered clean in English and Hindi, plus the database tab`);

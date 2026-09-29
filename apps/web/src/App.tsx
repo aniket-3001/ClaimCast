@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import Account from "./components/Account";
 import { rupees, evaluate, registry, repair, type CaseInput } from "@claimcast/engine";
 import { Intake } from "./components/Intake";
 import { Controls } from "./components/Controls";
@@ -10,12 +9,13 @@ import { Database } from "./components/Database";
 import { Learning } from "./components/Learning";
 import { ChatDock, chatRecords, type Turn } from "./components/ChatDock";
 import { SavedSessions } from "./components/SavedSessions";
+import { Profile, initials } from "./components/Profile";
 import { Login, type Role } from "./components/Login";
 import { CornerControls } from "./components/ThemeToggle";
 import { lang, setLang, t, type Lang } from "./i18n";
 import { recordChoice, saveSession } from "./api";
 
-type Tab = "start" | "journey" | "working" | "database" | "learning";
+type Tab = "start" | "journey" | "working" | "database" | "learning" | "profile";
 
 /**
  * The two sides of ClaimCast. A family sees their admission; the admin sees
@@ -201,7 +201,6 @@ export default function App() {
           </span>
         </div>
         <div className="masthead-right">
-          {role === "user" && <Account />}
           {role === "user" && (
             <button className="save-session" onClick={() => void saveNow()} disabled={saving === "saving"}>
               {saving === "saving"
@@ -216,6 +215,20 @@ export default function App() {
           <button className="switch-view" onClick={() => setRole(null)}>
             {t("Switch view")}
           </button>
+          {role === "user" && (
+            <button
+              type="button"
+              className={`avatar ${tab === "profile" ? "on" : ""}`}
+              aria-label={t("Your profile")}
+              title={t("Your profile")}
+              onClick={() => {
+                setTab("profile");
+                window.scrollTo(0, 0);
+              }}
+            >
+              {initials(name || policyholder)}
+            </button>
+          )}
           {saving !== "idle" && saving !== "saving" && <div className="warn-line">{saving}</div>}
         </div>
       </header>
@@ -243,7 +256,7 @@ export default function App() {
         ))}
       </nav>
 
-      {tab !== "start" && tab !== "database" && tab !== "learning" && (
+      {(tab === "journey" || tab === "working") && (
         <Controls value={input} onChange={pick} />
       )}
 
@@ -262,6 +275,20 @@ export default function App() {
             setTab("journey");
             window.scrollTo(0, 0);
           }}
+        />
+      )}
+      {tab === "profile" && (
+        <Profile
+          e={e}
+          name={name}
+          onName={setName}
+          policyholder={policyholder}
+          onPolicyholder={setPolicyholder}
+          onAge={(age) => pick({ ...input, age })}
+          questionsNow={chatTurns.filter((x) => x.role === "user").length}
+          onOpen={open}
+          onBack={() => setTab("start")}
+          onLang={changeLang}
         />
       )}
       {tab === "journey" && <Journey e={e} onPick={pick} />}

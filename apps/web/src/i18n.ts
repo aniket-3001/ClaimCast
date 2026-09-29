@@ -247,6 +247,26 @@ const ENGINE: Record<string, string> = {
 /** Screen text. Keys are the English exactly as written in the components. */
 const HI: Record<string, string> = {
   // Shell
+  "Your profile": "आपकी प्रोफ़ाइल",
+  "Age {n}": "उम्र {n}",
+  Done: "हो गया",
+  "My plan": "मेरा प्लान",
+  "Saved stays": "सहेजी गई भर्तियाँ",
+  "kept from this browser": "इस ब्राउज़र से सहेजी गईं",
+  "Questions asked": "पूछे गए सवाल",
+  "to Ask ClaimCast": "ClaimCast से",
+  "My hospital stays": "मेरी अस्पताल भर्तियाँ",
+  "Nothing saved yet. Press “Save my session” at the top to keep a hospital stay here.":
+    "अभी कुछ सहेजा नहीं गया। किसी भर्ती को यहाँ रखने के लिए ऊपर “मेरा सत्र सहेजें” दबाएँ।",
+  "you pay": "आप देंगे",
+  "Open any stay to see its path again, priced with today’s figures.": "किसी भी भर्ती को खोलकर उसका रास्ता आज के आंकड़ों के साथ फिर देखें।",
+  Preferences: "पसंद",
+  Language: "भाषा",
+  Theme: "थीम",
+  "Email sign-in": "ईमेल साइन-इन",
+  "{n} saved stay is linked to this browser.": "{n} सहेजी गई भर्ती इस ब्राउज़र से जुड़ी है।",
+  "{n} saved stays are linked to this browser.": "{n} सहेजी गई भर्तियाँ इस ब्राउज़र से जुड़ी हैं।",
+  "Sign in with email to keep them if you switch devices.": "डिवाइस बदलने पर भी इन्हें रखने के लिए ईमेल से साइन इन करें।",
   "About you": "आपके बारे में",
   "Your insurance": "आपका बीमा",
   "Government schemes": "सरकारी योजनाएँ",

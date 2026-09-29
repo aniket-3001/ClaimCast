@@ -87,6 +87,18 @@ export async function listSessions(db: PrismaClient, take = 200): Promise<SavedS
   return rows.map(toRow);
 }
 
+/** This browser's own saved sessions, newest first, in full, for the profile page. */
+export async function mySessions(db: PrismaClient, userId: string | null): Promise<SavedSessionDetail[]> {
+  if (!userId) return [];
+  const rows = await db.savedSession.findMany({ where: { userId }, orderBy: { updatedAt: "desc" }, take: 50 });
+  return rows.map((r) => ({
+    ...toRow(r),
+    input: r.input as SavedSessionDetail["input"],
+    policy: (r.policy ?? null) as SavedSessionDetail["policy"],
+    chat: ChatTurnRecordSchema.array().catch([]).parse(r.chat),
+  }));
+}
+
 export async function sessionDetail(db: PrismaClient, id: string): Promise<SavedSessionDetail | null> {
   const r = await db.savedSession.findUnique({ where: { id } });
   if (!r) return null;

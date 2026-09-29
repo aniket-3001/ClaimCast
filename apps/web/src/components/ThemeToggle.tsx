@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { lang, t, type Lang } from "../i18n";
 
 /**
@@ -23,7 +23,15 @@ export function applyTheme(t: Theme) {
 }
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>(storedTheme);
+  // Read from the page itself, and listen for changes, so every theme button on
+  // screen (the corner one and the profile page's) always agrees.
+  const current = (): Theme => (document.documentElement.dataset.theme === "dark" ? "dark" : "light");
+  const [theme, setTheme] = useState<Theme>(() => (typeof document === "undefined" ? "light" : current()));
+  useEffect(() => {
+    const on = () => setTheme(current());
+    window.addEventListener("claimcast-theme", on);
+    return () => window.removeEventListener("claimcast-theme", on);
+  }, []);
   const next: Theme = theme === "light" ? "dark" : "light";
 
   const flip = () => {
@@ -33,7 +41,7 @@ export function ThemeToggle() {
     } catch {
       // Storage blocked: the switch still works for this page load.
     }
-    setTheme(next);
+    window.dispatchEvent(new Event("claimcast-theme"));
   };
 
   return (
