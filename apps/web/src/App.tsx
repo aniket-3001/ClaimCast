@@ -112,6 +112,7 @@ export default function App() {
   // Intake so the chatbox on every tab can search it after Intake unmounts.
   const [documentId, setDocumentId] = useState<string | null>(null);
   const [chatTurns, setChatTurns] = useState<Turn[]>([]);
+  const [wizardStep, setWizardStep] = useState(0);
   // One saved record per sitting: the first save creates it, later ones update it.
   const [saved, setSaved] = useState<{ id: string; at: Date } | null>(null);
   const [saving, setSaving] = useState<"idle" | "saving" | string>("idle");
@@ -255,6 +256,8 @@ export default function App() {
           policyholder={policyholder}
           onPolicyholder={setPolicyholder}
           onDocument={setDocumentId}
+          step={wizardStep}
+          onStep={setWizardStep}
           onContinue={() => {
             setTab("journey");
             window.scrollTo(0, 0);

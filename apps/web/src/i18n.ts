@@ -247,6 +247,25 @@ const ENGINE: Record<string, string> = {
 /** Screen text. Keys are the English exactly as written in the components. */
 const HI: Record<string, string> = {
   // Shell
+  "About you": "आपके बारे में",
+  "Your insurance": "आपका बीमा",
+  "Government schemes": "सरकारी योजनाएँ",
+  "Your health": "आपकी सेहत",
+  Review: "समीक्षा",
+  "Step {a} of {b}": "चरण {a} / {b}",
+  "Tell us about you": "हमें अपने बारे में बताएँ",
+  "Only the age matters for the bill. Names are optional.": "बिल के लिए केवल उम्र मायने रखती है। नाम वैकल्पिक हैं।",
+  "Which health insurance plan do you have?": "आपके पास कौन सा स्वास्थ्य बीमा प्लान है?",
+  or: "या",
+  "Can a government scheme help?": "क्या कोई सरकारी योजना मदद कर सकती है?",
+  "These decide whether a scheme could pay for the stay instead.": "इनसे तय होता है कि क्या कोई योजना भर्ती का खर्च उठा सकती है।",
+  "Policies wait a while before covering an illness you already had. We check that wait for you.":
+    "पॉलिसी पहले से मौजूद बीमारी को कवर करने से पहले कुछ समय इंतज़ार करती है। हम आपके लिए यह जाँचते हैं।",
+  "Here is where you stand": "आपकी स्थिति यह है",
+  Edit: "बदलें",
+  Back: "पीछे",
+  Next: "आगे",
+  "See my bill": "मेरा बिल देखें",
   Start: "शुरुआत",
   "The path": "रास्ता",
   "The working": "हिसाब",

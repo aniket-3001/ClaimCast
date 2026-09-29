@@ -91,7 +91,7 @@ for (const l of ["en", "hi"] as const) {
     rendered++;
   }
   renderToString(
-    <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="" onPolicyholder={noop} onContinue={noop} />,
+    <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="" onPolicyholder={noop} onContinue={noop} step={0} onStep={noop} />,
   );
   renderToString(<Database onOpen={noop} />);
 }

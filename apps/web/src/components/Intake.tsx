@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fmt, pct, registry, setRegistry, type CaseInput, type Policy } from "@claimcast/engine";
+import { evaluate, fmt, pct, registry, setRegistry, type CaseInput, type Policy } from "@claimcast/engine";
 import type { Extraction, ExtractedField, ShakyField } from "@claimcast/contracts";
 import { confirmDocument, extractPolicy } from "../api";
 import { plural, t } from "../i18n";
@@ -22,6 +22,8 @@ export function Intake({
   onPolicyholder,
   onDocument,
   onContinue,
+  step,
+  onStep,
 }: {
   input: CaseInput;
   onChange: (next: CaseInput) => void;
@@ -32,6 +34,9 @@ export function Intake({
   /** The uploaded document's id once it has been read, for the chatbox to search. */
   onDocument?: (documentId: string) => void;
   onContinue: () => void;
+  /** Which wizard step is showing; held by the app so it survives a tab change. */
+  step: number;
+  onStep: (n: number) => void;
 }) {
   const { policies: POLICIES } = registry();
   const policy = POLICIES.find((p) => p.id === input.policyId)!;
@@ -66,110 +71,92 @@ export function Intake({
   }
   const set = (patch: Partial<CaseInput>) => onChange({ ...input, ...patch });
 
+  const go = (n: number) => {
+    onStep(Math.max(0, Math.min(STEPS.length - 1, n)));
+    window.scrollTo(0, 0);
+  };
+  const e = evaluate(input);
+  const yesNo = (value: boolean, change: (v: boolean) => void) => (
+    <div className="yn">
+      <button type="button" aria-pressed={value} onClick={() => change(true)}>
+        {t("Yes")}
+      </button>
+      <button type="button" aria-pressed={!value} onClick={() => change(false)}>
+        {t("No")}
+      </button>
+    </div>
+  );
+
   return (
-    <>
-      <div className="givens">
-        <div className="given">
-          <label htmlFor="i-name">{t("Your name")}</label>
-          <input
-            id="i-name"
-            type="text"
-            placeholder={t("Optional")}
-            value={name}
-            onChange={(ev) => onName(ev.target.value)}
-          />
-        </div>
-        <div className="given">
-          <label htmlFor="i-policyholder">{t("Name on the policy")}</label>
-          <input
-            id="i-policyholder"
-            type="text"
-            placeholder={t("Optional")}
-            value={policyholder}
-            onChange={(ev) => onPolicyholder(ev.target.value)}
-          />
-        </div>
-        <div className="given wide">
-          <label htmlFor="i-policy">{t("Your health insurance plan")}</label>
-          <select
-            id="i-policy"
-            value={input.policyId}
-            onChange={(ev) => {
-              set({ policyId: ev.target.value });
-              setUp({ stage: "idle" });
-            }}
+    <div className="wizard">
+      <div className="wiz-progress">
+        {STEPS.map((label, i) => (
+          <button
+            key={label}
+            type="button"
+            className={`wiz-dot ${i === step ? "on" : i < step ? "done" : ""}`}
+            onClick={() => go(i)}
           >
-            {POLICIES.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.product} — {p.insurer}
-              </option>
-            ))}
-          </select>
-        </div>
+            <span className="wiz-n">{i < step ? "✓" : i + 1}</span>
+            <span className="wiz-l">{t(label)}</span>
+          </button>
+        ))}
       </div>
-
-      {/* The facts that decide whether a government scheme is open, and whether
-          a waiting period still stands between this condition and cover. They
-          are asked once, here, and answered on the tree — never as a tab of
-          their own, because a scheme is a way of paying, not a topic. */}
-      <div className="givens">
-        <div className="given narrow">
-          <label htmlFor="i-age">{t("Patient's age")}</label>
-          <input
-            id="i-age"
-            type="number"
-            min={0}
-            max={120}
-            value={input.age}
-            onChange={(ev) => set({ age: clamp(ev.target.value, 0, 120) })}
-          />
-        </div>
-        <div className="given">
-          <label htmlFor="i-pmjay">{t("Ayushman Bharat card at home?")}</label>
-          <select
-            id="i-pmjay"
-            value={input.hasPmjayCard ? "yes" : "no"}
-            onChange={(ev) => set({ hasPmjayCard: ev.target.value === "yes" })}
-          >
-            <option value="no">{t("No")}</option>
-            <option value="yes">{t("Yes")}</option>
-          </select>
-        </div>
-        <div className="given">
-          <label htmlFor="i-cghs">{t("Central govt. employee or pensioner?")}</label>
-          <select
-            id="i-cghs"
-            value={input.govtEmployeeOrPensioner ? "yes" : "no"}
-            onChange={(ev) => set({ govtEmployeeOrPensioner: ev.target.value === "yes" })}
-          >
-            <option value="no">{t("No")}</option>
-            <option value="yes">{t("Yes")}</option>
-          </select>
-        </div>
-        <div className="given">
-          <label htmlFor="i-esi">{t("Covered by ESI at work?")}</label>
-          <select
-            id="i-esi"
-            value={input.esiInsured ? "yes" : "no"}
-            onChange={(ev) => set({ esiInsured: ev.target.value === "yes" })}
-          >
-            <option value="no">{t("No")}</option>
-            <option value="yes">{t("Yes")}</option>
-          </select>
-        </div>
-        <div className="given">
-          <label htmlFor="i-ped">{t("Illness began before the policy?")}</label>
-          <select
-            id="i-ped"
-            value={input.preExisting ? "yes" : "no"}
-            onChange={(ev) => set({ preExisting: ev.target.value === "yes" })}
-          >
-            <option value="no">{t("No")}</option>
-            <option value="yes">{t("Yes")}</option>
-          </select>
-        </div>
+      <div className="wiz-bar">
+        <div style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
       </div>
+      <div className="wiz-count">{t("Step {a} of {b}", { a: step + 1, b: STEPS.length })}</div>
 
+      {step === 0 && (
+        <div className="wiz-card">
+          <h1 className="wiz-q">{t("Tell us about you")}</h1>
+          <p className="wiz-hint">{t("Only the age matters for the bill. Names are optional.")}</p>
+          <label className="wiz-field">
+            <span>{t("Your name")}</span>
+            <input type="text" placeholder={t("Optional")} value={name} onChange={(ev) => onName(ev.target.value)} />
+          </label>
+          <label className="wiz-field">
+            <span>{t("Name on the policy")}</span>
+            <input
+              type="text"
+              placeholder={t("Optional")}
+              value={policyholder}
+              onChange={(ev) => onPolicyholder(ev.target.value)}
+            />
+          </label>
+          <label className="wiz-field narrow">
+            <span>{t("Patient's age")}</span>
+            <input
+              type="number"
+              min={0}
+              max={120}
+              value={input.age}
+              onChange={(ev) => set({ age: clamp(ev.target.value, 0, 120) })}
+            />
+          </label>
+        </div>
+      )}
+
+      {step === 1 && (
+        <div className="wiz-card">
+          <h1 className="wiz-q">{t("Which health insurance plan do you have?")}</h1>
+          <label className="wiz-field">
+            <span>{t("Your health insurance plan")}</span>
+            <select
+              value={input.policyId}
+              onChange={(ev) => {
+                set({ policyId: ev.target.value });
+                setUp({ stage: "idle" });
+              }}
+            >
+              {POLICIES.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.product} — {p.insurer}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="wiz-or">{t("or")}</p>
       <section className="section">
         <div className="section-head">
           <h2>{t("Your policy schedule")}</h2>
@@ -225,7 +212,7 @@ export function Intake({
             {/* The picker above is the by-hand path, and it is a real one: these
                 are the terms of the policy chosen there, not an extraction
                 dressed up as one. */}
-            <HandEntered policy={policy} onConfirm={onContinue} />
+            <HandEntered policy={policy} onConfirm={() => go(2)} />
           </>
         )}
 
@@ -241,20 +228,98 @@ export function Intake({
               // line ago; the server's note of it, and the correction it
               // carries, must not hold anybody at the door.
               void confirmDocument(up.documentId, fields, keepExamples);
-              onContinue();
+              go(2);
             }}
           />
         )}
       </section>
+        </div>
+      )}
 
-      <p className="note" style={{ marginTop: 16 }}>
-        {t(
-          "Nothing we read from your document is used until you have checked it. If you fix something, ClaimCast learns to read that detail more carefully next time.",
+      {step === 2 && (
+        <div className="wiz-card">
+          <h1 className="wiz-q">{t("Can a government scheme help?")}</h1>
+          <p className="wiz-hint">{t("These decide whether a scheme could pay for the stay instead.")}</p>
+          <div className="wiz-yn">
+            <span>{t("Ayushman Bharat card at home?")}</span>
+            {yesNo(input.hasPmjayCard, (v) => set({ hasPmjayCard: v }))}
+          </div>
+          <div className="wiz-yn">
+            <span>{t("Central govt. employee or pensioner?")}</span>
+            {yesNo(input.govtEmployeeOrPensioner, (v) => set({ govtEmployeeOrPensioner: v }))}
+          </div>
+          <div className="wiz-yn">
+            <span>{t("Covered by ESI at work?")}</span>
+            {yesNo(input.esiInsured, (v) => set({ esiInsured: v }))}
+          </div>
+        </div>
+      )}
+
+      {step === 3 && (
+        <div className="wiz-card">
+          <h1 className="wiz-q">{t("Illness began before the policy?")}</h1>
+          <p className="wiz-hint">
+            {t("Policies wait a while before covering an illness you already had. We check that wait for you.")}
+          </p>
+          <div className="wiz-yn big">{yesNo(input.preExisting, (v) => set({ preExisting: v }))}</div>
+        </div>
+      )}
+
+      {step === 4 && (
+        <div className="wiz-card">
+          <h1 className="wiz-q">{t("Here is where you stand")}</h1>
+          <div className="wiz-result">
+            <span className="k">{t("As things stand, you pay")}</span>
+            <span className="v">{fmt(e.result.patientPays)}</span>
+            <span className="s">
+              {t("Insurer pays")} {fmt(e.result.insurerPays)} · {t("Bill")} {fmt(e.result.billTotal)}
+            </span>
+          </div>
+          <ul className="wiz-review">
+            {[
+              [t("Your name"), name || "—", 0],
+              [t("Patient's age"), String(input.age), 0],
+              [t("Your health insurance plan"), `${e.policy.product} — ${e.policy.insurer}`, 1],
+              [t("Ayushman Bharat card at home?"), input.hasPmjayCard ? t("Yes") : t("No"), 2],
+              [t("Central govt. employee or pensioner?"), input.govtEmployeeOrPensioner ? t("Yes") : t("No"), 2],
+              [t("Covered by ESI at work?"), input.esiInsured ? t("Yes") : t("No"), 2],
+              [t("Illness began before the policy?"), input.preExisting ? t("Yes") : t("No"), 3],
+            ].map(([k, v, s]) => (
+              <li key={String(k)}>
+                <span>{k}</span>
+                <b>{v}</b>
+                <button type="button" className="wiz-edit" onClick={() => go(Number(s))}>
+                  {t("Edit")}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="wiz-nav">
+        {step > 0 ? (
+          <button type="button" className="wiz-back" onClick={() => go(step - 1)}>
+            ← {t("Back")}
+          </button>
+        ) : (
+          <span />
         )}
-      </p>
-    </>
+        {step < STEPS.length - 1 ? (
+          <button type="button" className="wiz-next" onClick={() => go(step + 1)}>
+            {t("Next")} →
+          </button>
+        ) : (
+          <button type="button" className="wiz-next" onClick={onContinue}>
+            {t("See my bill")} →
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
+
+const STEPS = ["About you", "Your insurance", "Government schemes", "Your health", "Review"];
 
 interface HandRow {
   label: string;
