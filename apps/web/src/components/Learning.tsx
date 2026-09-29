@@ -113,7 +113,7 @@ export function Learning() {
           <Signal
             n={state.choices}
             k={t("Choices made")}
-            why={t("Which hospital, room or option families picked on their path. It helps decide which options to show first.")}
+            why={t("Which hospital, room or option families picked on their path. Counted so the team can see what families choose; never linked to a person.")}
           />
         </div>
       </section>

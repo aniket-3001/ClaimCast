@@ -935,7 +935,8 @@ app.post("/api/outcomes", async (req, reply) => {
  * One branch taken in the journey.
  *
  * The weakest of the three signals, and labelled that way wherever it is used:
- * it orders what the tree offers first and makes no number more accurate. Not
+ * it is counted for the team to see which branches families take, and makes no
+ * number more accurate. Nothing reorders the tree on it yet. Not
  * scoped to a session and carrying no owner column, because a record of which
  * illnesses and room classes a particular person was contemplating is not a
  * thing worth keeping in order to sort a menu.

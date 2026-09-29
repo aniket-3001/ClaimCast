@@ -76,61 +76,148 @@ SLIDES = [
     ("Slide 3 — What ClaimCast does", {
         "says": "ClaimCast runs the same calculation the insurer runs after discharge, but before admission, in "
                 "three steps, and shows what each choice would cost the family.",
-        "explain": ["<b>Tell us</b> — the family picks their plan, treatment and hospital; they can upload their "
-                    "policy PDF, which ClaimCast reads and they check.",
-                    "<b>See every choice</b> — hospital, room, implant, cashless or refund, each with the rupee "
-                    "amount the family would pay.",
-                    "<b>Understand the bill</b> — every rupee the insurance will not pay, line by line, with the "
-                    "policy rule that causes it.",
+        "explain": ["<b>Tell us</b> — who the patient is and the family, the insurance plan (the policy PDF can be "
+                    "uploaded: ClaimCast reads it and the family checks every detail), any government scheme, and "
+                    "optionally a health report or prescription.",
+                    "<b>See every choice</b> — hospital, room, implant, cashless or refund, and where to have each "
+                    "scan, each with the rupee amount the family would pay.",
+                    "<b>Understand the bill</b> — every rupee the insurance will not pay, line by line, with the rule "
+                    "behind it; questions can be typed or spoken, in English or Hindi.",
                     "The example: the same spine surgery costs the family ₹1,26,900 in a private room but ₹48,500 "
                     "in a semi-private one — ₹78,400 kept just by choosing the bed with the room limit in mind."],
-        "numbers": ["The example is the prototype's reference case: 5 nights, ₹5 lakh policy, room limit "
-                    "₹5,000 a day. The figures come from the ClaimCast calculator and are checked by an automated "
-                    "test on every code change. The hospital, insurer and patient are made up."],
+        "numbers": ["The example is the prototype's reference case: Meridian Institute (New Delhi), 5 nights, "
+                    "Health Shield Classic with ₹5 lakh cover and a ₹5,000-a-day room limit. The figures come from "
+                    "the ClaimCast engine and are checked by an automated test. Hospital, insurer and patient are "
+                    "made up."],
         "abbr": ["<b>PDF</b> — Portable Document Format, the usual file type for a policy document.",
                  "<b>Cashless</b> — the insurer pays the hospital directly. <b>Refund / reimbursement</b> — the "
                  "family pays first and is paid back later."],
     }),
-    ("Slide 4 — Two sides of ClaimCast", {
-        "says": "The left side is what a family uses; the right side is what the ClaimCast team sees — the "
-                "system's memory and how it learns. Everything listed is built and working in the prototype.",
-        "explain": ["<b>For families:</b> Start (a few simple questions), The path (every choice and its cost), "
-                    "The working (the bill line by line), Ask ClaimCast (a chat assistant), and Save my session.",
-                    "<b>1 · Every saved session is kept</b> — who, which hospital, what they pay and what they asked. "
-                    "The team sees each one on the Database tab.",
-                    "<b>2 · The chat assistant remembers</b> — when someone asks something, it recalls the three most "
-                    "similar questions from saved sessions and how they were answered. The AI model itself is not "
-                    "retrained; it learns by remembering. Amounts always come from the new family's own bill.",
-                    "<b>3 · The bill estimator retrains itself</b> — families can report what their bill finally came "
-                    "to (“Already had this admission?” at the bottom of The path). After every 10 new bills, the "
-                    "estimator is rebuilt on all the data and the new version is used straight away. This was tested "
-                    "end to end: 10 bills in, new version out, forecast moved.",
-                    "<b>4 · Misread policy details are counted</b> — when a family uploads a policy and fixes a detail "
-                    "ClaimCast read wrongly, that is counted. A detail checked at least 3 times and corrected in at "
-                    "least a quarter of them is flagged: the next family is warned to double-check it, and past "
-                    "corrections are shown to the AI as examples when it reads the next policy."],
-        "numbers": ["Retrain threshold: 10 bills (a setting, RETRAIN_EVERY). Misread flag: at least 3 checks and "
-                    "at least 25% corrected."],
-        "abbr": ["<b>AI</b> — artificial intelligence.",
-                 "<b>Estimator</b> — the machine learning model that predicts what the whole bill is likely to be."],
+    ("Slide 4 — How it works: the family's path and the team's", {
+        "says": "The pipeline of the working prototype: the seven screens a family goes through, the shared core, "
+                "and the four screens the ClaimCast team uses.",
+        "explain": ["<b>Family side.</b> 1 Log in as Patient / Caregiver (language and theme buttons are on every "
+                    "page). 2 Start: a five-step wizard — About you (with family members), Your insurance, "
+                    "Government schemes, Your health, Review. 3 “Estimate my bill” opens the path; with a health "
+                    "report, its plan is shown first. 4 The path: every choice priced, a ‘None’ option for the "
+                    "treatment and for the policy, the likely bill range from the ML model, and a form to share the "
+                    "final bill. 5 The working: the bill line by line and cheaper options. 6 Ask ClaimCast. "
+                    "7 Save my session (each person gets a unique ID; the Profile keeps stays and family).",
+                    "<b>Shared core.</b> One rule-based money engine (the same code runs in the browser and on the "
+                    "server), a PostgreSQL database, the XGBoost bill estimator, and the AI readers.",
+                    "<b>Team side.</b> Log in as ClaimCast team (no password in the demo), Saved sessions (search "
+                    "by name, hospital, diagnosis or ID), What ClaimCast knows (all reference data with sources), "
+                    "What it has learned (the learning counters and the estimator's retraining)."],
+        "abbr": ["<b>ML</b> — machine learning.",
+                 "<b>PostgreSQL</b> — the open-source database that stores sessions, people and reference data."],
     }),
-    ("Slide 5 — User study", {
+    ("Slide 5 — Built around the whole family", {
+        "says": "Two features for families: one profile for the whole family where every person has a unique ID, "
+                "and turning a health report into a costed plan.",
+        "explain": ["<b>Family branch.</b> Start to About you asks for your name and age, the patient's name and age "
+                    "(with a “The patient is me” shortcut), the name on the policy, and any number of family "
+                    "members (husband, wife, son, daughter, father, mother, other) with the + Add button.",
+                    "<b>Unique IDs.</b> When the session is saved, the server gives every person a UUID and keeps "
+                    "it on later saves. Two sons both called Ravi get two IDs. An ID copied from another session, or "
+                    "sent twice, is replaced. The IDs appear in Profile to My family and in the team's Database, "
+                    "which can be searched by ID. The four IDs on the slide are real ones from a test save.",
+                    "<b>Health report to plan.</b> On Start to Your health, upload a PDF or photo, or type the report. "
+                    "It is read once and not stored. The diagnosis, tests, surgery and medicines are each quoted from "
+                    "the report and the quote is checked. Scans are matched to CGHS test codes and the surgery to its "
+                    "PM-JAY package; the family confirms or fixes. The path then opens with a recommendation, each "
+                    "scan at every hospital, the surgery at every hospital, and who pays.",
+                    "<b>Example.</b> A 68-year-old with a broken ankle on Health Shield Classic: X-ray, MRI, blood "
+                    "tests and ECG, then ankle fixation. Cheapest overall: Navjeevan District Hospital, Rewa, about "
+                    "₹9,300 for the family; the same at Meridian, Delhi: ₹53,600."],
+        "numbers": ["Scan prices are ClaimCast estimates: about twice the CGHS rate, adjusted for each hospital's "
+                    "cost level and never below the CGHS rate; the site shows them as “about”.",
+                    "Who pays a scan: ESI at hospitals with an ESIC tie-up; CGHS at empanelled centres; PM-JAY only "
+                    "inside the surgery package at the same hospital; the policy as pre-hospitalisation cost within "
+                    "its window (30 days for Health Shield Classic)."],
+        "abbr": ["<b>UUID</b> — universally unique identifier, a 36-character ID that is never repeated.",
+                 "<b>ORIF</b> — open reduction and internal fixation: surgery that fixes a broken bone with plates "
+                 "and screws.",
+                 "<b>MRI / ECG / CBC</b> — magnetic resonance imaging scan / electrocardiogram (heart trace) / "
+                 "complete blood count."],
+    }),
+    ("Slide 6 — The AI inside", {
+        "says": "Where language models are used, which ones, what they are given, and how code checks what they "
+                "return. The rule: AI reads and explains; it never works out a rupee.",
+        "explain": ["<b>Reading the policy PDF</b> — Gemini 2.5 Pro on Google's Vertex AI in the cloud version (Groq "
+                    "and Llama 3.3 70B as fallbacks). It gets the PDF, the passages a TF-IDF search finds for each "
+                    "detail, and past corrections if families agreed to share them. It returns 16 details, each with "
+                    "the sentence and page it came from; code looks for every quote in the PDF's own text, and the "
+                    "family confirms each detail.",
+                    "<b>Ask ClaimCast</b> — Llama 3.3 70B via OpenRouter. It gets the engine's numbered facts, "
+                    "health-report facts, passages from the uploaded policy and the three most similar past answers. "
+                    "Every rupee figure in its answer must match an engine fact or a checked quote; anything else is "
+                    "flagged on screen.",
+                    "<b>Reading a health report</b> — the same Llama model; a photo or scanned PDF is first "
+                    "transcribed by Gemini 2.5 Flash. Quotes are checked, tests are matched to CGHS codes by fixed "
+                    "rules, and keyword rules take over if no model is available.",
+                    "<b>Not AI, on purpose</b> — the money engine, the XGBoost bill-range model, and the browser's "
+                    "own speech features for voice in and read-aloud."],
+        "abbr": ["<b>LLM</b> — large language model.",
+                 "<b>TF-IDF</b> — term frequency–inverse document frequency, a simple word-matching search.",
+                 "<b>Vertex AI / OpenRouter / Groq</b> — cloud services that run AI models.",
+                 "<b>Gemini</b> — Google's AI models. <b>Llama</b> — Meta's open AI models."],
+    }),
+    ("Slide 7 — Self-learning, checked on the running system", {
+        "says": "What learns, how, and the proof: a live test on the running prototype, plus automated tests "
+                "against a real database.",
+        "explain": ["<b>1 · Final bills teach the bill estimator.</b> On 29 Sep 2026 we reported ten ankle-surgery bills "
+                    "about 60% above the estimate. The middle estimate went from ₹83,881 to ₹92,336 after five bills "
+                    "(each new bill corrects it straight away), and when ten new bills were in, the XGBoost model "
+                    "retrained itself into a new version (2026-09-29.1 to 2026-09-29.2) with no one pressing a "
+                    "button. The test bills were deleted afterwards.",
+                    "<b>2 · Policy fixes teach the PDF reader.</b> A detail checked at least 3 times and corrected in at "
+                    "least a quarter of them gets a warning for the next family. Corrections the family agreed to "
+                    "share are shown to the AI as worked examples when it reads the next policy.",
+                    "<b>3 · Saved chats become the chat's memory.</b> The three most similar remembered answers guide how a "
+                    "new question is explained. Answers that contained a wrong figure are never remembered, and "
+                    "figures always come from the new family's bill.",
+                    "<b>4 · Choices on the path are only counted.</b> Which options families pick is counted for the team; it changes no "
+                    "figure. Be clear about this if asked.",
+                    "<b>What does not learn:</b> the AI models' weights and the money rules, by design."],
+        "numbers": ["One older bill already in the database made the tenth; the service dropped one unusable row "
+                    "and trained on nine. Retrain threshold: 10 bills (RETRAIN_EVERY)."],
+    }),
+    ("Slide 8 — User study", {
         "says": "Three questions we asked of the design — is it easy, is it open to everyone, does it change a "
                 "decision — what we have done for each, and the study with real families we plan next.",
         "explain": ["<b>Be clear with the judges:</b> the three columns are our own design review and the changes we "
                     "made. No study with real families has been run yet; the blue box is the plan.",
-                    "Usability: the answer comes first (“you pay ₹…”), insurance words replaced with plain ones, "
-                    "every choice shows its rupee effect.",
-                    "Accessibility: high contrast, large figures, English and Hindi on every page, light and dark "
-                    "themes, works without uploading anything.",
-                    "Purpose: every choice shows what it saves; the assistant only talks about money and sends "
-                    "medical questions to the doctor.",
+                    "Usability: Start is five short steps with a Review; the answer comes first; insurance words "
+                    "replaced (“When did this illness begin?”).",
+                    "Accessibility: English and Hindi on every page, voice questions in either language, answers read "
+                    "aloud, high contrast, large figures, light and dark themes.",
+                    "Purpose: every choice shows what it saves; a health report becomes the cheapest place for each "
+                    "scan and the surgery.",
                     "The plan: 20 caregivers at a hospital admission desk, three tasks, and a usability score "
                     "target of 70 or more out of 100."],
         "abbr": ["<b>SUS</b> — System Usability Scale, a standard 10-question survey scored 0–100; about 68 is "
                  "average, 70+ is considered good."],
     }),
-    ("Slide 6 — Who it helps: every income group", {
+    ("Slide 9 — User personas", {
+        "says": "Five design personas and the feature built for each. They are not study participants.",
+        "explain": ["<b>A · The chatbox — Rohit, 34.</b> Asks what the screen does not show (“two days in ICU?”). "
+                    "Ask ClaimCast answers from the engine's figures, keeps the conversation, and says when it does "
+                    "not know.",
+                    "<b>B · Hindi and voice — Kamla, 45, cannot read.</b> One tap on the Hindi button, speaks her question into "
+                    "the chat's mic in Hindi, hears the answer read aloud; the Ayushman card is asked about in Start.",
+                    "<b>C · Transparency — Mr Sharma, 58, suspicious.</b> Every cut on The working names its rule; "
+                    "quotes from his own policy PDF are checked with page numbers; any AI figure not from the engine "
+                    "is flagged.",
+                    "<b>D · Audio answers — Arjun, 29, blind.</b> “Read answers aloud”, a Listen button on each "
+                    "answer, spoken questions, and screen-reader updates; ₹ is read as “rupees”.",
+                    "<b>E · Family analysis — Meena, 42, family floater.</b> Every member with an ID; the patient "
+                    "separate from the policyholder; “Sum insured used” on the path accounts for what other members "
+                    "already claimed this year; age 70+ unlocks Vay Vandana.",
+                    "The WHERE line on each card is where to show it in a live demo."],
+        "abbr": ["<b>Family floater</b> — one policy whose sum insured is shared by the whole family.",
+                 "<b>Screen reader</b> — software that reads the screen aloud for blind users."],
+    }),
+    ("Slide 10 — Who it helps: every income group", {
         "says": "Hospital costs hit every income group, and ClaimCast helps each one in a different way.",
         "explain": ["<b>The chart:</b> India's households are split into five equal groups by how much they spend, "
                     "from the poorest 20% to the richest 20%. Each pair of bars is the average amount one stay in a "
@@ -162,88 +249,75 @@ SLIDES = [
                  "<b>ESI</b> — Employees' State Insurance, health cover for lower-paid workers.",
                  "<b>CGHS</b> — Central Government Health Scheme."],
     }),
-    ("Slide 7 — What is new about ClaimCast", {
-        "says": "The four things that make ClaimCast different from what exists today.",
-        "explain": ["<b>Before, not after</b> — the same calculation insurers do after discharge, done before "
-                    "admission.",
-                    "<b>Prices the decision</b> — other tools explain the policy wording; ClaimCast puts a rupee "
-                    "figure on each choice.",
-                    "<b>Shows its working</b> — every rupee not paid points to the rule behind it, and the chat "
-                    "assistant is checked so it cannot invent an amount.",
-                    "<b>Learns from every family</b> — saved sessions, shared bills and fixed policy details all "
-                    "make the next answer better.",
-                    "The dark bar is the one-line summary: today you find out after discharge; with ClaimCast you "
-                    "know before admission and can choose."],
-    }),
-    ("Slide 8 — What each answer costs", {
-        "says": "The inference cost — what it costs to answer one family — measured on the working prototype, and "
-                "what that becomes as the number of families grows. Hosting and storage are left out on purpose.",
-        "explain": ["<b>₹0 for data</b> — every price list and rule is public government data.",
-                    "<b>~5 paise per chat question</b> — the chat assistant runs on Llama 3.3 70B through OpenRouter; "
-                    "we measured our own spending.",
-                    "<b>≈ ₹0 per bill estimate</b> — the estimator answers in about one millisecond on an ordinary "
-                    "processor.",
-                    "<b>~5 seconds to retrain</b> — rebuilding the estimator takes about five seconds on a laptop; no "
-                    "graphics card needed.",
-                    "<b>The table:</b> if each family asks 5 questions and looks at 20 bill estimates, the cost is "
-                    "about 22 paise per family whether we serve 1,000 or 10 lakh families a month — it grows in a "
-                    "straight line with use and has no big fixed cost. At 10 lakh families a month that is about "
-                    "₹2.2 lakh.",
-                    "Compare that with the ₹78,400 one family keeps in our example."],
-        "numbers": ["Chat: our OpenRouter account's spending rose about US$0.005 over about 11 test questions, "
-                    "about US$0.0005 (≈ 4.4 paise) each.",
-                    "Bill estimate: the estimator service answered in 0.9–2.7 milliseconds in five timed calls; "
-                    "priced generously at 2 ms of Google Cloud Run processor time (US$0.000024 per vCPU-second).",
-                    "US$1 is taken as ₹88. Retrain time: 4.6 seconds measured on a MacBook."],
-        "abbr": ["<b>Inference</b> — using a trained model to answer a question (as opposed to training it).",
-                 "<b>Llama 3.3 70B</b> — an open AI language model from Meta with 70 billion parameters.",
-                 "<b>OpenRouter</b> — a service that gives access to many AI models, billed per word processed.",
-                 "<b>CPU / vCPU</b> — (virtual) central processing unit, the ordinary processor in a computer.",
-                 "<b>GPU</b> — graphics processing unit, specialised hardware often needed by large AI models.",
-                 "<b>ms</b> — millisecond, a thousandth of a second. <b>US$</b> — US dollar."],
-    }),
-    ("Slide 9 — How ClaimCast compares", {
-        "says": "Where families get help today, and why none of them does what ClaimCast does.",
-        "explain": ["<b>Hospital insurance desk</b> — helps at admission, but after the choice is made, gives a "
-                    "spoken estimate, and works for the hospital.",
-                    "<b>Policy websites (Policybazaar, Ditto)</b> — help people choose and buy a policy; they are "
-                    "not there at the hospital counter.",
-                    "<b>Insurer's own app</b> — shows claim status after the claim is filed; it works for the insurer.",
-                    "<b>General AI chatbots</b> — can explain wording any time but may guess numbers and do not "
-                    "know your case.",
-                    "<b>ClaimCast</b> — speaks before admission, at each choice, gives exact rupees plus the rule, "
-                    "and works for the family.",
-                    "Keep it fair: these descriptions say what each kind of service is for, not criticism of how "
-                    "it works inside."],
+    ("Slide 11 — What is new, and how it compares", {
+        "says": "Where families get help today, why none of them does what ClaimCast does, and the five things "
+                "that are new.",
+        "explain": ["<b>Hospital insurance desk</b> — helps at admission but after the choice is made, and works for "
+                    "the hospital. <b>Policy websites</b> (e.g. Policybazaar, Ditto) — help people buy a policy. "
+                    "<b>Insurer's app</b> — claim status after filing. <b>General AI chatbots</b> — explain wording "
+                    "but may guess numbers.",
+                    "<b>New:</b> before, not after; every decision priced, including each scan on a health report; "
+                    "every rupee shows its rule and the AI never makes up a number; built for the whole family in "
+                    "their language; learns from use.",
+                    "Keep it fair: the table says what each kind of service is for, not criticism of how it works."],
         "abbr": ["<b>TPA</b> — Third Party Administrator, the company that handles claims for insurers at the "
                  "hospital's insurance desk."],
     }),
-    ("Slide 10 — What comes next", {
-        "says": "A 3 / 6 / 12-month plan, with a goal and a target for each stage, and what is already built.",
-        "explain": ["<b>3 months — prove it helps families:</b> the study with 20 families, more Indian languages "
-                    "after Hindi, voice and WhatsApp, the first 50 real bills, proper logins for the team. Target: "
-                    "usability score 70+.",
-                    "<b>6 months — real prices, real bills:</b> partner hospitals share price lists and bills, read "
-                    "the policy formats of the 20 largest insurers, connect to cashless approval, price every "
-                    "government treatment package. Target: estimate within 15% of the real bill.",
-                    "<b>12 months — ready for real patients:</b> a hospital pilot, a mobile app, privacy under the "
-                    "DPDP Act, and linking to national digital health records with consent. Target: 1 lakh "
-                    "families a month.",
+    ("Slide 12 — What each answer costs", {
+        "says": "The inference cost of answering a family, measured on the working prototype, and what it becomes "
+                "at scale. Hosting and storage are left out on purpose.",
+        "explain": ["<b>₹0 for data</b> — every price list and rule is public government data.",
+                    "<b>~4 paise per chat question</b> — Llama 3.3 70B through OpenRouter.",
+                    "<b>4–8 paise per health report</b> — about 4 paise for a PDF or typed report, 8 for a photo, "
+                    "which Gemini 2.5 Flash transcribes first.",
+                    "<b>≈ ₹0 per bill estimate</b> — about a millisecond on an ordinary processor.",
+                    "<b>The table:</b> 5 questions, 1 photo report and 20 estimates per family comes to about 30 "
+                    "paise a family, whether 1,000 or 10 lakh families a month."],
+        "numbers": ["Chat: about US$0.0005 per question (OpenRouter spending over test questions).",
+                    "Health report: US$0.00041 per PDF read and US$0.00086 per photo read, from the OpenRouter usage "
+                    "counter over three reads of each, 29 Sep 2026.",
+                    "Bill estimate: 0.9–2.7 ms per answer, priced at 2 ms of Google Cloud Run CPU (US$0.000024 per "
+                    "vCPU-second). US$1 is taken as ₹88."],
+        "abbr": ["<b>Inference</b> — using a trained model to answer (as opposed to training it).",
+                 "<b>CPU / vCPU</b> — (virtual) central processing unit. <b>ms</b> — millisecond."],
+    }),
+    ("Slide 13 — What comes next", {
+        "says": "A 3 / 6 / 12-month plan, each with a goal and a target, and what already works.",
+        "explain": ["<b>3 months — prove it helps families:</b> the study with 20 families, including blind users "
+                    "with a screen reader; Tamil, Bengali and Marathi with voice; WhatsApp voice notes and report "
+                    "photos; team logins with roles.",
+                    "<b>6 months — real prices, real bills:</b> partner hospitals' price lists and bills so scan and "
+                    "bill estimates use real prices; all 1,949 PM-JAY packages on the path (15 procedures today); "
+                    "family floater tracking from saved stays; policy formats of the 20 largest insurers.",
+                    "<b>12 months — ready for real patients:</b> a hospital pilot, health records through ABDM with "
+                    "consent, DPDP Act consent and deletion, cashless pre-approval sent to the insurer.",
                     "The bottom bar lists what already works today."],
-        "numbers": ["Targets and dates are goals, not commitments."],
+        "numbers": ["Targets and dates are goals, not commitments. The estimator is trained on 17,715 tariff rows "
+                    "built from the 1,949 PM-JAY packages and CGHS rates."],
         "abbr": ["<b>DPDP Act</b> — Digital Personal Data Protection Act, 2023, India's data privacy law.",
                  "<b>ABDM</b> — Ayushman Bharat Digital Mission, the national programme for digital health records."],
     }),
-    ("Slide 11 — Thank you", {
+    ("Slide 14 — Thank you", {
         "says": "The closing line — “The decision, before the bill” — and an invitation for questions.",
         "explain": ["Leave the audience with the one idea: families should know the money before they choose, not "
                     "after.",
-                    "The small print is important if asked: these are estimates, not guarantees; ClaimCast gives no "
-                    "medical advice; the demo uses made-up patients and hospitals."],
+                    "The small print matters if asked: these are estimates, not guarantees; ClaimCast gives no "
+                    "medical advice and does not interpret reports medically; the demo uses made-up patients and "
+                    "hospitals."],
     }),
 ]
 
 GLOSSARY = [
+    ("CBC / ECG / MRI", "Complete blood count / electrocardiogram (heart trace) / magnetic resonance imaging scan."),
+    ("Family floater", "One policy whose sum insured is shared by the whole family."),
+    ("Gemini", "Google's AI models; Gemini 2.5 Pro reads policy PDFs, Gemini 2.5 Flash transcribes report photos."),
+    ("Groq", "A cloud service that runs AI models; a fallback reader for policy PDFs."),
+    ("ORIF", "Open reduction and internal fixation — surgery that fixes a broken bone with plates and screws."),
+    ("PostgreSQL", "The open-source database behind ClaimCast."),
+    ("TF-IDF", "Term frequency–inverse document frequency — a simple word-matching search used to find passages."),
+    ("UUID", "Universally unique identifier — a 36-character ID given to every person in a saved session."),
+    ("Vertex AI", "Google Cloud's service for running AI models."),
+    ("Web Speech API", "The browser's built-in speech recognition and read-aloud, used for voice in and out."),
     ("₹, paise, lakh", "Indian rupee; 100 paise = ₹1; 1 lakh = 1,00,000 (one hundred thousand); written ₹1 L."),
     ("ABDM", "Ayushman Bharat Digital Mission — India's national programme for digital health records."),
     ("AI", "Artificial intelligence."),
@@ -311,7 +385,7 @@ def build():
             block += [Paragraph("Short forms on this slide", H3), *bullets(d["abbr"])]
         story += [KeepTogether(block[:3]), *block[3:], Spacer(1, 12)]
     story += [PageBreak(), Paragraph("Glossary of abbreviations and terms", H2)]
-    rows = [[Paragraph("<b>%s</b>" % k, BODY), Paragraph(v, BODY)] for k, v in GLOSSARY]
+    rows = [[Paragraph("<b>%s</b>" % k, BODY), Paragraph(v, BODY)] for k, v in sorted(GLOSSARY, key=lambda g: (not g[0].startswith("₹"), g[0].lower()))]
     tbl = Table(rows, colWidths=[42 * mm, A4[0] - 40 * mm - 42 * mm])
     tbl.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"),
                              ("ROWBACKGROUNDS", (0, 0), (-1, -1), [HexColor("#FFFFFF"), PALE]),

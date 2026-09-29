@@ -25,9 +25,9 @@
  *   2. **Outcomes.** A bill settled, and we can see where in our own band it
  *      landed. The strongest evidence available and the scarcest, because it
  *      has to be volunteered weeks after the fact.
- *   3. **Choices.** Which branches people take. Cheap, plentiful, and only good
- *      for ordering what is offered — it makes no number more accurate, and it
- *      is described that way wherever it is described at all.
+ *   3. **Choices.** Which branches people take. Cheap, plentiful, and counted
+ *      for the team to see -- nothing reorders on it yet, it makes no number
+ *      more accurate, and it is described that way wherever it is described.
  *
  * On privacy. Counters here carry a field name, a model name and a verdict.
  * They say nothing about any person and are always written. The verbatim terms

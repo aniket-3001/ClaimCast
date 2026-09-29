@@ -803,8 +803,8 @@ const HI: Record<string, string> = {
   "Families told us what their hospital bill finally came to. This is how ClaimCast finds out whether its estimates were right.":
     "परिवारों ने बताया कि अस्पताल का बिल आखिर कितना आया। इसी से ClaimCast जानता है कि उसके अनुमान सही थे या नहीं।",
   "Choices made": "किए गए चुनाव",
-  "Which hospital, room or option families picked on their path. It helps decide which options to show first.":
-    "परिवारों ने अपने रास्ते पर कौन सा अस्पताल, कमरा या विकल्प चुना। इससे तय होता है कि पहले कौन से विकल्प दिखाएँ।",
+  "Which hospital, room or option families picked on their path. Counted so the team can see what families choose; never linked to a person.":
+    "परिवारों ने अपने रास्ते पर कौन सा अस्पताल, कमरा या विकल्प चुना। इसे गिना जाता है ताकि टीम देख सके कि परिवार क्या चुनते हैं; यह कभी किसी व्यक्ति से नहीं जोड़ा जाता।",
   "The chat assistant’s memory": "चैट सहायक की याददाश्त",
   "Grows with every saved session": "हर सहेजे गए सत्र के साथ बढ़ती है",
   "When a family saves their session, their questions and the answers they got are remembered. When someone asks something similar later, the assistant looks back at how it was explained before — so it keeps getting better at what families actually ask. The rupee amounts always come from the new family’s own bill, never from someone else’s.":
