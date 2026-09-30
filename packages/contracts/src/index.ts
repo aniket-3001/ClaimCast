@@ -77,6 +77,8 @@ export const CaseInputSchema = z.object({
   govtEmployeeOrPensioner: z.boolean(),
   esiInsured: z.boolean(),
   preExisting: z.boolean(),
+  /** The age-group government scheme is applied by default; false switches it off. */
+  ageScheme: z.boolean().optional(),
 });
 
 export type CaseInputWire = z.infer<typeof CaseInputSchema>;
@@ -803,6 +805,8 @@ export const SessionSummarySchema = z.object({
   repudiated: z.string().nullable(),
   /** "None" was chosen for the treatment: nothing was priced, so every figure is zero. */
   noTreatment: z.boolean().default(false),
+  /** The age-group government scheme that is the payer (Vay Vandana 70+, RBSK under 18), when applied. */
+  ageScheme: z.string().nullable().default(null),
 });
 
 export const SavedSessionRowSchema = z.object({

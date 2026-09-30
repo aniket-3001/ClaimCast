@@ -40,6 +40,12 @@ export interface CaseInput {
    * a clinical history question, and this app does not answer those.
    */
   preExisting: boolean;
+  /**
+   * Whether the government scheme for the patient's age group is applied by
+   * default -- Vay Vandana at 70 and above, RBSK under 18. Absent means yes;
+   * false is the family choosing to see the claim on their own policy instead.
+   */
+  ageScheme?: boolean;
 }
 
 export interface Evaluated {
@@ -619,7 +625,28 @@ const LABEL: Record<string, string> = {
 
 /* ── Government schemes, as alternatives to the policy — never on top of it ── */
 
-export type SchemeId = "private" | "pmjay" | "vayvandana" | "cghs" | "esi";
+export type SchemeId = "private" | "pmjay" | "vayvandana" | "rbsk" | "cghs" | "esi";
+
+/**
+ * The two age groups a government scheme covers on age alone. Only two, on
+ * purpose: children under 18 (RBSK) and people aged 70 and above (Ayushman
+ * Vay Vandana). Every other scheme here turns on a card, a job or a wage.
+ */
+export const CHILD_UNDER = 18;
+export const SENIOR_FROM = 70;
+
+/**
+ * The treatments here that RBSK pays for. RBSK treats a published list of
+ * childhood conditions -- defects at birth, deficiencies, diseases and
+ * developmental delays -- free at government and empanelled hospitals on a
+ * District Early Intervention Centre referral. Of the procedures ClaimCast
+ * prices, only cataract surgery falls on that list (congenital cataract); an
+ * appendix or a fracture is not a listed condition, and saying so is the
+ * point of the check.
+ */
+export const RBSK_COVERED: Record<string, string> = {
+  "p-cataract": "congenital cataract",
+};
 
 export interface Scheme {
   id: SchemeId;
@@ -653,6 +680,8 @@ export function schemeOptions(e: Evaluated): Scheme[] {
   const { hospital: h, procedure: p, input } = e;
 
   const pmjayReach = h.pmjayEmpanelled && p.pmjayRate !== null;
+  const rbskCondition = RBSK_COVERED[p.id] ?? null;
+  const rbskReach = h.pmjayEmpanelled && rbskCondition !== null;
   const cghsReach = h.cghsRateBand !== null && p.cghsRate !== null;
   const esiReach = h.esicTieUp && p.cghsRate !== null;
 
@@ -693,9 +722,24 @@ export function schemeOptions(e: Evaluated): Scheme[] {
         : `Not available: ${!h.pmjayEmpanelled ? "hospital is not PM-JAY empanelled" : "no package rate for this procedure"}.`,
       patientPays: pmjayReach ? 0 : null,
       packageRate: pmjayReach ? p.pmjayRate : null,
-      eligible: pmjayReach && input.age >= 70,
-      reason: !pmjayReach ? "not offered here" : input.age < 70 ? `patient is ${input.age}, scheme starts at 70` : null,
+      eligible: pmjayReach && input.age >= SENIOR_FROM,
+      reason: !pmjayReach ? "not offered here" : input.age < SENIOR_FROM ? `patient is ${input.age}, scheme starts at 70` : null,
       clause: "VAY_VANDANA",
+      current: false,
+    },
+    {
+      id: "rbsk",
+      label: "RBSK (Rashtriya Bal Swasthya Karyakram, under 18)",
+      detail: rbskReach
+        ? `Free for a child, as treatment of ${rbskCondition}, at government and empanelled hospitals on a DEIC referral.`
+        : `Not available: ${
+            rbskCondition === null ? "RBSK treats listed childhood conditions only, and this is not one" : "hospital is not a government or empanelled centre"
+          }.`,
+      patientPays: rbskReach ? 0 : null,
+      packageRate: rbskReach ? p.pmjayRate : null,
+      eligible: rbskReach && input.age < CHILD_UNDER,
+      reason: !rbskReach ? "not offered here" : input.age >= CHILD_UNDER ? `patient is ${input.age}, scheme is for under 18` : null,
+      clause: "RBSK",
       current: false,
     },
     {
@@ -731,6 +775,35 @@ export function schemeOptions(e: Evaluated): Scheme[] {
   ];
 
   return schemes;
+}
+
+/**
+ * The government scheme the patient's age puts them in, if any: RBSK under 18,
+ * Ayushman Vay Vandana at 70 and above. `applies` is whether it reaches this
+ * hospital and treatment; `applied` is whether it is the payer the headline
+ * figure uses -- by default it is, unless the family switched it off.
+ */
+export interface AgeScheme {
+  scheme: Scheme;
+  group: "child" | "senior";
+  applies: boolean;
+  applied: boolean;
+}
+
+export function ageScheme(e: Evaluated): AgeScheme | null {
+  const age = e.input.age;
+  const group = age < CHILD_UNDER ? "child" : age >= SENIOR_FROM ? "senior" : null;
+  if (!group) return null;
+  const scheme = schemeOptions(e).find((s) => s.id === (group === "child" ? "rbsk" : "vayvandana"))!;
+  const applies = scheme.eligible && scheme.patientPays !== null;
+  return { scheme, group, applies, applied: applies && e.input.ageScheme !== false };
+}
+
+/** What the family pays as things stand: the age scheme's figure when it is applied, the policy's otherwise. */
+export function familyPays(e: Evaluated): { amount: Paise; via: Scheme | null } {
+  const a = ageScheme(e);
+  if (a?.applied && a.scheme.patientPays! < e.result.patientPays) return { amount: a.scheme.patientPays!, via: a.scheme };
+  return { amount: e.result.patientPays, via: null };
 }
 
 /** The single most compelling reason to look past the private policy at all. */

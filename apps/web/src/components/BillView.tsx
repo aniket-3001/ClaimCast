@@ -1,3 +1,4 @@
+import { AgeSchemeNote } from "./Journey";
 import { fmt, isNoPolicy, pct, type LineKind, type Evaluated, registry } from "@claimcast/engine";
 import { lang, t, tx } from "../i18n";
 
@@ -44,6 +45,8 @@ export function BillView({ e }: { e: Evaluated }) {
               insurer: e.policy.insurer,
             })}
       </p>
+      {/* The working below is the policy's claim. When the age-group scheme is the payer, say so first. */}
+      <AgeSchemeNote e={e} />
 
       <div className="facts">
         <div className="fact">

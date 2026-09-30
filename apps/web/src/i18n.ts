@@ -112,6 +112,7 @@ const PATTERNS: [RegExp, (m: RegExpMatchArray) => string][] = [
     `ESIC टाई-अप, CGHS पैकेज दर ${m[1]} पर, ESIC रेफ़रल पर कैशलेस।`],
   [/^Not available: (.+)\.$/, (m) => `उपलब्ध नहीं: ${reason(m[1])}।`],
   [/^patient is (\d+), scheme starts at 70$/, (m) => `मरीज़ की उम्र ${m[1]} है, योजना 70 से शुरू होती है`],
+  [/^patient is (\d+), scheme is for under 18$/, (m) => `मरीज़ की उम्र ${m[1]} है, योजना 18 से कम उम्र के लिए है`],
   [/^(.+), imported$/, (m) => `${m[1]}, आयातित`],
   [/^(.+), domestic make$/, (m) => `${m[1]}, भारत में निर्मित`],
   [/^package price at tier ([XYZ])$/, (m) => `टियर ${m[1]} पर पैकेज मूल्य`],
@@ -119,6 +120,11 @@ const PATTERNS: [RegExp, (m: RegExpMatchArray) => string][] = [
 
 /** What the engine writes, word for word. */
 const ENGINE: Record<string, string> = {
+  "RBSK (Rashtriya Bal Swasthya Karyakram, under 18)": "RBSK (राष्ट्रीय बाल स्वास्थ्य कार्यक्रम, 18 से कम)",
+  "Free for a child, as treatment of congenital cataract, at government and empanelled hospitals on a DEIC referral.": "बच्चे के लिए मुफ़्त, जन्मजात मोतियाबिंद के इलाज के रूप में, DEIC रेफ़रल पर सरकारी और सूचीबद्ध अस्पतालों में।",
+  "RBSK treats listed childhood conditions only, and this is not one": "RBSK केवल तय बचपन की बीमारियों का इलाज करती है, और यह उनमें से नहीं है",
+  "hospital is not a government or empanelled centre": "अस्पताल सरकारी या सूचीबद्ध केंद्र नहीं है",
+  "RBSK — Rashtriya Bal Swasthya Karyakram, children 0–18": "RBSK — राष्ट्रीय बाल स्वास्थ्य कार्यक्रम, 0–18 वर्ष के बच्चे",
   // Stages of the tree
   Admission: "भर्ती",
   Investigation: "जाँच",
@@ -249,6 +255,16 @@ const ENGINE: Record<string, string> = {
 /** Screen text. Keys are the English exactly as written in the components. */
 const HI: Record<string, string> = {
   // Shell
+  "70 and above: Ayushman Vay Vandana is applied by default. It covers up to ₹5 lakh a year, cashless, at PM-JAY hospitals.": "70 और उससे ऊपर: आयुष्मान वय वंदना अपने आप लागू होती है। यह PM-JAY अस्पतालों में साल में ₹5 लाख तक कैशलेस इलाज देती है।",
+  "Age 70 and above": "उम्र 70 और उससे ऊपर",
+  "Apply it": "लागू करें",
+  "Bill {bill} · paid by {scheme} · family pays": "बिल {bill} · {scheme} से भुगतान · परिवार देगा",
+  "Under 18": "18 से कम उम्र",
+  "Under 18: RBSK is checked by default. It treats listed childhood conditions free at government and empanelled hospitals.": "18 से कम उम्र: RBSK अपने आप जाँची जाती है। यह सरकारी और सूचीबद्ध अस्पतालों में बच्चों की तय बीमारियों का मुफ़्त इलाज करती है।",
+  "Use my plan instead": "इसके बजाय मेरा प्लान लें",
+  "With your plan instead": "आपके प्लान से होता",
+  "applied by default: you pay {x}, not {y} on your plan.": "अपने आप लागू: आप {x} देंगे, आपके प्लान पर {y} नहीं।",
+  "would cover this: you would pay {x}, not {y}.": "यह इसे कवर करेगी: आप {x} देंगे, {y} नहीं।",
   "No treatment chosen": "कोई इलाज नहीं चुना गया",
   "nothing priced": "कुछ भी नहीं आँका गया",
   "No treatment chosen, at {hospital}, {city}": "कोई इलाज नहीं चुना गया, {hospital}, {city} में",

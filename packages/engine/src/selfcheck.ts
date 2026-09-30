@@ -17,7 +17,7 @@ import { carePlan, surgeryOptions, testOptions, type DiagnosticTest } from "./ca
 // The engine has no data until something gives it some. These checks are the
 // one place that is allowed to hand it the hand-written set.
 setRegistry(FIXTURES);
-import { evaluate, fixedRegardless, repair, schemeOptions, bestGovtScheme, type CaseInput } from "./case";
+import { ageScheme, evaluate, familyPays, fixedRegardless, repair, schemeOptions, bestGovtScheme, type CaseInput } from "./case";
 
 let failures = 0;
 
@@ -287,6 +287,45 @@ console.log("A health report: scans and the operation, priced and paid for");
     "the one-hospital plan adds scans and operation at the same place, cheapest first",
     "the one-hospital totals do not add up",
   );
+}
+
+console.log("Government schemes by age: RBSK under 18, Vay Vandana at 70 and above");
+{
+  const base: CaseInput = repair({
+    hospitalId: "h-meridian", procedureId: "p-spine-fusion", policyId: "pol-classic", roomClass: "private",
+    route: "cashless", days: 5, icuDays: 0, siUsed: 0, implantId: "imported", admittedInpatient: true,
+    age: 45, hasPmjayCard: false, govtEmployeeOrPensioner: false, esiInsured: false, preExisting: false,
+  });
+  const check = (ok: boolean, good: string, bad: string) => {
+    if (!ok) failures++;
+    console.log(ok ? `  ok   ${good}` : `FAIL  ${bad}`);
+  };
+  const at = (patch: Partial<CaseInput>) => evaluate(repair({ ...base, ...patch }));
+  check(ageScheme(at({ age: 45 })) === null && familyPays(at({ age: 45 })).via === null,
+    "between 18 and 69 no age scheme is applied", "an age scheme was applied to a 45-year-old");
+  check(ageScheme(at({ age: 69 })) === null && ageScheme(at({ age: 70 }))?.scheme.id === "vayvandana",
+    "Vay Vandana starts at exactly 70", "the 70+ boundary is wrong");
+  check(ageScheme(at({ age: 17 }))?.scheme.id === "rbsk" && ageScheme(at({ age: 18 })) === null,
+    "RBSK ends at exactly 18", "the under-18 boundary is wrong");
+  const senior = at({ age: 72 });
+  check(familyPays(senior).amount === 0 && familyPays(senior).via?.id === "vayvandana" && senior.result.patientPays > 0,
+    "at 72 Vay Vandana is the default payer: the family pays nothing, the policy figure stays underneath",
+    "Vay Vandana was not applied by default at 72");
+  const off = at({ age: 72, ageScheme: false });
+  check(familyPays(off).via === null && familyPays(off).amount === off.result.patientPays && ageScheme(off)!.applies,
+    "switched off, the headline goes back to the policy while the scheme stays on offer",
+    "switching the age scheme off did not restore the policy figure");
+  const notHere = at({ age: 72, hospitalId: "h-vistara" });
+  check(ageScheme(notHere)!.applies === false && familyPays(notHere).via === null,
+    "Vay Vandana is never applied at a hospital outside PM-JAY",
+    "Vay Vandana was applied at a hospital that is not empanelled");
+  const child = at({ age: 8, procedureId: "p-cataract" });
+  check(familyPays(child).amount === 0 && familyPays(child).via?.id === "rbsk",
+    "a child's cataract surgery is free under RBSK by default", "RBSK was not applied to a child's cataract");
+  const appendix = at({ age: 8, procedureId: "p-appendix" });
+  check(ageScheme(appendix)!.applies === false && familyPays(appendix).via === null,
+    "RBSK does not pay for a treatment that is not a listed childhood condition",
+    "RBSK was applied to an appendicectomy");
 }
 
 console.log(failures ? `\n${failures} failed` : "\nall checks passed");

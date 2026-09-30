@@ -1,7 +1,7 @@
 import type { Policy } from "./types";
 import { fmt, type Paise } from "./money";
 import { ROOM_LABEL } from "./bill";
-import { fixedRegardless, gate, journey, schemeOptions, type Evaluated } from "./case";
+import { ageScheme, fixedRegardless, gate, journey, schemeOptions, type Evaluated } from "./case";
 import { registry, setRegistry } from "./registry";
 import { isNoPolicy } from "./nopolicy";
 
@@ -62,11 +62,29 @@ export function caseFacts(e: Evaluated): Fact[] {
   if (e.policy.exclusions) {
     add(`The policy's exclusions, as confirmed from the schedule: ${e.policy.exclusions}.`, null, []);
   }
-  add(
-    `As things stand the bill is ${fmt(r.billTotal)}; the insurer pays ${fmt(r.insurerPays)} and the family pays ${fmt(r.patientPays)}.`,
-    null,
-    [r.billTotal, r.insurerPays, r.patientPays],
-  );
+  const age = ageScheme(e);
+  if (age?.applied) {
+    add(
+      `The patient is ${e.input.age}, so ${age.scheme.label} is applied by default: the family pays ` +
+        `${fmt(age.scheme.patientPays!)} for this admission at this hospital. On the policy alone the bill would be ` +
+        `${fmt(r.billTotal)}, the insurer would pay ${fmt(r.insurerPays)} and the family ${fmt(r.patientPays)}.`,
+      age.scheme.clause,
+      [age.scheme.patientPays!, r.billTotal, r.insurerPays, r.patientPays],
+    );
+  } else {
+    add(
+      `As things stand the bill is ${fmt(r.billTotal)}; the insurer pays ${fmt(r.insurerPays)} and the family pays ${fmt(r.patientPays)}.`,
+      null,
+      [r.billTotal, r.insurerPays, r.patientPays],
+    );
+    if (age && !age.applies) {
+      add(
+        `The patient is ${e.input.age}, the age group ${age.scheme.label} covers, but it does not pay here: ${age.scheme.detail}`,
+        age.scheme.clause,
+        [],
+      );
+    }
+  }
 
   const g = gate(e);
   add(`${g.question} ${g.passed ? "Yes" : "No"} -- ${g.test}. ${g.detail}`, g.clause, []);

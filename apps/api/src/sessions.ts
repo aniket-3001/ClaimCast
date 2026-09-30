@@ -19,7 +19,7 @@ import {
   type SavedSessionDetail,
   type SavedSessionRow,
 } from "@claimcast/contracts";
-import { evaluate, repair, withPolicy, ROOM_LABEL, registry } from "@claimcast/engine";
+import { evaluate, familyPays, repair, withPolicy, ROOM_LABEL, registry } from "@claimcast/engine";
 import { chunkPages, retrieve } from "./retrieval.js";
 
 /** The engine's outcome for this session, priced now, as the admin will see it. */
@@ -27,6 +27,10 @@ export function summarise(req: SaveSessionRequest) {
   const run = () => {
     const e = evaluate(repair(req.case));
     const { clauses } = registry();
+    // The age-group scheme, when it is the payer, replaces the policy's claim
+    // rather than sitting on top of it: nothing is "refused" by a policy that
+    // is not being claimed on.
+    const via = familyPays(e).via;
     return {
       procedure: e.procedure.name,
       hospital: e.hospital.name,
@@ -34,23 +38,25 @@ export function summarise(req: SaveSessionRequest) {
       policy: `${e.policy.product} (${e.policy.insurer})`,
       roomClass: ROOM_LABEL[e.input.roomClass],
       billTotal: e.result.billTotal,
-      insurerPays: e.result.insurerPays,
-      patientPays: e.result.patientPays,
-      deductionTotal: e.result.deductionTotal,
-      deductions: e.result.deductions.map((d) => ({
+      // With the age scheme applied the scheme pays, not the insurer, and the family pays what it leaves.
+      insurerPays: via ? 0 : e.result.insurerPays,
+      patientPays: familyPays(e).amount,
+      deductionTotal: via ? 0 : e.result.deductionTotal,
+      deductions: (via ? [] : e.result.deductions).map((d) => ({
         line: d.line,
         amount: d.amount,
         clause: clauses[d.clause]?.cite ?? d.clause,
       })),
-      repudiated: e.result.repudiated?.reason ?? null,
+      repudiated: via ? null : e.result.repudiated?.reason ?? null,
       noTreatment: false,
+      ageScheme: via?.label ?? null,
     };
   };
   if (req.noTreatment) {
     // The family chose "none" for the treatment: keep where and with which plan, price nothing.
     const s = req.policy ? withPolicy(req.policy, run) : run();
     return { ...s, procedure: "No treatment chosen", billTotal: 0, insurerPays: 0, patientPays: 0, deductionTotal: 0,
-             deductions: [], repudiated: null, noTreatment: true };
+             deductions: [], repudiated: null, noTreatment: true, ageScheme: null };
   }
   return req.policy ? withPolicy(req.policy, run) : run();
 }

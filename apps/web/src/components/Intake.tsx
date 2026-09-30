@@ -1,5 +1,18 @@
 import { useState } from "react";
-import { evaluate, fmt, NO_POLICY_ID, pct, registry, setRegistry, type CaseInput, type Policy } from "@claimcast/engine";
+import {
+  CHILD_UNDER,
+  evaluate,
+  familyPays,
+  fmt,
+  NO_POLICY_ID,
+  pct,
+  registry,
+  SENIOR_FROM,
+  setRegistry,
+  type CaseInput,
+  type Policy,
+} from "@claimcast/engine";
+import { AgeSchemeNote } from "./Journey";
 import { POLICY_OWNERS, type ConfirmedHealth, type Extraction, type ExtractedField, type PolicyOwner, type ShakyField } from "@claimcast/contracts";
 import { confirmDocument, extractPolicy } from "../api";
 import { lang, plural, t } from "../i18n";
@@ -217,6 +230,7 @@ export function Intake({
                 </select>
               </label>
             </div>
+            <AgeHint age={people.patientAge} />
             {tried && missing.length > 0 && (
               <p className="wiz-note bad" role="alert">
                 {t("Please fill in the patient’s details marked * to continue.")}
@@ -413,6 +427,7 @@ export function Intake({
         <div className="wiz-card">
           <h1 className="wiz-q">{t("Can a government scheme help?")}</h1>
           <p className="wiz-hint">{t("These decide whether a scheme could pay for the stay instead.")}</p>
+          <AgeHint age={people.patientAge ?? input.age} boxed />
           <div className="wiz-yn">
             <span>{t("Ayushman Bharat card at home?")}</span>
             {yesNo(input.hasPmjayCard, (v) => set({ hasPmjayCard: v }))}
@@ -470,13 +485,19 @@ export function Intake({
               </span>
             </div>
           ) : (
-            <div className="wiz-result">
-              <span className="k">{t("As things stand, you pay")}</span>
-              <span className="v">{fmt(e.result.patientPays)}</span>
-              <span className="s">
-                {t("Insurer pays")} {fmt(e.result.insurerPays)} · {t("Bill")} {fmt(e.result.billTotal)}
-              </span>
-            </div>
+            <>
+              <div className="wiz-result">
+                <span className="k">{t("As things stand, you pay")}</span>
+                <span className="v">{fmt(familyPays(e).amount)}</span>
+                <span className="s">
+                  {familyPays(e).via
+                    ? `${t("With your plan instead")} ${fmt(e.result.patientPays)}`
+                    : `${t("Insurer pays")} ${fmt(e.result.insurerPays)}`}{" "}
+                  · {t("Bill")} {fmt(e.result.billTotal)}
+                </span>
+              </div>
+              <AgeSchemeNote e={e} onPick={onChange} />
+            </>
           )}
           <ul className="wiz-review">
             {[
@@ -1038,4 +1059,20 @@ function PersonId({ uid }: { uid?: string }) {
       ID {shortId(uid)}
     </span>
   );
+}
+
+/**
+ * What the patient's age turns on, said as soon as it is typed: the only two
+ * age groups a government scheme covers on age alone.
+ */
+function AgeHint({ age, boxed = false }: { age: number | null; boxed?: boolean }) {
+  if (age === null) return null;
+  const text =
+    age < CHILD_UNDER
+      ? t("Under 18: RBSK is checked by default. It treats listed childhood conditions free at government and empanelled hospitals.")
+      : age >= SENIOR_FROM
+        ? t("70 and above: Ayushman Vay Vandana is applied by default. It covers up to ₹5 lakh a year, cashless, at PM-JAY hospitals.")
+        : null;
+  if (!text) return null;
+  return <p className={boxed ? "wiz-note good" : "wiz-age-hint"}>{text}</p>;
 }

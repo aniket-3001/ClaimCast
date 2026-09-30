@@ -8,6 +8,8 @@ import {
   gate,
   journey,
   schemeOptions,
+  ageScheme,
+  familyPays,
   MATERIALITY,
   type Branch,
   type CaseInput,
@@ -39,6 +41,8 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
   const fixed = fixedRegardless(e);
   const fixedTotal = fixed.reduce((t, x) => t + x.amount, 0);
   const r = e.result;
+  // The age-group scheme (RBSK under 18, Vay Vandana 70+) is the default payer when it reaches here.
+  const pays = familyPays(e);
 
   return (
     <>
@@ -49,17 +53,25 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
       <div className="outcome">
         <div className="outcome-main">
           <span className="outcome-k">{t("As things stand, you pay")}</span>
-          <span className="outcome-v">{fmt(r.patientPays)}</span>
+          <span className={`outcome-v ${pays.via ? "paid" : ""}`}>{fmt(pays.amount)}</span>
         </div>
-        <div className="outcome-of">
-          <span className="k">{t("Insurer pays")}</span>
-          <span className="v paid">{fmt(r.insurerPays)}</span>
-        </div>
+        {pays.via ? (
+          <div className="outcome-of">
+            <span className="k">{t("With your plan instead")}</span>
+            <span className="v">{fmt(r.patientPays)}</span>
+          </div>
+        ) : (
+          <div className="outcome-of">
+            <span className="k">{t("Insurer pays")}</span>
+            <span className="v paid">{fmt(r.insurerPays)}</span>
+          </div>
+        )}
         <div className="outcome-of">
           <span className="k">{t("Bill")}</span>
           <span className="v">{fmt(r.billTotal)}</span>
         </div>
       </div>
+      <AgeSchemeNote e={e} onPick={onPick} />
 
       <div className="tree">
         <div className="tnode start">
@@ -212,6 +224,43 @@ function GovtFork({ e }: { e: Evaluated }) {
         </div>
       </div>
     </>
+  );
+}
+
+/**
+ * The small line under the headline: which government scheme the patient's
+ * age puts them in, whether it is paying here, and a switch to see the claim
+ * on the policy instead. Nothing is shown between 18 and 69.
+ */
+export function AgeSchemeNote({ e, onPick }: { e: Evaluated; onPick?: (next: CaseInput) => void }) {
+  const a = ageScheme(e);
+  if (!a) return null;
+  const { clauses: CLAUSES } = registry();
+  const who = a.group === "child" ? t("Under 18") : t("Age 70 and above");
+  const name = tx(a.scheme.label);
+  return (
+    <div className={`age-note ${a.applied ? "on" : ""}`} role="note">
+      <span className="age-i" aria-hidden="true">i</span>
+      <span className="age-t">
+        <b>
+          {who} · {name}
+        </b>{" "}
+        {a.applied
+          ? t("applied by default: you pay {x}, not {y} on your plan.", {
+              x: fmt(a.scheme.patientPays!),
+              y: fmt(e.result.patientPays),
+            })
+          : a.applies
+            ? t("would cover this: you would pay {x}, not {y}.", { x: fmt(a.scheme.patientPays!), y: fmt(e.result.patientPays) })
+            : tx(a.scheme.detail)}{" "}
+        <span className="cite">{tx(CLAUSES[a.scheme.clause].cite)}</span>
+      </span>
+      {a.applies && onPick && (
+        <button type="button" className="age-switch" onClick={() => onPick({ ...e.input, ageScheme: !a.applied })}>
+          {a.applied ? t("Use my plan instead") : t("Apply it")}
+        </button>
+      )}
+    </div>
   );
 }
 

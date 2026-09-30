@@ -112,6 +112,13 @@ await saveSession(db, null, { id: h1.id, name: MARK, case: input, health: null }
 ok((await sessionDetail(db, h1.id))?.health === null, "removing the health report and saving again did not clear it");
 await db.savedSession.delete({ where: { id: h1.id } });
 
+// At 70+ Vay Vandana is the default payer, and the record says so.
+const senior = await saveSession(db, null, { name: MARK, case: { ...input, age: 72, hospitalId: "h-meridian" } });
+const seniorRow = (await listSessions(db)).find((r) => r.id === senior.id);
+ok(seniorRow?.summary.patientPays === 0 && /Vay Vandana/.test(seniorRow.summary.ageScheme ?? "") && seniorRow.summary.deductions.length === 0,
+  "a 72-year-old's session was not saved with Vay Vandana as the payer");
+await db.savedSession.delete({ where: { id: senior.id } });
+
 // "None" chosen for the treatment: the record keeps no bill, not the procedure last on screen.
 const nil = await saveSession(db, null, { name: MARK, case: input, noTreatment: true });
 const nilRow = (await listSessions(db)).find((r) => r.id === nil.id);

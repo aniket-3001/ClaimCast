@@ -104,6 +104,12 @@ export const CLAUSES: Record<string, Clause> = {
     source: "National Health Authority, launched 29 October 2024",
     text: "Every citizen aged 70 and above qualifies for a \u20b95 lakh annual cover under PM-JAY on age alone \u2014 no income test, and independent of any card the rest of the household already holds. Introduced in 2024, so a family already on another policy may not know it applies to them.",
   },
+  RBSK: {
+    id: "RBSK",
+    cite: "RBSK — Rashtriya Bal Swasthya Karyakram, children 0–18",
+    source: "National Health Mission, Ministry of Health and Family Welfare, 2013",
+    text: "Children from birth to 18 are screened for defects at birth, deficiencies, diseases and developmental delays, and a listed condition found is treated free, including surgery, at government and empanelled hospitals on a referral from a District Early Intervention Centre. Conditions not on the list are not covered.",
+  },
   CGHS_SCHEME: {
     id: "CGHS_SCHEME",
     cite: "CGHS \u2014 package rates for serving and retired central government employees",

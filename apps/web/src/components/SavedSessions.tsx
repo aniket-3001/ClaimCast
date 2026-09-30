@@ -147,7 +147,9 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                   ) : (
                     <>
                       <b className="loss">{fmt(r.summary.patientPays)}</b>
-                      <div className="sub">{t("of")} {fmt(r.summary.billTotal)}</div>
+                      <div className="sub">
+                        {r.summary.ageScheme ? tx(r.summary.ageScheme) : `${t("of")} ${fmt(r.summary.billTotal)}`}
+                      </div>
                     </>
                   )}
                 </td>
@@ -199,10 +201,15 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                               t("Nothing priced: no treatment was chosen.")
                             ) : (
                               <>
-                                {t("Bill {bill} · insurance pays {paid} · family pays", {
-                                  bill: fmt(detail.summary.billTotal),
-                                  paid: fmt(detail.summary.insurerPays),
-                                })}{" "}
+                                {detail.summary.ageScheme
+                                  ? t("Bill {bill} · paid by {scheme} · family pays", {
+                                      bill: fmt(detail.summary.billTotal),
+                                      scheme: tx(detail.summary.ageScheme),
+                                    })
+                                  : t("Bill {bill} · insurance pays {paid} · family pays", {
+                                      bill: fmt(detail.summary.billTotal),
+                                      paid: fmt(detail.summary.insurerPays),
+                                    })}{" "}
                                 <b className="loss">{fmt(detail.summary.patientPays)}</b>
                               </>
                             )}

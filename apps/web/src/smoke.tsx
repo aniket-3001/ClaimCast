@@ -104,6 +104,14 @@ for (const l of ["en", "hi"] as const) {
     const path = renderToString(<Journey e={e} onPick={noop} />);
     renderToString(<ChatDock e={e} documentId={null} turns={[]} setTurns={noop} />);
     renderToString(<BillView e={e} />);
+    // The two age groups, on every case: a child and a 72-year-old, scheme on and off.
+    for (const age of [8, 72])
+      for (const on of [true, false]) {
+        const html = renderToString(<Journey e={evaluate({ ...c, age, ageScheme: on })} onPick={noop} />);
+        if (l === "hi" && /applied by default|would cover this|Use my plan instead/.test(html)) {
+          throw new Error("the age-scheme note has English left in it with Hindi selected");
+        }
+      }
     renderToString(<Alternatives e={e} onPick={noop} />);
     for (const surgery of [true, false]) {
       const care = renderToString(<CarePlan e={e} health={HEALTH} surgery={surgery} onPick={noop} />);

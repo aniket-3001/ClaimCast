@@ -233,6 +233,22 @@ export const SOURCES: SourceSeed[] = [
       "into it silently.",
   },
   {
+    id: "nhm-rbsk",
+    name: "Rashtriya Bal Swasthya Karyakram (RBSK), child health screening and early intervention",
+    publisher: "National Health Mission, Ministry of Health and Family Welfare",
+    url: "https://nhm.gov.in/index1.php?lang=1&level=4&sublinkid=1190&lid=583",
+    checksum: null,
+    fetchedAt: ASSEMBLED,
+    caveat:
+      "Not yet verified against a downloaded document. That RBSK covers children from birth " +
+      "to 18 for the 4Ds (defects at birth, deficiencies, diseases, developmental delays) " +
+      "and treats listed conditions free, including surgery, at government and empanelled " +
+      "facilities on a DEIC referral, is the programme's published position as widely " +
+      "summarised. Which conditions ClaimCast's procedures map to -- congenital cataract " +
+      "only -- is ClaimCast's own judgement, and treating PM-JAY empanelment as the proxy " +
+      "for an empanelled RBSK centre is a simplification of the synthetic hospitals.",
+  },
+  {
     id: "esic-medical-benefit",
     name: "ESI medical benefit, and ESIC tie-up hospitals settled at CGHS rates",
     publisher: "Employees' State Insurance Corporation",
@@ -288,6 +304,7 @@ export const CLAUSE_SOURCE: Record<string, string> = {
   PRIVATE_INDEMNITY: "claimcast-synthetic",
   PMJAY: "nha-hbp-2-2",
   VAY_VANDANA: "nha-vay-vandana",
+  RBSK: "nhm-rbsk",
   CGHS_SCHEME: "cghs-rates",
   ESI_SCHEME: "esic-medical-benefit",
   SINGLE_CLAIM_PATH: "general-insurance-law",
