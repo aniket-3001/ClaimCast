@@ -5,5 +5,5 @@ import { t } from "./i18n";
 export const policyLabel = (p: Policy) => (isNoPolicy(p) ? t("No insurance (we will pay ourselves)") : `${p.product} — ${p.insurer}`);
 export const policyShort = (p: Policy) => (isNoPolicy(p) ? t("No insurance") : p.product);
 
-/** Plans that exist only in this browser travel with a question or a save. */
-export const policyTravels = (p: Policy) => p.id === "pol-uploaded" || isNoPolicy(p);
+/** Plans that exist only in this browser travel with a question or a save. Every upload gets its own id, so this matches any of them. */
+export const policyTravels = (p: Policy) => p.id.startsWith("pol-uploaded") || isNoPolicy(p);

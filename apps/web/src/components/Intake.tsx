@@ -73,6 +73,9 @@ export function Intake({
   procNil?: boolean;
 }) {
   const { policies: POLICIES } = registry();
+  // Every PDF the family has read this sitting, each kept under its own id --
+  // uploading a second policy adds a choice, it never replaces the first.
+  const uploadedPolicies = POLICIES.filter((p) => p.id.startsWith("pol-uploaded"));
   const policy = POLICIES.find((p) => p.id === input.policyId)!;
   const [up, setUp] = useState<Upload>({ stage: "idle" });
 
@@ -343,12 +346,17 @@ export function Intake({
               ))}
             </select>
           </label>
+          {uploadedPolicies.length > 1 && (
+            <p className="wiz-note good">
+              {t("{n} policies uploaded this sitting — pick the one to price with above.", { n: uploadedPolicies.length })}
+            </p>
+          )}
           <p className="wiz-or">{t("or")}</p>
       <section className="section">
         <div className="section-head">
           <h2>{t("Your policy schedule")}</h2>
           <span className="aside">
-            {up.stage === "read" ? t("Read from your PDF") : t("Sample plan for this demo")}
+            {policy.id.startsWith("pol-uploaded") ? t("Read from your PDF") : t("Sample plan for this demo")}
           </span>
         </div>
 
@@ -356,12 +364,14 @@ export function Intake({
           <label className="tnode start" style={{ cursor: "pointer", display: "block" }}>
             <div className="tnode-k">{t("Optional")}</div>
             <div className="tnode-v" style={{ fontSize: 20 }}>
-              {t("Upload your policy document (PDF)")}
+              {uploadedPolicies.length ? t("Upload another policy document (PDF)") : t("Upload your policy document (PDF)")}
             </div>
             <div className="tnode-sub">
               {t(
                 "Click to choose the file. We read your limits from it for you to check. It is kept private and deleted after a few days.",
               )}
+              {uploadedPolicies.length > 0 &&
+                " " + t("Each family member's policy can be uploaded separately; nothing already added is lost.")}
             </div>
             <input
               type="file"
@@ -400,24 +410,34 @@ export function Intake({
                 are the terms of the policy chosen there, not an extraction
                 dressed up as one. */}
             <HandEntered policy={policy} onConfirm={() => go(2)} />
+            <button type="button" className="wiz-link" onClick={() => setUp({ stage: "idle" })}>
+              {t("Try a different file")}
+            </button>
           </>
         )}
 
         {up.stage === "read" && (
-          <ExtractionPanel
-            extraction={up.extraction}
-            fallback={policy}
-            shaky={up.shaky}
-            onConfirm={(p, fields, keepExamples) => {
-              adoptPolicy(p);
-              // Not awaited, and its failure is swallowed inside. The
-              // confirmation that governs this app happened in the browser a
-              // line ago; the server's note of it, and the correction it
-              // carries, must not hold anybody at the door.
-              void confirmDocument(up.documentId, fields, keepExamples);
-              go(2);
-            }}
-          />
+          <>
+            <ExtractionPanel
+              extraction={up.extraction}
+              fallback={policy}
+              shaky={up.shaky}
+              onConfirm={(p, fields, keepExamples) => {
+                adoptPolicy(p);
+                // Not awaited, and its failure is swallowed inside. The
+                // confirmation that governs this app happened in the browser a
+                // line ago; the server's note of it, and the correction it
+                // carries, must not hold anybody at the door.
+                void confirmDocument(up.documentId, fields, keepExamples);
+                go(2);
+              }}
+            />
+            {/* Nothing here is adopted until Confirm above is pressed, so
+                leaving for another file loses nothing already chosen. */}
+            <button type="button" className="wiz-link" onClick={() => setUp({ stage: "idle" })}>
+              {t("Upload a different policy instead")}
+            </button>
+          </>
         )}
       </section>
         </div>
@@ -996,7 +1016,10 @@ function asPolicy(
 
   return {
     ...fallback,
-    id: "pol-uploaded",
+    // Each upload gets its own id, from the document it was read from, so a
+    // second policy adds to the family's choices instead of replacing the
+    // first -- adoptPolicy() below only ever overwrites an id it already saw.
+    id: `pol-uploaded-${e.documentId}`,
     insurer: str("insurer", fallback.insurer),
     product: str("product", fallback.product),
     sumInsured: num("sumInsured") ?? fallback.sumInsured,
