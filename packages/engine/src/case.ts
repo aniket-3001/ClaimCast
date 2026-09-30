@@ -46,6 +46,11 @@ export interface CaseInput {
    * false is the family choosing to see the claim on their own policy instead.
    */
   ageScheme?: boolean;
+  /**
+   * The patient is the policyholder's parent, covered as a dependant. Decided by the caller, from
+   * whose policy it is; the engine only knows what the policy says to do about it.
+   */
+  dependentParent?: boolean;
 }
 
 export interface Evaluated {
@@ -151,6 +156,9 @@ export function evaluate(input: CaseInput): Evaluated {
       siUsed: input.siUsed,
       repudiated: repudiation,
       dayCareDowngrade,
+      procedureId: p.id,
+      outOfNetwork: !h.network.includes(pol.insurer),
+      dependentParent: input.dependentParent,
     }),
     repudiation,
   };
@@ -205,6 +213,9 @@ export function forecast(e: Evaluated, band?: Band): Forecast {
       siUsed: e.input.siUsed,
       repudiated: e.repudiation,
       dayCareDowngrade,
+      procedureId: e.procedure.id,
+      outOfNetwork: !e.hospital.network.includes(e.policy.insurer),
+      dependentParent: e.input.dependentParent,
     });
 
   const roomExcess = e.result.deductions

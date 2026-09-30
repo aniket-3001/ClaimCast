@@ -141,6 +141,14 @@ export default function App() {
     if (pre !== input.preExisting) setInput((cur) => ({ ...cur, preExisting: pre }));
   }, [illnessDate, input.policyId, input.preExisting]);
 
+  // Whose policy it is decides whether the patient is the policyholder's parent, and a policy can
+  // carry a co-payment of its own for that. Derived here, beside the illness date, so it follows the
+  // dropdown on any tab and is never a second thing for the family to tick.
+  const isParent = people.policyOwner === "son" || people.policyOwner === "daughter";
+  useEffect(() => {
+    if (!!input.dependentParent !== isParent) setInput((cur) => ({ ...cur, dependentParent: isParent }));
+  }, [isParent, input.dependentParent]);
+
   // One entry point for every change, so no unreachable combination is ever
   // put on screen — a hospital that has no private room, a cashless route at a
   // hospital outside the network.

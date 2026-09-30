@@ -1,6 +1,14 @@
 import type { BillLine, Policy } from "./types";
+import { procedureLimit } from "./policyclauses";
 import { ratioSplit, type Paise } from "./money";
 import { isNoPolicy } from "./nopolicy";
+
+/**
+ * The `lineId` of a deduction that belongs to the admission as a whole, not to a line of the bill.
+ * The bill table lists these as rows of their own, so they are never counted in the total without
+ * being seen.
+ */
+export const WHOLE_ADMISSION = "admission";
 
 export interface Deduction {
   lineId: string;
@@ -26,6 +34,8 @@ export interface Adjudication {
   roomCapPerDay: Paise | null;
   repudiated: { reason: string; clause: string } | null;
   notes: string[];
+  /** The co-payment rate actually applied: the policy's own, or the dependent parent's. */
+  copayPct: number;
 }
 
 /**
@@ -69,6 +79,15 @@ export function adjudicate(args: {
    * unaffected: the dispute is about the admission, not the treatment.
    */
   dayCareDowngrade?: boolean;
+  /** Which procedure this bill is for, so a limit written against it can be found. */
+  procedureId?: string;
+  /**
+   * The hospital is not on this insurer's cashless network. Decided by the caller, which
+   * knows the hospital; this function only knows what the policy says to do about it.
+   */
+  outOfNetwork?: boolean;
+  /** The patient is the policyholder's parent, covered as a dependant. */
+  dependentParent?: boolean;
 }): Adjudication {
   const { lines, policy } = args;
   const downgrade = args.dayCareDowngrade ?? false;
@@ -99,6 +118,7 @@ export function adjudicate(args: {
       roomCapPerDay: null,
       repudiated: args.repudiated,
       notes: ["Claim refused in full. Nothing below applies."],
+      copayPct: 0,
     };
   }
 
@@ -116,6 +136,7 @@ export function adjudicate(args: {
       roomCapPerDay: null,
       repudiated: null,
       notes: ["No insurance chosen: the family pays the whole bill. Check whether a government scheme could pay instead."],
+      copayPct: 0,
     };
   }
 
@@ -248,9 +269,51 @@ export function adjudicate(args: {
     }
   }
 
+  // Two limits that belong to the admission as a whole rather than to any one line. They come
+  // after every line-level refusal and before the co-payment, because the wording says so: the
+  // procedure limit is "applied before co-payment", and the network reduction is a share of the
+  // admissible amount, which is what is left once the lines have been dealt with. Each is its own
+  // deduction under its own clause, so the working lists it beside the rest with the rupees it took.
+  let running = billTotal - deductions.reduce((t, d) => t + d.amount, 0);
+
+  const cap = policy.procedureCaps?.find((c) => c.procedureId === args.procedureId);
+  if (cap) {
+    const limit = procedureLimit(cap);
+    if (running > limit) {
+      const sides = limit / cap.amount;
+      deductions.push({
+        lineId: WHOLE_ADMISSION,
+        line: "Whole admission, limit for this procedure",
+        amount: running - limit,
+        reason:
+          cap.per === "side" && sides > 1
+            ? `The policy pays at most ${inr(cap.amount)} per side, ${inr(limit)} for both, for the whole admission: room, fees, implant and medicines together.`
+            : `The policy pays at most ${inr(limit)} for the whole admission for this procedure: room, fees, implant and medicines together.`,
+        clause: "PROCEDURE_CAP",
+      });
+      running = limit;
+    }
+  }
+
+  if (args.outOfNetwork && policy.nonNetworkPct !== null && policy.nonNetworkPct < 1) {
+    const drop = Math.round(running * (1 - policy.nonNetworkPct));
+    if (drop > 0) {
+      deductions.push({
+        lineId: WHOLE_ADMISSION,
+        line: "Hospital outside the insurer's network",
+        amount: drop,
+        reason: `This hospital is not on ${policy.insurer}'s cashless network, and the policy settles such a claim at ${Math.round(policy.nonNetworkPct * 100)}% of the admissible amount.`,
+        clause: "NON_NETWORK",
+      });
+    }
+  }
+
   const deductionTotal = deductions.reduce((t, d) => t + d.amount, 0);
   const admissible = billTotal - deductionTotal;
-  const copay = Math.round(admissible * policy.copayPct);
+  // A dependent parent can carry a co-payment of their own; nobody else does.
+  const copayPct =
+    args.dependentParent && policy.parentCopayPct !== null ? policy.parentCopayPct : policy.copayPct;
+  const copay = Math.round(admissible * copayPct);
   const afterCopay = admissible - copay;
 
   const siLeft = Math.max(0, policy.sumInsured - siUsed);
@@ -277,6 +340,7 @@ export function adjudicate(args: {
     roomCapPerDay: roomCap,
     repudiated: null,
     notes,
+    copayPct,
   };
 }
 

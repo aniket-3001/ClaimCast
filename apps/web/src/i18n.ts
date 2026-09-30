@@ -85,6 +85,12 @@ const PATTERNS: [RegExp, (m: RegExpMatchArray) => string][] = [
   [/^Priced by room category, so it is reduced in the same ratio: (₹[\d,]+) ÷ (₹[\d,]+)\.$/, (m) =>
     `यह कमरे की श्रेणी के हिसाब से तय होता है, इसलिए इसे उसी अनुपात में घटाया गया: ${m[1]} ÷ ${m[2]}।`],
   [/^Sub-limit of (₹[\d,]+) regardless of the balance sum insured\.$/, (m) => `बची हुई बीमा राशि चाहे जितनी हो, ${m[1]} की उप-सीमा।`],
+  [/^The policy pays at most (₹[\d,]+) per side, (₹[\d,]+) for both, for the whole admission: room, fees, implant and medicines together\.$/, (m) =>
+    `पॉलिसी पूरे भर्ती खर्च के लिए प्रति पक्ष अधिकतम ${m[1]} देती है, दोनों के लिए ${m[2]}: कमरा, फीस, इम्प्लांट और दवाएँ मिलाकर।`],
+  [/^The policy pays at most (₹[\d,]+) for the whole admission for this procedure: room, fees, implant and medicines together\.$/, (m) =>
+    `पॉलिसी इस प्रक्रिया के पूरे भर्ती खर्च के लिए अधिकतम ${m[1]} देती है: कमरा, फीस, इम्प्लांट और दवाएँ मिलाकर।`],
+  [/^This hospital is not on (.+)'s cashless network, and the policy settles such a claim at (\d+)% of the admissible amount\.$/, (m) =>
+    `यह अस्पताल ${m[1]} के कैशलेस नेटवर्क में नहीं है, और पॉलिसी ऐसे दावे को स्वीकार्य राशि के ${m[2]}% पर निपटाती है।`],
   [/^Outside the (\d+)-day pre-hospitalisation window\.$/, (m) => `भर्ती से पहले की ${m[1]} दिन की सीमा के बाहर।`],
   [/^(₹[\d,]+) of the sum insured was already used this year\. Only (₹[\d,]+) was left\.$/, (m) =>
     `इस साल बीमा राशि में से ${m[1]} पहले ही इस्तेमाल हो चुकी थी। केवल ${m[2]} बचा था।`],
@@ -206,6 +212,16 @@ const ENGINE: Record<string, string> = {
   // Refused whatever the path
   "Non-medical items": "गैर-चिकित्सीय सामान",
   "Implant above its sub-limit": "उप-सीमा से ऊपर का इम्प्लांट",
+  "Whole admission, limit for this procedure": "पूरा भर्ती खर्च, इस प्रक्रिया की सीमा",
+  "Hospital outside the insurer's network": "बीमा कंपनी के नेटवर्क से बाहर का अस्पताल",
+  "Policy wording — limit on the whole admission for a procedure (annexure)": "पॉलिसी की शर्तें — किसी प्रक्रिया के पूरे भर्ती खर्च पर सीमा (अनुलग्नक)",
+  "Policy wording — claim outside the cashless network": "पॉलिसी की शर्तें — कैशलेस नेटवर्क से बाहर का दावा",
+  "whole admission": "पूरा भर्ती खर्च",
+  "Limit for this procedure": "इस प्रक्रिया की सीमा",
+  "Outside the network": "नेटवर्क से बाहर",
+  "pays {p}%": "{p}% का भुगतान",
+  "Limit on the whole admission for a procedure": "किसी प्रक्रिया के पूरे भर्ती खर्च पर सीमा",
+  "Share paid outside the insurer's network": "बीमा कंपनी के नेटवर्क से बाहर अस्पताल में दिया जाने वाला हिस्सा",
   "Outside the pre and post-hospitalisation window": "भर्ती से पहले/बाद की समय-सीमा के बाहर",
   // Schemes
   "PM-JAY (Ayushman Bharat)": "PM-JAY (आयुष्मान भारत)",
@@ -709,6 +725,9 @@ const HI: Record<string, string> = {
   Deductions: "कटौतियाँ",
   Admissible: "मंज़ूर राशि",
   "Co-payment at {p}": "{p} पर को-पेमेंट",
+  "Co-payment if the patient is a dependent parent": "मरीज़ आश्रित माता-पिता हों तो को-पेमेंट",
+  "Read from your document": "आपके दस्तावेज़ से पढ़ा गया",
+  "Type how many months you have had this cover to continue.": "आगे बढ़ने के लिए लिखें कि आपके पास यह कवर कितने महीनों से है।",
   "Above the sum insured": "बीमा राशि से ऊपर",
   "On this route the family pays {bill} at discharge and is repaid {x} about {d} days later.":
     "इस रास्ते पर परिवार छुट्टी के समय {bill} चुकाता है और लगभग {d} दिन बाद {x} वापस मिलते हैं।",

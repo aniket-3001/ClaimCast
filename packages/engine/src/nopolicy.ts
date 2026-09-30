@@ -22,6 +22,7 @@ export const NO_POLICY: Policy = {
   icuCapPctOfSI: null,
   proportionateDeduction: false,
   copayPct: 0,
+  parentCopayPct: null,
   implantSubLimit: null,
   preHospDays: 0,
   postHospDays: 0,
@@ -30,6 +31,8 @@ export const NO_POLICY: Policy = {
   pedWaitingMonths: 0,
   moratoriumMonths: 0,
   exclusions: null,
+  procedureCaps: null,
+  nonNetworkPct: null,
   notes: "No health insurance: the family pays the whole bill unless a government scheme applies.",
 };
 

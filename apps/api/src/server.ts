@@ -457,6 +457,13 @@ app.post("/api/policies/extract", async (req, reply) => {
     return reply.code(400).send({ error: "no file", detail: "Send the schedule as a file part." });
   }
 
+  // Who the admission is for, sent ahead of the file. A policy can insure several people, each with
+  // their own start date, and the reader has to pick the right person's months. One short line of text,
+  // never stored and never logged; anything else in it is stripped rather than trusted, because it goes
+  // straight into a prompt.
+  const said = (part.fields as Record<string, { value?: unknown } | undefined> | undefined)?.patient?.value;
+  const patient = typeof said === "string" ? said.replace(/[^\p{L}\p{N} .'-]/gu, "").trim().slice(0, 80) : "";
+
   const bytes = await part.toBuffer();
   // The declared content type is the uploader's claim; the first five bytes are
   // the file's own. Both have to say PDF, because the model is about to be told
@@ -484,7 +491,11 @@ app.post("/api/policies/extract", async (req, reply) => {
     const hints = pick
       ? await promptHints(ref.db, `${pick.provider}/${pick.model}`).catch(() => "")
       : "";
-    const { extraction } = await extractPolicy(bytes, filename, doc.id, hints);
+    const who = patient
+      ? `The patient is ${patient}. Several people may be insured on this document: wherever a figure is ` +
+        `stated per person, such as months of continuous cover, read the one for ${patient} only.\n\n`
+      : "";
+    const { extraction } = await extractPolicy(bytes, filename, doc.id, who + hints);
     await ref.db.policyDocument.update({ where: { id: doc.id }, data: { extraction } });
 
     // What every previous reader of this model got wrong often enough to be

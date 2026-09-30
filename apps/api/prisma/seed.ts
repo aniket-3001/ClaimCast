@@ -13,7 +13,7 @@
  * and it is recorded rather than assumed.
  */
 
-import { PrismaClient, type Prisma } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 // The fixtures, by name. This is the one place in the application that is
 // meant to read them: everything downstream reads the database this writes.
 import {
@@ -283,6 +283,9 @@ async function main() {
         pedWaitingMonths: pol.pedWaitingMonths,
         moratoriumMonths: pol.moratoriumMonths,
         exclusions: pol.exclusions,
+          procedureCaps: pol.procedureCaps ? (pol.procedureCaps as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
+          nonNetworkPct: pol.nonNetworkPct,
+          parentCopayPct: pol.parentCopayPct,
         notes: pol.notes ?? null,
         sourceId: SYNTHETIC,
       };
@@ -330,6 +333,9 @@ async function main() {
         moratoriumMonths: pol.moratoriumMonths,
         // The ETL reads the prescribed limits, not the exclusions list.
         exclusions: null,
+          procedureCaps: Prisma.DbNull,
+          nonNetworkPct: null,
+          parentCopayPct: null,
         notes:
           pol.notes +
           " Sum insured is issuable from Rs 1,00,000 to Rs 5,00,000 in multiples" +

@@ -24,7 +24,7 @@
  * already says, and every screen that shows the result says so.
  */
 
-import type { DiagnosticTest, Procedure } from "@claimcast/engine";
+import { procedureFor, type DiagnosticTest, type Procedure } from "@claimcast/engine";
 import type { HealthReading, ReadTest } from "@claimcast/contracts";
 import { HealthReadingSchema } from "@claimcast/contracts";
 import { chat } from "./llm.js";
@@ -254,33 +254,8 @@ export function bestMatch(cat: Catalogue, phrase: string): DiagnosticTest | null
 
 // ── Matching a treatment to a priced procedure ──────────────────────────────
 
-/** How each priced operation is written on a report. Both halves of a pair must appear. */
-const PROCEDURE_WORDS: Record<string, [RegExp, RegExp?]> = {
-  "p-ankle-orif": [/\bankle\b|malleol/i, /\borif\b|fixation|plating|\bplate\b|screw|surgery|operat|open reduction/i],
-  "p-spine-fusion": [/fusion|\btlif\b|\bplif\b/i, /spin|lumbar|l[1-5]/i],
-  "p-cabg": [/\bcabg\b|bypass graft|coronary artery bypass/i],
-  "p-angioplasty": [/angioplasty|\bptca\b|\bstent/i],
-  "p-tkr": [/knee replacement|\btkr\b|\btka\b|arthroplasty.{0,20}knee|knee.{0,20}arthroplasty/i],
-  "p-chole": [/cholecystectomy|lap\.? chole/i],
-  "p-appendix": [/appendic?ectomy|appendectomy/i],
-  "p-csection": [/caesarean|cesarean|\blscs\b|c[\s-]section/i],
-  "p-delivery": [/normal delivery|vaginal delivery|\bnvd\b/i],
-  "p-cataract": [/cataract|phaco|\biol\b/i],
-  "p-chemo": [/chemotherapy|\bchemo\b/i],
-  "p-dialysis": [/dialysis/i],
-  "p-pneumonia": [/pneumonia/i],
-  "p-sepsis": [/septic shock|sepsis/i],
-  "p-observation": [/gastroenteritis/i],
-};
-
-export function procedureFor(text: string, procedures: Procedure[]): string | null {
-  const known = new Set(procedures.map((p) => p.id));
-  for (const [id, [a, b]] of Object.entries(PROCEDURE_WORDS)) {
-    if (!known.has(id)) continue;
-    if (a.test(text) && (!b || b.test(text))) return id;
-  }
-  return null;
-}
+// The phrase map lives in the engine now, shared with the policy reader.
+export { procedureFor };
 
 // ── Reading ─────────────────────────────────────────────────────────────────
 

@@ -23,3 +23,5 @@ export * from "./registry";
 export * from "./facts";
 export * from "./nopolicy";
 export * from "./care";
+export * from "./procedurewords";
+export * from "./policyclauses";

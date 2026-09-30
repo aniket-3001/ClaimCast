@@ -26,6 +26,7 @@ import type {
   Hospital,
   Policy,
   Procedure,
+  ProcedureCap,
   RoomClass,
 } from "@claimcast/engine";
 
@@ -145,6 +146,9 @@ export async function policies(): Promise<Policy[]> {
     pedWaitingMonths: p.pedWaitingMonths,
     moratoriumMonths: p.moratoriumMonths,
     exclusions: p.exclusions,
+      procedureCaps: (p.procedureCaps as ProcedureCap[] | null) ?? null,
+      nonNetworkPct: p.nonNetworkPct,
+      parentCopayPct: p.parentCopayPct,
     ...(p.notes === null ? {} : { notes: p.notes }),
   }));
 }

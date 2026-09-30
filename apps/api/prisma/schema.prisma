@@ -283,6 +283,12 @@ model Policy {
   moratoriumMonths Int
   /// The wording's exclusions, as read and confirmed. Null where no document was read.
   exclusions       String?
+  /// Limits on the whole admission for a named procedure, from the wording's annexure.
+  procedureCaps    Json?
+  /// Share of the admissible amount paid outside the insurer's network, e.g. 0.7. Null = no reduction.
+  nonNetworkPct    Float?
+  /// Co-payment that applies only to a dependent parent's claim, e.g. 0.2. Null = no separate rule.
+  parentCopayPct   Float?
   notes            String?
 
   sourceId String

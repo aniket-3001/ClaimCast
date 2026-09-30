@@ -165,11 +165,14 @@ export async function getForecast(
  */
 export async function extractPolicy(
   file: File,
+  /** Who the admission is for. Sent before the file so the server sees it first. */
+  patient = "",
 ): Promise<
   | { ok: true; documentId: string; extraction: Extraction; shaky: ShakyField[] }
   | { ok: false; reason: string }
 > {
   const form = new FormData();
+  if (patient.trim()) form.append("patient", patient.trim());
   form.append("file", file);
   const res = await fetch(BASE + "/api/policies/extract", {
     method: "POST",

@@ -79,6 +79,8 @@ export const CaseInputSchema = z.object({
   preExisting: z.boolean(),
   /** The age-group government scheme is applied by default; false switches it off. */
   ageScheme: z.boolean().optional(),
+  /** The patient is the policyholder's parent, covered as a dependant. */
+  dependentParent: z.boolean().optional(),
 });
 
 export type CaseInputWire = z.infer<typeof CaseInputSchema>;
@@ -170,6 +172,13 @@ export const PolicySchema = z.object({
   pedWaitingMonths: z.number().int().min(0),
   moratoriumMonths: z.number().int().min(0),
   exclusions: z.string().nullable(),
+  // Defaulted rather than required, so a policy saved before these existed still parses.
+  procedureCaps: z
+    .array(z.object({ procedureId: z.string(), amount: Paise, per: z.enum(["admission", "side"]) }))
+    .nullable()
+    .default(null),
+  nonNetworkPct: z.number().gt(0).lte(1).nullable().default(null),
+  parentCopayPct: z.number().min(0).max(1).nullable().default(null),
   notes: z.string().optional(),
 });
 export const _policyMatchesEngine: Exact<z.infer<typeof PolicySchema>, Policy> = true;
@@ -342,6 +351,9 @@ export const EXTRACTED_FIELDS = [
   "pedWaitingMonths",
   "moratoriumMonths",
   "exclusions",
+  "procedureCaps",
+  "nonNetworkPct",
+  "parentCopayPct",
 ] as const;
 
 export type ExtractedField = (typeof EXTRACTED_FIELDS)[number];

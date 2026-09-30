@@ -22,6 +22,17 @@ import {
 import { evaluate, familyPays, repair, withPolicy, ROOM_LABEL, registry } from "@claimcast/engine";
 import { chunkPages, retrieve } from "./retrieval.js";
 
+/**
+ * A policy as a client may have sent it: the two fields added for the wording's hidden limits can be
+ * missing from one sent by an older page, and "missing" means "none read", which is null.
+ */
+const policyOf = (p: NonNullable<SaveSessionRequest["policy"]>) => ({
+  ...p,
+  procedureCaps: p.procedureCaps ?? null,
+  nonNetworkPct: p.nonNetworkPct ?? null,
+  parentCopayPct: p.parentCopayPct ?? null,
+});
+
 /** The engine's outcome for this session, priced now, as the admin will see it. */
 export function summarise(req: SaveSessionRequest) {
   const run = () => {
@@ -54,11 +65,11 @@ export function summarise(req: SaveSessionRequest) {
   };
   if (req.noTreatment) {
     // The family chose "none" for the treatment: keep where and with which plan, price nothing.
-    const s = req.policy ? withPolicy(req.policy, run) : run();
+    const s = req.policy ? withPolicy(policyOf(req.policy), run) : run();
     return { ...s, procedure: "No treatment chosen", billTotal: 0, insurerPays: 0, patientPays: 0, deductionTotal: 0,
              deductions: [], repudiated: null, noTreatment: true, ageScheme: null };
   }
-  return req.policy ? withPolicy(req.policy, run) : run();
+  return req.policy ? withPolicy(policyOf(req.policy), run) : run();
 }
 
 export async function saveSession(db: PrismaClient, userId: string | null, req: SaveSessionRequest) {

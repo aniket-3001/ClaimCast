@@ -150,6 +150,12 @@ export interface Policy {
   /** Some products buy the clause out. When false, no scaling ever happens. */
   proportionateDeduction: boolean;
   copayPct: number;
+  /**
+   * A different co-payment for a claim made for a dependent parent, which group and family
+   * policies often carry. Null where the policy has no such rule. Used only when the case says
+   * the patient is the policyholder's parent; everyone else pays `copayPct`.
+   */
+  parentCopayPct: number | null;
   implantSubLimit: Paise | null;
   preHospDays: number;
   postHospDays: number;
@@ -164,7 +170,26 @@ export interface Policy {
    * is not the same as a policy with no exclusions, and is never priced as one.
    */
   exclusions: string | null;
+  /**
+   * A limit on the whole admission for a named procedure, from the wording's annexure.
+   * Null where none was read. Applied before the co-payment, as a deduction of its own.
+   */
+  procedureCaps: ProcedureCap[] | null;
+  /**
+   * The share of the admissible amount paid when the hospital is not on the insurer's
+   * cashless network -- 0.7 for 70% -- or null where the policy does not reduce for it.
+   * Null is not 1: a policy that simply asks you to pay first and claim afterwards has
+   * not reduced anything.
+   */
+  nonNetworkPct: number | null;
   notes?: string;
+}
+
+/** One limit on the whole admission for a procedure. `per: "side"` is per knee, per eye. */
+export interface ProcedureCap {
+  procedureId: string;
+  amount: Paise;
+  per: "admission" | "side";
 }
 
 /** A clause that can be cited as the cause of a deduction. */

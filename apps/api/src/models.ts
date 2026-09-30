@@ -58,20 +58,40 @@ export const FIELD_NOTES: Record<ExtractedField, string> = {
   icuCapPctOfSI: "ICU limit as a fraction of sum insured, or null if stated in rupees only.",
   proportionateDeduction:
     "true if the policy applies proportionate deduction when the room taken exceeds the limit.",
-  copayPct: "Co-payment as a fraction -- 20% is 0.2, none is 0.",
+  copayPct:
+    "Co-payment as a fraction -- 20% is 0.2, none is 0. The general one, for the insured person and " +
+    "their spouse and children. A co-payment stated only for a dependent parent is not this one: it " +
+    "goes in parentCopayPct, and this stays 0 if nobody else pays one.",
   implantSubLimit: "Implant or prosthesis sub-limit in paise, or null if there is none.",
   preHospDays: "Days of pre-hospitalisation expenses covered.",
   postHospDays: "Days of post-hospitalisation expenses covered.",
   dayCareCovered: "true if day-care procedures are covered without the minimum stay.",
   monthsInForce:
-    "How many months the cover has been continuously in force. A schedule states the current " +
-    "policy year, which is a different thing, so this is almost always null. Do not compute it " +
-    "from the period of insurance.",
+    "How many months of continuous cover the PATIENT has, only where the document states it as a " +
+    "number of months against that person (a certificate of continuous cover does). If the " +
+    "instructions name the patient, use that person's figure and no one else's. A schedule states " +
+    "the current policy year, which is a different thing, so otherwise this is null. Never compute " +
+    "it from dates.",
   pedWaitingMonths: "Pre-existing disease waiting period, in months.",
   moratoriumMonths: "Moratorium period, in months.",
   exclusions:
     "What the policy excludes or will not pay for, as a semicolon-separated list in the " +
     "document's own words. The span quotes the heading or opening line of that section.",
+  procedureCaps:
+    "A limit on the WHOLE admission for a named procedure (room, fees, implant and medicines " +
+    "together), usually in a table or annexure near the end. One entry per procedure, separated " +
+    "by semicolons, as 'procedure name: amount in rupees per knee' (or per eye, or per admission) -- " +
+    "for example 'Total knee replacement: 150000 per knee; Cataract surgery: 30000 per eye'. " +
+    "Null if there is no such table. Not the implant sub-limit, the room limit or the sum insured. " +
+    "The span quotes the heading of that table.",
+  parentCopayPct:
+    "A co-payment that applies only to a claim for a dependent parent, as a fraction -- 20% is 0.2. " +
+    "Null if the policy has no separate rule for parents. The span quotes the sentence that states it.",
+  nonNetworkPct:
+    "If the policy pays only a share of the admissible amount at a hospital outside its cashless " +
+    "network, that share as a fraction -- 70% is 0.7. Null if it does not reduce the payment. " +
+    "A statement that you pay first and claim afterwards, on the same terms, is null. The span " +
+    "quotes the sentence that states the reduction.",
 };
 
 /**
@@ -102,6 +122,9 @@ export const FIELD_TYPES: Record<ExtractedField, "string" | "number" | "boolean"
   pedWaitingMonths: "number",
   moratoriumMonths: "number",
   exclusions: "string",
+  procedureCaps: "string",
+  nonNetworkPct: "number",
+  parentCopayPct: "number",
 };
 
 /**
@@ -131,6 +154,9 @@ export const FIELD_QUERIES: Record<ExtractedField, string> = {
   pedWaitingMonths: "pre-existing disease waiting period months",
   moratoriumMonths: "moratorium period months continuous",
   exclusions: "exclusions excluded not payable non-payable items permanent",
+  procedureCaps: "annexure procedure limits maximum payable whole admission per knee per eye cataract hernia knee replacement",
+  nonNetworkPct: "hospital outside network non-network settled percentage admissible amount cashless reimbursement",
+  parentCopayPct: "dependent parent parents co-payment percentage admissible amount group policy",
 };
 
 /** Per field, the passages retrieval ranked highest in this document. */

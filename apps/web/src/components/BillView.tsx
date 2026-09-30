@@ -1,5 +1,15 @@
 import { AgeSchemeNote } from "./Journey";
-import { familyPays, fmt, isNoPolicy, pct, type LineKind, type Evaluated, registry } from "@claimcast/engine";
+import {
+  familyPays,
+  fmt,
+  isNoPolicy,
+  pct,
+  procedureLimit,
+  WHOLE_ADMISSION,
+  type LineKind,
+  type Evaluated,
+  registry,
+} from "@claimcast/engine";
 import { lang, t, tx } from "../i18n";
 
 const KIND: Record<LineKind, { label: string; tone: string }> = {
@@ -26,7 +36,7 @@ export function BillView({ e }: { e: Evaluated }) {
   // default payer here -- everything below this point works out what the
   // policy alone would do, and that math is not what the family actually pays.
   const pays = familyPays(e);
-  const byLine = new Map<string, { amount: number; clause: string; reason: string }[]>();
+  const byLine = new Map<string, Evaluated["result"]["deductions"]>();
   for (const d of r.deductions) {
     if (!byLine.has(d.lineId)) byLine.set(d.lineId, []);
     byLine.get(d.lineId)!.push(d);
@@ -76,7 +86,7 @@ export function BillView({ e }: { e: Evaluated }) {
         </div>
         <div className="fact">
           <span className="k">{t("Co-payment")}</span>
-          <span className="v">{e.policy.copayPct ? pct(e.policy.copayPct) : t("none")}</span>
+          <span className="v">{r.copayPct ? pct(r.copayPct) : t("none")}</span>
         </div>
         <div className="fact">
           <span className="k">{t("Implant sub-limit")}</span>
@@ -84,6 +94,22 @@ export function BillView({ e }: { e: Evaluated }) {
             {e.policy.implantSubLimit === null ? t("none") : fmt(e.policy.implantSubLimit)}
           </span>
         </div>
+        {/* Only where the wording has them: two terms a schedule page does not show. */}
+        {(() => {
+          const cap = e.policy.procedureCaps?.find((c) => c.procedureId === e.procedure.id);
+          return cap ? (
+            <div className="fact">
+              <span className="k">{t("Limit for this procedure")}</span>
+              <span className="v">{fmt(procedureLimit(cap))}</span>
+            </div>
+          ) : null;
+        })()}
+        {e.policy.nonNetworkPct !== null && (
+          <div className="fact">
+            <span className="k">{t("Outside the network")}</span>
+            <span className="v">{t("pays {p}%", { p: Math.round(e.policy.nonNetworkPct * 100) })}</span>
+          </div>
+        )}
       </div>
 
       {r.roomRatio < 1 && (
@@ -146,6 +172,26 @@ export function BillView({ e }: { e: Evaluated }) {
                   </tr>
                 );
               })}
+              {/* Deductions that belong to the admission as a whole, not to one line: each is a row of its
+                  own, so what it took is listed with the rest rather than appearing only in the total. */}
+              {(byLine.get(WHOLE_ADMISSION) ?? []).map((d, i) => (
+                <tr key={"admission-" + i}>
+                  <td>
+                    {tx(d.line)}
+                    <div className="sub">
+                      {tx(d.reason)} <span className="cite">{tx(CLAUSES[d.clause].cite)}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className="chip loss">{t("whole admission")}</span>
+                  </td>
+                  <td className="num">—</td>
+                  <td className="num">
+                    <span style={{ color: "var(--loss)" }}>{fmt(d.amount)}</span>
+                  </td>
+                  <td className="num">—</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -176,7 +222,7 @@ export function BillView({ e }: { e: Evaluated }) {
           {r.copay > 0 && (
             <li className="row">
               <span className="row-l">
-                {t("Co-payment at {p}", { p: pct(e.policy.copayPct) })}
+                {t("Co-payment at {p}", { p: pct(r.copayPct) })}
                 <span className="cite">{tx(CLAUSES.COPAY.cite)}</span>
               </span>
               <span className="row-amt loss">{fmt(-r.copay)}</span>

@@ -7,7 +7,18 @@
  * markup rather than an exception. Run by `npm run check` alongside selfcheck.
  */
 import { renderToString } from "react-dom/server";
-import { NO_POLICY, evaluate, familyPays, fmt, setRegistry, stayDays, type CaseInput } from "@claimcast/engine";
+import {
+  NO_POLICY,
+  evaluate,
+  familyPays,
+  fmt,
+  registry,
+  repair,
+  setRegistry,
+  stayDays,
+  type CaseInput,
+  type Policy,
+} from "@claimcast/engine";
 import {
   ADMISSIONS,
   FIXTURES,
@@ -160,5 +171,51 @@ for (const l of ["en", "hi"] as const) {
     <Profile e={evaluate(cases[0])} name="Asha Rao" onName={noop} policyholder="" onPolicyholder={noop} onAge={noop} questionsNow={2} onOpen={noop} onBack={noop} onLang={noop} people={{ selfAge: 40, patientName: "Sita", patientAge: 68, policyOwner: "self", family: [] }} />,
   );
 }
+
+// The two clauses a schedule does not show. The engine tests prove the arithmetic; this proves the person
+// looking at "The working" can see it: each clause is a row of the bill table with its amount, its reason and
+// its clause, the policy's terms show beside the other limits, and Hindi leaves no English in them.
+{
+  const prev = registry();
+  const pol: Policy = {
+    ...POLICIES.find((p) => p.id === "pol-sanjeevani")!,
+    id: "pol-smoke-clauses",
+    insurer: "Nivaran Insurance",
+    procedureCaps: [{ procedureId: "p-tkr", amount: 5_000_000, per: "side" }],
+    nonNetworkPct: 0.7,
+  };
+  setRegistry({ ...prev, policies: [...prev.policies, pol] });
+  const at = (hospitalId: string): CaseInput =>
+    repair({
+      hospitalId, procedureId: "p-tkr", policyId: pol.id, roomClass: "private", route: "cashless", days: 5, icuDays: 0,
+      siUsed: 0, implantId: "", admittedInpatient: true, age: 45, hasPmjayCard: false, govtEmployeeOrPensioner: false,
+      esiInsured: false, preExisting: false,
+    });
+  for (const l of ["en", "hi"] as const) {
+    setLang(l, false);
+    const off = evaluate(at("h-arogya"));
+    const html = renderToString(<BillView e={off} />);
+    const capCut = off.result.deductions.find((d) => d.clause === "PROCEDURE_CAP");
+    const netCut = off.result.deductions.find((d) => d.clause === "NON_NETWORK");
+    if (!netCut) throw new Error("the network reduction did not apply at a hospital off the network");
+    if (!capCut) throw new Error("the procedure limit did not apply to a bill above it");
+    for (const d of [capCut, netCut]) {
+      if (!d) continue;
+      if (!html.includes(esc(fmt(d.amount)))) throw new Error("a whole-admission deduction is in the total but not on the bill table");
+      if (!html.includes("whole admission") && !html.includes("पूरा भर्ती खर्च")) throw new Error("the whole-admission row has no label");
+    }
+    if (l === "hi" && /at most|cashless network, and the policy|Hospital outside the insurer|Whole admission, limit/.test(html)) {
+      throw new Error("the whole-admission rows have English left in them with Hindi selected");
+    }
+    const on = renderToString(<BillView e={evaluate(at("h-meridian"))} />);
+    if (/NON_NETWORK|outside the insurer|बीमा कंपनी के नेटवर्क से बाहर का अस्पताल/.test(on)) {
+      throw new Error("the network reduction was shown for a hospital that is on the network");
+    }
+  }
+  setRegistry(prev);
+  setLang("en", false);
+  console.log("ok   the two policy clauses are rows of the bill table, in English and Hindi, and absent where they do not apply");
+}
+
 setLang("en", false);
 console.log(`ok   ${rendered} cases rendered clean in English and Hindi, plus the database tab`);

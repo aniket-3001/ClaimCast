@@ -296,6 +296,8 @@ export const CLAUSE_SOURCE: Record<string, string> = {
   IMPLANT_SUBLIMIT: "claimcast-synthetic",
   PRE_POST_WINDOW: "claimcast-synthetic",
   COPAY: "claimcast-synthetic",
+  PROCEDURE_CAP: "claimcast-synthetic",
+  NON_NETWORK: "claimcast-synthetic",
   SUM_INSURED: "claimcast-synthetic",
   DAY_CARE: "irdai-standard-definitions",
   DAY_CARE_DOWNGRADE: "irdai-standard-definitions",

@@ -50,6 +50,18 @@ export const CLAUSES: Record<string, Clause> = {
     source: "Product wording",
     text: "Expenses incurred before admission or after discharge are payable only within the stated windows, and only where they relate to the same condition.",
   },
+  PROCEDURE_CAP: {
+    id: "PROCEDURE_CAP",
+    cite: "Policy wording \u2014 limit on the whole admission for a procedure (annexure)",
+    source: "Product wording",
+    text: "For a procedure listed in the policy's annexure, the most the insurer pays for the whole admission is the amount shown there, taking room, fees, implant and medicines together. It is applied before the co-payment, and it is separate from the room limit and the implant sub-limit.",
+  },
+  NON_NETWORK: {
+    id: "NON_NETWORK",
+    cite: "Policy wording \u2014 claim outside the cashless network",
+    source: "Product wording",
+    text: "Where the wording says so, a claim at a hospital that is not on the insurer's cashless network is settled at a stated share of the admissible amount, and the family bears the rest.",
+  },
   COPAY: {
     id: "COPAY",
     cite: "Policy schedule \u2014 co-payment",

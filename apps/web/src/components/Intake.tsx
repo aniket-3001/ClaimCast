@@ -5,6 +5,7 @@ import {
   familyPays,
   fmt,
   NO_POLICY_ID,
+  parseProcedureCaps,
   pct,
   registry,
   SENIOR_FROM,
@@ -81,7 +82,7 @@ export function Intake({
 
   async function read(file: File) {
     setUp({ stage: "reading", filename: file.name });
-    const r = await extractPolicy(file).catch(() => ({
+    const r = await extractPolicy(file, people.patientName).catch(() => ({
       ok: false as const,
       reason: "The server is not reachable.",
     }));
@@ -711,6 +712,9 @@ const READ_ROWS: { field: ExtractedField; label: string; kind: Kind; unit?: stri
   { field: "pedWaitingMonths", label: "Wait before old illnesses are covered", kind: "count", unit: "months" },
   { field: "moratoriumMonths", label: "After this, claims cannot be disputed", kind: "count", unit: "months" },
   { field: "exclusions", label: "Not covered", kind: "text" },
+  { field: "parentCopayPct", label: "Co-payment if the patient is a dependent parent", kind: "pct", unit: "%" },
+  { field: "procedureCaps", label: "Limit on the whole admission for a procedure", kind: "text" },
+  { field: "nonNetworkPct", label: "Share paid outside the insurer's network", kind: "pct", unit: "%" },
 ];
 
 /**
@@ -796,9 +800,13 @@ function ExtractionPanel({
   // Not on a schedule, and not derivable from one: a policy renewed for eight
   // years and one bought in January carry the same period of insurance. It
   // decides whether the waiting period above has expired, so it is asked rather
-  // than guessed, and it starts from the sample policy only so the field is
-  // never silently zero.
-  const [months, setMonths] = useState(String(fallback.monthsInForce));
+  // than guessed. It starts from what the document states for this patient, where it does (a
+  // certificate of continuous cover does), and is otherwise empty. Starting from a sample plan left
+  // a wrong number sitting there looking as if it had been confirmed.
+  const stated = extraction.fields.monthsInForce;
+  const statedMonths = typeof stated?.value === "number" ? stated.value : null;
+  const [months, setMonths] = useState(statedMonths !== null ? String(statedMonths) : "");
+  const monthsOk = months.trim() !== "" && Number.isFinite(Number(months)) && Number(months) >= 0;
 
   // What the person has typed, keyed by field, and empty until they type. The
   // reading itself is never mutated: the row the server sent has to survive
@@ -933,11 +941,21 @@ function ExtractionPanel({
           onChange={(ev) => setMonths(ev.target.value)}
         />
       </div>
-      <p className="note" style={{ marginTop: 6 }}>
-        {t(
-          "Your document shows this year's dates, not how long you have been insured without a break. Waiting periods depend on it, so please tell us.",
-        )}
-      </p>
+      {statedMonths !== null && stated?.span && months === String(statedMonths) ? (
+        <p className="note" style={{ marginTop: 6 }}>
+          {t("Read from your document")}: {"“"}
+          {stated.span.text}
+          {"”"} {"—"} {t("page {n}", { n: stated.span.page })}
+        </p>
+      ) : (
+        <p className={monthsOk ? "note" : "warn-line"} style={{ marginTop: 6 }}>
+          {monthsOk
+            ? t(
+                "Your document shows this year's dates, not how long you have been insured without a break. Waiting periods depend on it, so please tell us.",
+              )
+            : t("Type how many months you have had this cover to continue.")}
+        </p>
+      )}
 
       {/* Asked here rather than in a settings screen nobody opens, and asked
           about one specific thing rather than as a blanket permission. What is
@@ -964,6 +982,7 @@ function ExtractionPanel({
       <button
         type="button"
         style={{ marginTop: 14 }}
+        disabled={!monthsOk}
         onClick={() =>
           onConfirm(
             asPolicy(confirmed, extraction, fallback, clamp(months, 0, 600)),
@@ -1037,6 +1056,18 @@ function asPolicy(
     pedWaitingMonths: num("pedWaitingMonths") ?? fallback.pedWaitingMonths,
     moratoriumMonths: num("moratoriumMonths") ?? fallback.moratoriumMonths,
     exclusions: str("exclusions", "") || null,
+    // Both come off the wording itself and are confirmed on the same screen as the rest. The caps are
+    // typed as lines a person can read and correct, and turned into limits here; a share outside
+    // 0 to 100 is discarded rather than trusted, since it would pay more than the bill or nothing.
+    parentCopayPct: (() => {
+      const v = num("parentCopayPct");
+      return v !== null && v >= 0 && v <= 1 ? v : null;
+    })(),
+    procedureCaps: parseProcedureCaps(str("procedureCaps", ""), registry().procedures),
+    nonNetworkPct: (() => {
+      const v = num("nonNetworkPct");
+      return v !== null && v > 0 && v <= 1 ? v : null;
+    })(),
     notes: `Read from ${e.filename} on ${e.extractedAt.slice(0, 10)} and confirmed field by field.`,
   };
 }

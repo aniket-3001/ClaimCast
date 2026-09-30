@@ -9,9 +9,12 @@
  */
 import { adjudicate } from "./engine";
 import { fmt, rupees as r } from "./money";
-import { admission, policy, setRegistry } from "./registry";
+import { admission, policy, registry, setRegistry } from "./registry";
 import { ADMISSIONS, FIXTURES, HOSPITALS } from "./fixtures";
 import { NO_POLICY, NO_POLICY_ID } from "./nopolicy";
+import { parseProcedureCaps, procedureLimit } from "./policyclauses";
+import { WHOLE_ADMISSION } from "./engine";
+import type { Policy } from "./types";
 import { carePlan, surgeryOptions, testOptions, type DiagnosticTest } from "./care";
 
 // The engine has no data until something gives it some. These checks are the
@@ -326,6 +329,121 @@ console.log("Government schemes by age: RBSK under 18, Vay Vandana at 70 and abo
   check(ageScheme(appendix)!.applies === false && familyPays(appendix).via === null,
     "RBSK does not pay for a treatment that is not a listed childhood condition",
     "RBSK was applied to an appendicectomy");
+}
+
+
+console.log("Two clauses a schedule does not show: a limit on the whole admission, and a reduced settlement outside the network");
+{
+  let bad = 0;
+  const ok = (good: boolean, yes: string, no: string) => {
+    if (!good) {
+      bad++;
+      failures++;
+    }
+    console.log(`${good ? "  ok  " : "FAIL  "}${good ? yes : no}`);
+  };
+  // The reference admission's bill, under the reference policy, is the baseline: 3,53,900 billed, 2,27,000 paid.
+  const a = admission("a-2401");
+  const base = policy(a.policyId);
+  const price = (over: Partial<Policy>, more: { procedureId?: string; outOfNetwork?: boolean; dependentParent?: boolean } = {}) =>
+    adjudicate({ lines: a.lines, policy: { ...base, ...over }, siUsed: a.siUsed, repudiated: null, ...more });
+  const adds = (x: ReturnType<typeof price>) =>
+    x.insurerPays + x.patientPays === x.billTotal && x.deductions.reduce((t, d) => t + d.amount, 0) === x.deductionTotal;
+  const spine = "p-spine-fusion";
+  const cap = (amount: number, per: "admission" | "side" = "admission") => [{ procedureId: spine, amount, per }];
+  const has = (x: ReturnType<typeof price>, clause: string) => x.deductions.some((d) => d.clause === clause);
+
+  const none = price({}, { procedureId: spine, outOfNetwork: true });
+  ok(none.insurerPays === r(227000) && !none.deductions.some((d) => d.lineId === WHOLE_ADMISSION),
+    "a policy with neither clause is untouched, in or out of network", "a policy with no such clause was changed");
+
+  const capped = price({ procedureCaps: cap(r(200000)) }, { procedureId: spine });
+  const cd = capped.deductions.find((d) => d.clause === "PROCEDURE_CAP");
+  ok(!!cd && cd.lineId === WHOLE_ADMISSION && cd.amount === r(27000) && capped.insurerPays === r(200000) && adds(capped),
+    "a Rs 2,00,000 limit takes the Rs 27,000 above it, as a deduction of its own, and the figures still add up",
+    `the procedure limit gave ${cd ? fmt(cd.amount) : "no deduction"} and insurer ${fmt(capped.insurerPays)}`);
+  ok(!!cd && /2,00,000/.test(cd.reason) && /room, fees, implant and medicines/.test(cd.reason),
+    "the reason names the limit and what it covers", "the reason does not name the limit");
+  ok(!has(price({ procedureCaps: cap(r(300000)) }, { procedureId: spine }), "PROCEDURE_CAP"),
+    "a limit above the bill takes nothing", "a limit above the bill still took something");
+  ok(!has(price({ procedureCaps: cap(r(200000)) }), "PROCEDURE_CAP") &&
+    !has(price({ procedureCaps: cap(r(200000)) }, { procedureId: "p-tkr" }), "PROCEDURE_CAP"),
+    "a limit written for one procedure is never applied to another, or to a bill that names none",
+    "a limit leaked onto another procedure");
+
+  const withCopay = price({ procedureCaps: cap(r(200000)), copayPct: 0.2 }, { procedureId: spine });
+  ok(withCopay.copay === r(40000) && withCopay.insurerPays === r(160000),
+    "the limit comes before the co-payment: 20% of Rs 2,00,000, not of the larger figure",
+    `co-payment was ${fmt(withCopay.copay)} on a capped amount`);
+
+  const out = price({ nonNetworkPct: 0.7 }, { outOfNetwork: true });
+  const nd = out.deductions.find((d) => d.clause === "NON_NETWORK");
+  ok(!!nd && nd.lineId === WHOLE_ADMISSION && nd.amount === r(68100) && out.insurerPays === r(158900) && adds(out),
+    "outside the network the claim is settled at 70%: Rs 68,100 comes off Rs 2,27,000, leaving Rs 1,58,900",
+    `outside the network the reduction was ${nd ? fmt(nd.amount) : "absent"}`);
+  ok(!has(price({ nonNetworkPct: 0.7 }, { outOfNetwork: false }), "NON_NETWORK"),
+    "in network the reduction never applies", "the network reduction applied in network");
+  ok(!has(price({ nonNetworkPct: null }, { outOfNetwork: true }), "NON_NETWORK"),
+    "a policy that only says to pay first and claim later has no reduction to apply", "a reduction was invented");
+  ok(/70%/.test(nd?.reason ?? "") && /cashless network/.test(nd?.reason ?? ""),
+    "the reason says which share and why", "the network reason is not specific");
+
+  const both = price({ procedureCaps: cap(r(200000)), nonNetworkPct: 0.7 }, { procedureId: spine, outOfNetwork: true });
+  ok(both.deductions.map((d) => d.clause).filter((c) => c === "PROCEDURE_CAP" || c === "NON_NETWORK").join(",") === "PROCEDURE_CAP,NON_NETWORK" &&
+    both.insurerPays === r(140000) && adds(both),
+    "both together: the limit first, then 70% of what is left (Rs 1,40,000)", `both together paid ${fmt(both.insurerPays)}`);
+
+  // A co-payment that belongs to a dependent parent alone, as on a group policy.
+  const parentRule = { copayPct: 0, parentCopayPct: 0.2 };
+  const asParent = price(parentRule, { dependentParent: true });
+  const asEmployee = price(parentRule, {});
+  ok(asParent.copay === r(45400) && asParent.insurerPays === r(181600) && asParent.copayPct === 0.2 && adds(asParent),
+    "a dependent parent pays 20% of Rs 2,27,000 (Rs 45,400); the rate actually applied is reported with the result",
+    `a parent's co-payment was ${fmt(asParent.copay)}`);
+  ok(asEmployee.copay === 0 && asEmployee.insurerPays === r(227000) && asEmployee.copayPct === 0,
+    "the employee, spouse and children pay no co-payment on the same policy", "the parent rule leaked onto the employee");
+  ok(price({ copayPct: 0.1, parentCopayPct: null }, { dependentParent: true }).copayPct === 0.1,
+    "a policy with no parent rule charges a parent its ordinary co-payment", "a parent was charged a rule the policy does not have");
+
+  // Sides: "per knee" on a bilateral replacement is two limits.
+  ok(procedureLimit({ procedureId: "p-tkr", amount: r(150000), per: "side" }) === r(300000) &&
+    procedureLimit({ procedureId: "p-tkr", amount: r(150000), per: "admission" }) === r(150000) &&
+    procedureLimit({ procedureId: "p-cataract", amount: r(30000), per: "side" }) === r(30000),
+    "per knee on a bilateral replacement is Rs 3,00,000; per eye on one cataract is one limit", "the per-side limit is wrong");
+
+  const parsed = parseProcedureCaps(
+    "Total knee replacement: 150000 per knee; Cataract surgery: ₹30,000 per eye; Hernia repair: 60000 per admission",
+    FIXTURES.procedures);
+  ok(parsed?.length === 2 && parsed[0].procedureId === "p-tkr" && parsed[0].amount === r(150000) && parsed[0].per === "side" &&
+    parsed[1].procedureId === "p-cataract" && parsed[1].amount === r(30000),
+    "a schedule's lines are read into limits; one for a procedure we do not price is dropped, not guessed at",
+    `the caps were read as ${JSON.stringify(parsed)}`);
+  ok(parseProcedureCaps("Room rent up to 5000 a day", FIXTURES.procedures) === null && parseProcedureCaps(null, FIXTURES.procedures) === null,
+    "text with no procedure limit in it gives none", "a limit was read out of nothing");
+
+  // Through evaluate(): the hospital decides network, so the same policy prices differently in two places.
+  const pol: Policy = {
+    ...policy("pol-sanjeevani"),
+    id: "pol-test-clauses",
+    insurer: "Nivaran Insurance",
+    procedureCaps: [{ procedureId: "p-tkr", amount: r(150000), per: "side" }],
+    nonNetworkPct: 0.7,
+  };
+  const prev = registry();
+  setRegistry({ ...prev, policies: [...prev.policies, pol] });
+  const inp = (hospitalId: string): CaseInput => ({
+    hospitalId, procedureId: "p-tkr", policyId: pol.id, roomClass: "private", route: "cashless", days: 5, icuDays: 0, siUsed: 0,
+    implantId: "", admittedInpatient: true, age: 45, hasPmjayCard: false, govtEmployeeOrPensioner: false,
+    esiInsured: false, preExisting: false,
+  });
+  const inNet = evaluate(repair(inp("h-meridian")));
+  const outNet = evaluate(repair(inp("h-arogya")));
+  setRegistry(prev);
+  ok(!has(inNet.result, "NON_NETWORK") && has(outNet.result, "NON_NETWORK"),
+    "through evaluate(): on the network no reduction, at a hospital off it the 70% applies",
+    "evaluate() did not tell the two hospitals apart");
+  ok(adds(inNet.result) && adds(outNet.result), "and both hospitals' figures add up", "a figure did not add up");
+  console.log(bad ? `  ${bad} failed in this block` : "  the two clauses are applied, ordered, itemised and never applied where they should not be");
 }
 
 console.log(failures ? `\n${failures} failed` : "\nall checks passed");
