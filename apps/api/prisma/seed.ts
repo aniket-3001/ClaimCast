@@ -17,6 +17,7 @@ import { PrismaClient, type Prisma } from "@prisma/client";
 // The fixtures, by name. This is the one place in the application that is
 // meant to read them: everything downstream reads the database this writes.
 import {
+  ADMISSIONS,
   CLAUSES,
   HOSPITALS,
   LIST_FRAMEWORK,
@@ -421,7 +422,11 @@ async function main() {
     //
     // A deployment's admissions table holds the admissions that deployment saw.
     // Until it has seen one it is empty, and the screen says so.
-    await tx.admission.deleteMany({});
+    //
+    // Only the fixtures' own ids are removed. The deploy pipeline now runs this
+    // seed on every push to main, so clearing the whole table would one day
+    // delete an admission this deployment genuinely settled.
+    await tx.admission.deleteMany({ where: { id: { in: ADMISSIONS.map((a) => a.id) } } });
   },
   // Prisma gives an interactive transaction five seconds by default, which is
   // ample against a database on the same machine and nowhere near enough

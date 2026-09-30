@@ -368,8 +368,11 @@ Every push, on every branch, runs the checks: the engine's selfcheck and its 76
 rendered cases, the deck's figures, the reference admission adjudicated against
 a real Postgres started as a service container, the extraction target, the
 session rules, the three learning loops, and the cost model's own tests. A push
-to `main` that clears all of that goes on to migrate, build both images tagged
-with the commit, deploy `ml` then `api`, and smoke the public URL.
+to `main` that clears all of that goes on to migrate and seed the database,
+build both images tagged with the commit, deploy `ml` then `api`, and smoke the
+public URL. The seed is there because a migration only makes tables: a release
+that adds one (the CGHS investigation list, a new source) would otherwise come up
+against an empty table and show nothing, with no error.
 
 The smoke it runs is `infra/smoke_deploy.py`, not `smoke_learning.py`. The
 learning one is the stronger check, and it earns that by reporting an invented

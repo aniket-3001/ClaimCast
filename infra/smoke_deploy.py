@@ -98,6 +98,11 @@ CASE = {
     "age": 45,
     "hasPmjayCard": False,
     "govtEmployeeOrPensioner": False,
+    # Added to the case contract with the ESI scheme and the applied waiting
+    # period. Both are required, so a payload without them is refused with a 400,
+    # which is how this script found out the contract had moved.
+    "esiInsured": False,
+    "preExisting": False,
 }
 st, ev = call("POST", "/api/cases/evaluate", CASE)
 ok(st == 200, "POST /api/cases/evaluate is 200")
@@ -115,6 +120,17 @@ if st == 200 and isinstance(ev, dict):
     # thing the deck promises cannot happen.
     unattributed = [d for d in r["deductions"] if not d.get("clause")]
     ok(not unattributed, str(len(r["deductions"])) + " deductions, every one citing a clause")
+
+# The age-group schemes apply by default: Vay Vandana from 70, RBSK under 18. A
+# scheme pays instead of the policy, so the policy-only figures must not be what
+# comes back as the settlement when one applies; here we only assert the route
+# still answers and still adds up for both ends of the age range.
+for who, age in (("a 72 year old", 72), ("a 9 year old", 9)):
+    st, ev2 = call("POST", "/api/cases/evaluate", {**CASE, "age": age})
+    ok(st == 200, "an evaluation for " + who + " is 200")
+    if st == 200 and isinstance(ev2, dict):
+        r2 = ev2["result"]
+        ok(r2["insurerPays"] + r2["patientPays"] == r2["billTotal"], "  and insurer + patient = bill for " + who)
 
 # -------------------------------------------------------------- forecast --
 # This is the only route that crosses into the Python service, so it is the

@@ -182,7 +182,7 @@ jobs:
       # person would open by hand, and the password is read from Secret Manager
       # by the job rather than kept as a GitHub secret -- one fewer copy, and it
       # rotates wherever Secret Manager rotates.
-      - name: Migrate
+      - name: Migrate and seed
         run: |
           gcloud compute start-iap-tunnel claimcast-db 5432 \
             --local-host-port=localhost:5433 --zone=$REGION-a --project=$PROJECT &
@@ -198,6 +198,14 @@ jobs:
           esac
           npm ci
           DATABASE_URL="$DB" npx prisma migrate deploy --schema apps/api/prisma/schema.prisma
+          # The reference rows the new code reads, written before it starts. A
+          # migration makes the tables; only the seed fills them. Without this
+          # step a revision that adds a table (the 776 CGHS tests, a new source
+          # and clause) comes up against an empty one and shows nothing, with no
+          # error anywhere. The seed is an idempotent upsert, inside one
+          # transaction, and touches reference rows only.
+          npm run db:generate
+          DATABASE_URL="$DB" npm run db:seed
 
       # The model first. It tolerates an older API -- a request without
       # `observed` is the survey estimate untouched -- so this order is safe in
