@@ -10,5 +10,10 @@
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
-xgboost==3.4.1
+# The CPU-only build of the same release, imported as `xgboost`. The full wheel
+# depends on nvidia-nccl, a 305 MB GPU communication library that a CPU-only
+# Cloud Run service can never use. It made a cold build pull 300 MB more than
+# this service needs, and every image tagged by commit would carry it into
+# Artifact Registry, whose free tier is 0.5 GB. This wheel is 5.8 MB.
+xgboost-cpu==3.4.1
 numpy==2.5.3
