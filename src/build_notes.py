@@ -148,7 +148,7 @@ SLIDES = [
                 "return. The rule: AI reads and explains; it never works out a rupee.",
         "explain": ["<b>Reading the policy PDF</b> — Gemini 2.5 Pro on Google's Vertex AI in the cloud version (Groq "
                     "and Llama 3.3 70B as fallbacks). It gets the PDF, the passages a TF-IDF search finds for each "
-                    "detail, and past corrections if families agreed to share them. It returns 16 details, each with "
+                    "detail, and past corrections if families agreed to share them. It returns 17 details, each with "
                     "the sentence and page it came from; code looks for every quote in the PDF's own text, and the "
                     "family confirms each detail.",
                     "<b>Ask ClaimCast</b> — Llama 3.3 70B via OpenRouter. It gets the engine's numbered facts, "

@@ -415,7 +415,7 @@ title(s, "The AI inside: what reads, what answers, what checks", "Language model
 cols = [
     ("READING YOUR POLICY PDF", "Gemini 2.5 Pro on Vertex AI", "fallback: Groq gpt-oss-120b · Llama 3.3 70B",
      "the PDF, the passages a TF-IDF search finds for each detail, and past corrections (only if the family agreed)",
-     "16 policy details, each with the sentence and page it came from",
+     "17 policy details, each with the sentence and page it came from",
      "each quote is searched in the PDF’s own text; the family confirms every detail before it is used"),
     ("ASK CLAIMCAST  (CHAT)", "Llama 3.3 70B via OpenRouter", "English or Hindi answers",
      "the engine’s numbered facts about this stay, health-report facts, policy passages, and 3 similar past answers",
