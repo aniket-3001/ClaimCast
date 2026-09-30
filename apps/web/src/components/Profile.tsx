@@ -169,7 +169,7 @@ export function Profile({
             <li key={s.id}>
               <button type="button" onClick={() => reopen(s)}>
                 <span className="what">
-                  <b>{s.summary.procedure}</b>
+                  <b>{s.summary.noTreatment ? t("No treatment chosen") : s.summary.procedure}</b>
                   <span>
                     {s.summary.hospital} · {tx(s.summary.roomClass)} ·{" "}
                     {new Date(s.updatedAt).toLocaleDateString("en-IN")}
@@ -177,7 +177,7 @@ export function Profile({
                 </span>
                 <span className="pay">
                   <span>{t("you pay")}</span>
-                  <b className="loss">{fmt(s.summary.patientPays)}</b>
+                  <b className="loss">{s.summary.noTreatment ? "—" : fmt(s.summary.patientPays)}</b>
                 </span>
                 <span className="go">→</span>
               </button>

@@ -3,7 +3,7 @@ import type { SavedSessionDetail, SavedSessionRow } from "@claimcast/contracts";
 import { fmt, registry, setRegistry, type CaseInput } from "@claimcast/engine";
 import { adminSession, adminSessions } from "../api";
 import { plural, t, tx } from "../i18n";
-import { RELATION_LABEL, type Relation } from "../people";
+import { POLICY_OWNER_LABEL, RELATION_LABEL, type Relation } from "../people";
 
 /**
  * Every session a family chose to save, as the admin sees it.
@@ -28,13 +28,13 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
     .filter(
       (r) =>
         !needle ||
-        [r.name, r.policyholder, r.summary.hospital, r.summary.procedure, r.health?.diagnosis, ...r.people.flatMap((p) => [p.name, p.uid])]
+        [r.name, r.policyholder, patientOf(r), r.summary.hospital, r.summary.procedure, r.health?.diagnosis, ...r.people.flatMap((p) => [p.name, p.uid])]
           .filter(Boolean)
           .some((x) => x!.toLowerCase().includes(needle)),
     )
     .sort((x, y) => {
       const v = (r: SavedSessionRow): string | number =>
-        sort[0] === "family" ? (r.name || r.policyholder || "").toLowerCase()
+        sort[0] === "family" ? (patientOf(r) || r.name || r.policyholder || "").toLowerCase()
         : sort[0] === "stay" ? r.summary.procedure
         : sort[0] === "plan" ? r.summary.policy
         : sort[0] === "pays" ? r.summary.patientPays
@@ -132,17 +132,24 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
             <Fragment key={r.id}>
               <tr className={`pick ${openId === r.id ? "on" : ""}`} onClick={() => setOpenId(openId === r.id ? null : r.id)}>
                 <td>
-                  <b>{r.name || r.policyholder || t("Unnamed")}</b>
+                  <b>{patientOf(r) || r.name || r.policyholder || t("Unnamed")}</b>
+                  {r.name && patientOf(r) && r.name !== patientOf(r) && <div className="sub">{t("saved by {x}", { x: r.name })}</div>}
                   {r.uploadedPolicy && <div className="sub">{t(" · own policy uploaded").replace(" · ", "")}</div>}
                 </td>
                 <td>
-                  {r.summary.procedure}
+                  {r.summary.noTreatment ? t("No treatment chosen") : r.summary.procedure}
                   <div className="sub">{r.summary.hospital}</div>
                 </td>
                 <td>{r.summary.policy}</td>
                 <td className="num">
-                  <b className="loss">{fmt(r.summary.patientPays)}</b>
-                  <div className="sub">{t("of")} {fmt(r.summary.billTotal)}</div>
+                  {r.summary.noTreatment ? (
+                    <span className="sub">{t("nothing priced")}</span>
+                  ) : (
+                    <>
+                      <b className="loss">{fmt(r.summary.patientPays)}</b>
+                      <div className="sub">{t("of")} {fmt(r.summary.billTotal)}</div>
+                    </>
+                  )}
                 </td>
                 <td className="num">{r.people.length}</td>
                 <td className="num">{r.chatTurns}</td>
@@ -157,16 +164,28 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                     <>
                       <div className="session-grid">
                         <div>
-                          <div className="session-k">{t("Family")}</div>
+                          <div className="session-k">{t("Patient")}</div>
                           <div>
-                            {detail.name || "—"}
-                            {detail.policyholder && detail.policyholder !== detail.name
-                              ? " " + t("(policy in the name of {x})", { x: detail.policyholder })
+                            {patientOf(detail) || "—"}
+                            {detail.people.find((p) => p.role === "patient")?.age != null
+                              ? ` · ${t("Age {n}", { n: detail.people.find((p) => p.role === "patient")!.age! })}`
                               : ""}
                           </div>
+                          <div className="session-k">{t("Name on the policy")}</div>
+                          <div>
+                            {detail.policyholderRelation === "none"
+                              ? t(POLICY_OWNER_LABEL.none)
+                              : `${detail.policyholder || "—"}${
+                                  detail.policyholderRelation ? ` (${t(POLICY_OWNER_LABEL[detail.policyholderRelation])})` : ""
+                                }`}
+                          </div>
+                          <div className="session-k">{t("Registered by")}</div>
+                          <div>{detail.name || t("Not registered")}</div>
                           <div className="session-k">{t("Hospital stay")}</div>
                           <div>
-                            {t("{proc}, {hospital}, {city}, {room} room, {n} nights", {
+                            {detail.summary.noTreatment
+                              ? t("No treatment chosen, at {hospital}, {city}", { hospital: detail.summary.hospital, city: detail.summary.city })
+                              : t("{proc}, {hospital}, {city}, {room} room, {n} nights", {
                               proc: detail.summary.procedure,
                               hospital: detail.summary.hospital,
                               city: detail.summary.city,
@@ -176,11 +195,17 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
                           </div>
                           <div className="session-k">{t("What ClaimCast worked out")}</div>
                           <div>
-                            {t("Bill {bill} · insurance pays {paid} · family pays", {
-                              bill: fmt(detail.summary.billTotal),
-                              paid: fmt(detail.summary.insurerPays),
-                            })}{" "}
-                            <b className="loss">{fmt(detail.summary.patientPays)}</b>
+                            {detail.summary.noTreatment ? (
+                              t("Nothing priced: no treatment was chosen.")
+                            ) : (
+                              <>
+                                {t("Bill {bill} · insurance pays {paid} · family pays", {
+                                  bill: fmt(detail.summary.billTotal),
+                                  paid: fmt(detail.summary.insurerPays),
+                                })}{" "}
+                                <b className="loss">{fmt(detail.summary.patientPays)}</b>
+                              </>
+                            )}
                             {detail.summary.repudiated && <div className="warn-line">{tx(detail.summary.repudiated)}</div>}
                           </div>
                         </div>
@@ -310,7 +335,7 @@ export function SavedSessions({ onOpen }: { onOpen: (c: CaseInput) => void }) {
 
 type Col = "family" | "stay" | "plan" | "pays" | "people" | "q" | "saved";
 const COLS: [Col, string][] = [
-  ["family", "Family"],
+  ["family", "Patient"],
   ["stay", "Hospital stay"],
   ["plan", "Plan"],
   ["pays", "Family pays"],
@@ -318,3 +343,8 @@ const COLS: [Col, string][] = [
   ["q", "Questions"],
   ["saved", "Saved on"],
 ];
+
+/** The patient's name, from the people saved with the session. */
+function patientOf(r: SavedSessionRow): string {
+  return r.people.find((p) => p.role === "patient")?.name ?? "";
+}

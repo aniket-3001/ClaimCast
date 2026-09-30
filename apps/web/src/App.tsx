@@ -3,7 +3,7 @@ import { rupees, evaluate, registry, repair, type CaseInput } from "@claimcast/e
 import type { ConfirmedHealth } from "@claimcast/contracts";
 import { isPreExisting } from "./illness";
 import { policyTravels } from "./labels";
-import { EMPTY_PEOPLE, toPersons, withUids, type People } from "./people";
+import { EMPTY_PEOPLE, patientMissing, toPersons, withUids, type People } from "./people";
 import { Intake } from "./components/Intake";
 import { Controls } from "./components/Controls";
 import { Journey } from "./components/Journey";
@@ -197,12 +197,28 @@ export default function App() {
     } else setProcNil(true);
   };
 
+  // A save warning goes once the family edits the details it was about.
+  useEffect(() => {
+    setSaving((cur) => (cur === "idle" || cur === "saving" ? cur : "idle"));
+  }, [people, policyholder, name]);
+
   const saveNow = async () => {
+    // The patient's details are required: take the family to them rather than save a record without.
+    if (patientMissing(people, policyholder).length) {
+      setSaving(t("Add the patient’s details on Start before saving."));
+      setTab("start");
+      setWizardStep(0);
+      window.scrollTo(0, 0);
+      return;
+    }
     setSaving("saving");
+    const insured = people.policyOwner !== "none";
     const r = await saveSession({
       ...(saved ? { id: saved.id } : {}),
       ...(name ? { name } : {}),
-      ...(policyholder ? { policyholder } : {}),
+      ...(insured && policyholder ? { policyholder } : {}),
+      policyholderRelation: people.policyOwner,
+      noTreatment: procNil,
       case: e.input,
       ...(policyTravels(e.policy) ? { policy: e.policy } : {}),
       ...(documentId ? { documentId } : {}),
@@ -315,6 +331,7 @@ export default function App() {
           onPeople={setPeople}
           health={health}
           onHealth={setHealth}
+          procNil={procNil}
           onContinue={() => {
             setTab("journey");
             window.scrollTo(0, 0);
@@ -328,7 +345,10 @@ export default function App() {
           onName={setName}
           policyholder={policyholder}
           onPolicyholder={setPolicyholder}
-          onAge={(age) => pick({ ...input, age })}
+          onAge={(age) => {
+            setPeople((p) => ({ ...p, patientAge: age }));
+            pick({ ...input, age });
+          }}
           questionsNow={chatTurns.filter((x) => x.role === "user").length}
           onOpen={open}
           onBack={() => setTab("start")}

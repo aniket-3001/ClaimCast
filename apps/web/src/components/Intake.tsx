@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { evaluate, fmt, pct, registry, setRegistry, type CaseInput, type Policy } from "@claimcast/engine";
-import type { ConfirmedHealth, Extraction, ExtractedField, ShakyField } from "@claimcast/contracts";
+import { evaluate, fmt, NO_POLICY_ID, pct, registry, setRegistry, type CaseInput, type Policy } from "@claimcast/engine";
+import { POLICY_OWNERS, type ConfirmedHealth, type Extraction, type ExtractedField, type PolicyOwner, type ShakyField } from "@claimcast/contracts";
 import { confirmDocument, extractPolicy } from "../api";
 import { lang, plural, t } from "../i18n";
 import { checkIllness, showDate, todayIso } from "../illness";
 import { policyLabel } from "../labels";
 import { HealthReport } from "./HealthReport";
-import { newMember, RELATION_LABEL, RELATIONS, shortId, type Member, type People, type Relation } from "../people";
+import { newMember, patientMissing, POLICY_OWNER_LABEL, RELATION_LABEL, RELATIONS, shortId, type Member, type People, type Relation } from "../people";
 
 /**
  * The front door, not the engine.
@@ -34,6 +34,7 @@ export function Intake({
   onPeople,
   health,
   onHealth,
+  procNil = false,
 }: {
   input: CaseInput;
   onChange: (next: CaseInput) => void;
@@ -55,6 +56,8 @@ export function Intake({
   /** The confirmed health report, or null. Optional: without one the app prices as it always did. */
   health: ConfirmedHealth | null;
   onHealth: (h: ConfirmedHealth | null) => void;
+  /** "None" chosen for the treatment on the path: nothing to price, so the review shows no bill. */
+  procNil?: boolean;
 }) {
   const { policies: POLICIES } = registry();
   const policy = POLICIES.find((p) => p.id === input.policyId)!;
@@ -89,8 +92,18 @@ export function Intake({
   }
   const set = (patch: Partial<CaseInput>) => onChange({ ...input, ...patch });
 
+  // The patient's details are required: nothing past the first step until they are in.
+  const missing = patientMissing(people, policyholder);
+  const [tried, setTried] = useState(false);
+  const bad = (f: (typeof missing)[number]) => tried && missing.includes(f);
   const go = (n: number) => {
-    onStep(Math.max(0, Math.min(STEPS.length - 1, n)));
+    const to = Math.max(0, Math.min(STEPS.length - 1, n));
+    if (to > 0 && missing.length) {
+      setTried(true);
+      onStep(0);
+      return;
+    }
+    onStep(to);
     window.scrollTo(0, 0);
   };
   const e = evaluate(input);
@@ -127,119 +140,173 @@ export function Intake({
 
       {step === 0 && (
         <div className="wiz-card">
-          <h1 className="wiz-q">{t("Tell us about you")}</h1>
-          <p className="wiz-hint">{t("Only the patient’s age matters for the bill. Names are optional.")}</p>
+          <h1 className="wiz-q">{t("Who is the patient?")}</h1>
+          <p className="wiz-hint">{t("The patient’s details are needed to price the stay. Telling us about yourself is optional.")}</p>
 
-          <div className="wiz-pair">
-            <label className="wiz-field">
-              <span>{t("Your name")}</span>
-              <input type="text" placeholder={t("Optional")} value={name} onChange={(ev) => onName(ev.target.value)} />
-            </label>
-            <label className="wiz-field">
-              <span>{t("Your age")}</span>
-              <input
-                type="number"
-                min={0}
-                max={120}
-                placeholder={t("Optional")}
-                value={people.selfAge ?? ""}
-                onChange={(ev) => onPeople({ ...people, selfAge: ev.target.value === "" ? null : clamp(ev.target.value, 0, 120) })}
-              />
-            </label>
-            <PersonId uid={people.selfUid} />
-          </div>
-
-          <div className="wiz-pair">
-            <label className="wiz-field">
-              <span>{t("Patient’s name")}</span>
-              <input
-                type="text"
-                placeholder={t("Optional")}
-                value={people.patientName}
-                onChange={(ev) => onPeople({ ...people, patientName: ev.target.value })}
-              />
-            </label>
-            <label className="wiz-field">
-              <span>{t("Patient’s age")}</span>
-              <input
-                type="number"
-                min={0}
-                max={120}
-                value={input.age}
-                onChange={(ev) => set({ age: clamp(ev.target.value, 0, 120) })}
-              />
-            </label>
-            <PersonId uid={people.patientUid} />
-          </div>
-          <button
-            type="button"
-            className="wiz-link"
-            onClick={() => {
-              onPeople({ ...people, patientName: name });
-              if (people.selfAge !== null) set({ age: people.selfAge });
-            }}
-          >
-            {t("The patient is me")}
-          </button>
-
-          <label className="wiz-field">
-            <span>{t("Name on the policy")}</span>
-            <input
-              type="text"
-              placeholder={t("Optional")}
-              value={policyholder}
-              onChange={(ev) => onPolicyholder(ev.target.value)}
-            />
-          </label>
-
-          <div className="wiz-family">
-            <div className="wiz-family-head">
-              <span>{t("Family members")}</span>
-              <button
-                type="button"
-                className="wiz-add"
-                onClick={() => onPeople({ ...people, family: [...people.family, newMember()] })}
-                aria-label={t("Add a family member")}
-              >
-                + {t("Add")}
-              </button>
+          <section className="wiz-part">
+            <div className="wiz-part-head">
+              <span>{t("The patient’s details")}</span>
+              <span className="wiz-req">{t("Required")}</span>
             </div>
-            {people.family.length === 0 && <p className="wiz-empty">{t("Add a husband, wife, children or parents with the + button.")}</p>}
-            {people.family.map((m, i) => {
-              const put = (patch: Partial<Member>) =>
-                onPeople({ ...people, family: people.family.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
-              return (
-                <div className="wiz-member" key={m.key}>
-                  <select value={m.relation} onChange={(ev) => put({ relation: ev.target.value as Relation })} aria-label={t("Relation")}>
-                    {RELATIONS.map((r) => (
-                      <option key={r} value={r}>
-                        {t(RELATION_LABEL[r])}
-                      </option>
-                    ))}
-                  </select>
-                  <input type="text" placeholder={t("Name")} value={m.name} onChange={(ev) => put({ name: ev.target.value })} />
-                  <input
-                    type="number"
-                    min={0}
-                    max={120}
-                    placeholder={t("Age")}
-                    value={m.age ?? ""}
-                    onChange={(ev) => put({ age: ev.target.value === "" ? null : clamp(ev.target.value, 0, 120) })}
-                  />
-                  <button
-                    type="button"
-                    className="wiz-remove"
-                    aria-label={t("Remove")}
-                    onClick={() => onPeople({ ...people, family: people.family.filter((_, j) => j !== i) })}
-                  >
-                    ×
-                  </button>
-                  <PersonId uid={m.uid} />
-                </div>
-              );
-            })}
-            <p className="wiz-empty">{t("Everyone gets their own ID when you press “Save my session”, so no two people are ever mixed up.")}</p>
-          </div>
+            <div className="wiz-pair">
+              <label className={`wiz-field ${bad("name") ? "invalid" : ""}`}>
+                <span>{t("Patient’s name")} *</span>
+                <input
+                  type="text"
+                  required
+                  aria-invalid={bad("name")}
+                  value={people.patientName}
+                  onChange={(ev) => onPeople({ ...people, patientName: ev.target.value })}
+                />
+              </label>
+              <label className={`wiz-field ${bad("age") ? "invalid" : ""}`}>
+                <span>{t("Patient’s age")} *</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={120}
+                  required
+                  aria-invalid={bad("age")}
+                  value={people.patientAge ?? ""}
+                  onChange={(ev) => {
+                    if (ev.target.value === "") return onPeople({ ...people, patientAge: null });
+                    const age = clamp(ev.target.value, 0, 120);
+                    onPeople({ ...people, patientAge: age });
+                    set({ age });
+                  }}
+                />
+              </label>
+              <PersonId uid={people.patientUid} />
+            </div>
+            <div className="wiz-pair">
+              <label className={`wiz-field ${bad("holder") ? "invalid" : ""}`}>
+                <span>
+                  {t("Name on the policy")}
+                  {people.policyOwner === "none" ? "" : " *"}
+                </span>
+                <input
+                  type="text"
+                  disabled={people.policyOwner === "none"}
+                  aria-invalid={bad("holder")}
+                  placeholder={people.policyOwner === "none" ? t("Not needed") : ""}
+                  value={people.policyOwner === "none" ? "" : policyholder}
+                  onChange={(ev) => onPolicyholder(ev.target.value)}
+                />
+              </label>
+              <label className={`wiz-field ${bad("owner") ? "invalid" : ""}`}>
+                <span>{t("Whose policy is it?")} *</span>
+                <select
+                  required
+                  aria-invalid={bad("owner")}
+                  value={people.policyOwner ?? ""}
+                  onChange={(ev) => {
+                    const owner = (ev.target.value || null) as PolicyOwner | null;
+                    onPeople({ ...people, policyOwner: owner });
+                    // The patient's own policy is in the patient's name, unless they typed another.
+                    if (owner === "self" && !policyholder.trim()) onPolicyholder(people.patientName);
+                    // Not insured: the path prices it with no policy at all.
+                    if (owner === "none") set({ policyId: NO_POLICY_ID });
+                  }}
+                >
+                  <option value="">{t("Choose…")}</option>
+                  {POLICY_OWNERS.map((o) => (
+                    <option key={o} value={o}>
+                      {t(POLICY_OWNER_LABEL[o])}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {tried && missing.length > 0 && (
+              <p className="wiz-note bad" role="alert">
+                {t("Please fill in the patient’s details marked * to continue.")}
+              </p>
+            )}
+          </section>
+
+          <section className="wiz-part optional">
+            <div className="wiz-part-head">
+              <span>{t("Register and tell us about you")}</span>
+              <span className="wiz-opt">{t("Optional")}</span>
+            </div>
+            <div className="wiz-pair">
+              <label className="wiz-field">
+                <span>{t("Your name")}</span>
+                <input type="text" placeholder={t("Optional")} value={name} onChange={(ev) => onName(ev.target.value)} />
+              </label>
+              <label className="wiz-field">
+                <span>{t("Your age")}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={120}
+                  placeholder={t("Optional")}
+                  value={people.selfAge ?? ""}
+                  onChange={(ev) => onPeople({ ...people, selfAge: ev.target.value === "" ? null : clamp(ev.target.value, 0, 120) })}
+                />
+              </label>
+              <PersonId uid={people.selfUid} />
+            </div>
+            <button
+              type="button"
+              className="wiz-link"
+              onClick={() => {
+                onName(people.patientName);
+                onPeople({ ...people, selfAge: people.patientAge });
+              }}
+            >
+              {t("I am the patient")}
+            </button>
+
+            <div className="wiz-family">
+              <div className="wiz-family-head">
+                <span>{t("Family members")}</span>
+                <button
+                  type="button"
+                  className="wiz-add"
+                  onClick={() => onPeople({ ...people, family: [...people.family, newMember()] })}
+                  aria-label={t("Add a family member")}
+                >
+                  + {t("Add")}
+                </button>
+              </div>
+              {people.family.length === 0 && <p className="wiz-empty">{t("Add a husband, wife, children or parents with the + button.")}</p>}
+              {people.family.map((m, i) => {
+                const put = (patch: Partial<Member>) =>
+                  onPeople({ ...people, family: people.family.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
+                return (
+                  <div className="wiz-member" key={m.key}>
+                    <select value={m.relation} onChange={(ev) => put({ relation: ev.target.value as Relation })} aria-label={t("Relation")}>
+                      {RELATIONS.map((r) => (
+                        <option key={r} value={r}>
+                          {t(RELATION_LABEL[r])}
+                        </option>
+                      ))}
+                    </select>
+                    <input type="text" placeholder={t("Name")} value={m.name} onChange={(ev) => put({ name: ev.target.value })} />
+                    <input
+                      type="number"
+                      min={0}
+                      max={120}
+                      placeholder={t("Age")}
+                      value={m.age ?? ""}
+                      onChange={(ev) => put({ age: ev.target.value === "" ? null : clamp(ev.target.value, 0, 120) })}
+                    />
+                    <button
+                      type="button"
+                      className="wiz-remove"
+                      aria-label={t("Remove")}
+                      onClick={() => onPeople({ ...people, family: people.family.filter((_, j) => j !== i) })}
+                    >
+                      ×
+                    </button>
+                    <PersonId uid={m.uid} />
+                  </div>
+                );
+              })}
+              <p className="wiz-empty">{t("Everyone gets their own ID when you press “Save my session”, so no two people are ever mixed up.")}</p>
+            </div>
+          </section>
         </div>
       )}
 
@@ -392,17 +459,36 @@ export function Intake({
       {step === 4 && (
         <div className="wiz-card">
           <h1 className="wiz-q">{t("Here is where you stand")}</h1>
-          <div className="wiz-result">
-            <span className="k">{t("As things stand, you pay")}</span>
-            <span className="v">{fmt(e.result.patientPays)}</span>
-            <span className="s">
-              {t("Insurer pays")} {fmt(e.result.insurerPays)} · {t("Bill")} {fmt(e.result.billTotal)}
-            </span>
-          </div>
+          {procNil ? (
+            // "None" chosen for the treatment on the path: there is no stay to price, so no bill.
+            <div className="wiz-result nil">
+              <span className="k">{t("No treatment chosen yet")}</span>
+              <span className="s">
+                {health && health.tests.length
+                  ? t("Your tests are priced on “The path”. Pick a treatment there to see what a stay would cost.")
+                  : t("Pick the treatment on “The path” to see what you would pay.")}
+              </span>
+            </div>
+          ) : (
+            <div className="wiz-result">
+              <span className="k">{t("As things stand, you pay")}</span>
+              <span className="v">{fmt(e.result.patientPays)}</span>
+              <span className="s">
+                {t("Insurer pays")} {fmt(e.result.insurerPays)} · {t("Bill")} {fmt(e.result.billTotal)}
+              </span>
+            </div>
+          )}
           <ul className="wiz-review">
             {[
-              [t("Your name"), name || "—", 0],
-              [t("Patient"), `${people.patientName || "—"} · ${t("Age {n}", { n: input.age })}`, 0],
+              [t("Patient"), `${people.patientName || "—"} · ${t("Age {n}", { n: people.patientAge ?? input.age })}`, 0],
+              [
+                t("Name on the policy"),
+                people.policyOwner === "none"
+                  ? t(POLICY_OWNER_LABEL.none)
+                  : `${policyholder || "—"}${people.policyOwner ? ` (${t(POLICY_OWNER_LABEL[people.policyOwner])})` : ""}`,
+                0,
+              ],
+              [t("Your name"), name || t("Not registered"), 0],
               [
                 t("Family members"),
                 people.family.length

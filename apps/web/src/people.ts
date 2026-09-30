@@ -5,7 +5,7 @@
  * called Ravi are two different people, never one.
  */
 
-import type { Person, SavedPerson } from "@claimcast/contracts";
+import type { Person, PolicyOwner, SavedPerson } from "@claimcast/contracts";
 
 export type Relation = "husband" | "wife" | "son" | "daughter" | "father" | "mother" | "other";
 export const RELATIONS: Relation[] = ["husband", "wife", "son", "daughter", "father", "mother", "other"];
@@ -32,11 +32,43 @@ export interface People {
   selfAge: number | null;
   selfUid?: string;
   patientName: string;
+  /** Typed by the family. Null until then, even though the engine prices at a default age. */
+  patientAge: number | null;
   patientUid?: string;
+  /** Whose policy covers the patient, relative to the patient. */
+  policyOwner: PolicyOwner | null;
   family: Member[];
 }
 
-export const EMPTY_PEOPLE: People = { selfAge: null, patientName: "", family: [] };
+export const EMPTY_PEOPLE: People = { selfAge: null, patientName: "", patientAge: null, policyOwner: null, family: [] };
+
+/** Whose policy it is, as the dropdown says it, relative to the patient. */
+export const POLICY_OWNER_LABEL: Record<PolicyOwner, string> = {
+  self: "The patient’s own",
+  father: "Father’s",
+  mother: "Mother’s",
+  husband: "Husband’s",
+  wife: "Wife’s",
+  son: "Son’s",
+  daughter: "Daughter’s",
+  employer: "Employer’s (group policy)",
+  other: "Someone else’s",
+  none: "Not insured",
+};
+
+/**
+ * The patient's details are required before anything is saved or the wizard
+ * moves on: a name, an age, whose policy it is, and the name on it -- unless
+ * the patient is not insured, when there is no name on any policy to give.
+ */
+export function patientMissing(p: People, policyholder: string): ("name" | "age" | "owner" | "holder")[] {
+  const out: ("name" | "age" | "owner" | "holder")[] = [];
+  if (!p.patientName.trim()) out.push("name");
+  if (p.patientAge === null) out.push("age");
+  if (p.policyOwner === null) out.push("owner");
+  if (p.policyOwner !== "none" && !policyholder.trim()) out.push("holder");
+  return out;
+}
 
 let n = 0;
 export const newMember = (): Member => ({ key: "m" + ++n + "-" + Date.now(), relation: "wife", name: "", age: null });
@@ -45,7 +77,7 @@ export const newMember = (): Member => ({ key: "m" + ++n + "-" + Date.now(), rel
 export function toPersons(p: People, yourName: string, patientAge: number): Person[] {
   return [
     { role: "self", uid: p.selfUid, relation: null, name: yourName.trim(), age: p.selfAge },
-    { role: "patient", uid: p.patientUid, relation: null, name: p.patientName.trim(), age: patientAge },
+    { role: "patient", uid: p.patientUid, relation: null, name: p.patientName.trim(), age: p.patientAge ?? patientAge },
     ...p.family.map((m) => ({ role: "family" as const, uid: m.uid, relation: m.relation, name: m.name.trim(), age: m.age })),
   ];
 }

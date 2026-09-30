@@ -3042,3 +3042,17 @@ button:not(.tab):not(.chat-fab):not(.login-card):not(.session-row):not(.chat-sta
 }
 .care-sub-row td { background: var(--bg); font-size: 13px; padding-top: 7px; padding-bottom: 7px; }
 .care-more { background: transparent !important; color: var(--accent) !important; border: 1px solid var(--accent-pale) !important; }
+
+/* About you: the required patient part and the optional registration */
+.wiz-part { max-width: 520px; margin: 0 auto 22px; padding: 18px 18px 6px; border: 1px solid var(--hair); border-radius: 14px; }
+.wiz-part.optional { border-style: dashed; }
+.wiz-part-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; font-weight: 700; font-size: 16px; }
+.wiz-req, .wiz-opt { font-size: 11.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; }
+.wiz-req { color: var(--loss); background: rgba(200, 16, 46, 0.08); }
+.wiz-opt { color: var(--ink-3); background: var(--accent-wash); }
+.wiz-part .wiz-field { max-width: none; }
+.wiz-field.invalid input, .wiz-field.invalid select { border-color: var(--loss); box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.1); }
+.wiz-field input:disabled { opacity: 0.55; }
+.wiz-part .wiz-note { margin: 0 0 14px; }
+.wiz-result.nil { background: var(--accent-wash); border: 1px dashed var(--accent-pale); }
+.wiz-result.nil .k { font-size: 18px; }

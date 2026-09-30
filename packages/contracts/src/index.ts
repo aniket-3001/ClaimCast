@@ -754,6 +754,11 @@ export type ChatTurnRecord = z.infer<typeof ChatTurnRecordSchema>;
  * "Save my session". `id`, when given, updates that session rather than
  * starting another, so pressing save twice keeps one record per sitting.
  */
+/** Whose policy covers the patient, relative to the patient. `none`: the patient is not insured. */
+export const POLICY_OWNERS = ["self", "father", "mother", "husband", "wife", "son", "daughter", "employer", "other", "none"] as const;
+export const PolicyOwnerSchema = z.enum(POLICY_OWNERS);
+export type PolicyOwner = z.infer<typeof PolicyOwnerSchema>;
+
 /** One person in a saved session. `uid` is absent until the server has assigned one. */
 export const PersonSchema = z.object({
   uid: z.string().uuid().optional(),
@@ -770,6 +775,9 @@ export const SaveSessionSchema = z.object({
   id: z.string().optional(),
   name: z.string().max(120).optional(),
   policyholder: z.string().max(120).optional(),
+  policyholderRelation: PolicyOwnerSchema.nullable().optional(),
+  /** "None" chosen for the treatment on the path: saved as no bill, not as the last procedure on screen. */
+  noTreatment: z.boolean().optional(),
   case: CaseInputSchema,
   policy: PolicySchema.optional(),
   documentId: z.string().optional(),
@@ -793,12 +801,16 @@ export const SessionSummarySchema = z.object({
   deductionTotal: Paise,
   deductions: z.array(z.object({ line: z.string(), amount: Paise, clause: z.string() })),
   repudiated: z.string().nullable(),
+  /** "None" was chosen for the treatment: nothing was priced, so every figure is zero. */
+  noTreatment: z.boolean().default(false),
 });
 
 export const SavedSessionRowSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
   policyholder: z.string().nullable(),
+  /** Whose policy it is, relative to the patient. */
+  policyholderRelation: PolicyOwnerSchema.nullable().default(null),
   createdAt: z.string(),
   updatedAt: z.string(),
   summary: SessionSummarySchema,

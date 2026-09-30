@@ -117,17 +117,23 @@ for (const l of ["en", "hi"] as const) {
     rendered++;
   }
   for (const step of [0, 1, 2, 3, 4])
-    for (const health of [null, HEALTH]) {
+    for (const health of [null, HEALTH])
+    for (const procNil of [false, true]) {
       const html = renderToString(
-        <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="" onPolicyholder={noop} onContinue={noop} step={step} onStep={noop} illnessDate="" onIllnessDate={noop} people={{ selfAge: 40, patientName: "Sita", family: [{ key: "a", relation: "son", name: "Ravi", age: 9 }] }} onPeople={noop} health={health} onHealth={noop} />,
+        <Intake input={cases[0]} onChange={noop} name="" onName={noop} policyholder="Rajesh Kumar" onPolicyholder={noop} onContinue={noop} step={step} onStep={noop} illnessDate="" onIllnessDate={noop} people={{ selfAge: 40, patientName: "Sita", patientAge: 68, policyOwner: procNil ? "none" : "husband", family: [{ key: "a", relation: "son", name: "Ravi", age: 9 }] }} onPeople={noop} health={health} onHealth={noop} procNil={procNil} />,
       );
+      // "None" on the path means there is no stay to price: the review must not show a bill.
+      if (step === 4 && procNil && /As things stand, you pay|अभी की स्थिति में/.test(html)) {
+        throw new Error("the review showed a bill with no treatment chosen");
+      }
+      if (step === 4 && !procNil && !/₹/.test(html)) throw new Error("the review lost its bill with a treatment chosen");
       if (l === "hi" && step === 3 && /Add your health report|Your health report|Remove report/.test(html)) {
         throw new Error("the health report step has English left in it with Hindi selected");
       }
     }
   renderToString(<Database onOpen={noop} />);
   renderToString(
-    <Profile e={evaluate(cases[0])} name="Asha Rao" onName={noop} policyholder="" onPolicyholder={noop} onAge={noop} questionsNow={2} onOpen={noop} onBack={noop} onLang={noop} people={{ selfAge: 40, patientName: "Sita", family: [] }} />,
+    <Profile e={evaluate(cases[0])} name="Asha Rao" onName={noop} policyholder="" onPolicyholder={noop} onAge={noop} questionsNow={2} onOpen={noop} onBack={noop} onLang={noop} people={{ selfAge: 40, patientName: "Sita", patientAge: 68, policyOwner: "self", family: [] }} />,
   );
 }
 setLang("en", false);

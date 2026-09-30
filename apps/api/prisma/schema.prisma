@@ -631,6 +631,9 @@ model SavedSession {
   userId       String?
   name         String?
   policyholder String?
+  /// Whose policy it is, relative to the patient: self, father, mother,
+  /// husband, wife, son, daughter, employer, other, or none (not insured).
+  policyholderRelation String?
   /// The CaseInput, as the screen had it.
   input        Json
   /// An uploaded, confirmed policy, when that is what was priced.

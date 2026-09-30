@@ -13,6 +13,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import {
   ChatTurnRecordSchema,
   ConfirmedHealthSchema,
+  PolicyOwnerSchema,
   type ChatTurnRecord,
   type SaveSessionRequest,
   type SavedSessionDetail,
@@ -42,8 +43,15 @@ export function summarise(req: SaveSessionRequest) {
         clause: clauses[d.clause]?.cite ?? d.clause,
       })),
       repudiated: e.result.repudiated?.reason ?? null,
+      noTreatment: false,
     };
   };
+  if (req.noTreatment) {
+    // The family chose "none" for the treatment: keep where and with which plan, price nothing.
+    const s = req.policy ? withPolicy(req.policy, run) : run();
+    return { ...s, procedure: "No treatment chosen", billTotal: 0, insurerPays: 0, patientPays: 0, deductionTotal: 0,
+             deductions: [], repudiated: null, noTreatment: true };
+  }
   return req.policy ? withPolicy(req.policy, run) : run();
 }
 
@@ -51,6 +59,7 @@ export async function saveSession(db: PrismaClient, userId: string | null, req: 
   const data = {
     name: req.name?.trim() || null,
     policyholder: req.policyholder?.trim() || null,
+    policyholderRelation: req.policyholderRelation ?? null,
     input: req.case as unknown as Prisma.InputJsonValue,
     policy: (req.policy ?? undefined) as Prisma.InputJsonValue | undefined,
     documentId: req.documentId ?? null,
@@ -111,6 +120,7 @@ function toRow(r: Row): SavedSessionRow {
     id: r.id,
     name: r.name,
     policyholder: r.policyholder,
+    policyholderRelation: PolicyOwnerSchema.nullable().catch(null).parse(r.policyholderRelation ?? null),
     createdAt: r.createdAt.toISOString(),
     updatedAt: r.updatedAt.toISOString(),
     summary: r.summary as SavedSessionRow["summary"],

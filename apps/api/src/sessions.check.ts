@@ -103,12 +103,21 @@ const health = {
   procedureId: null,
   medicines: [],
 };
-const h1 = await saveSession(db, null, { name: MARK, case: input, health });
+const h1 = await saveSession(db, null, { name: MARK, policyholder: "Rajesh Sharma", policyholderRelation: "husband", case: input, health });
+const owner = (await listSessions(db)).find((r) => r.id === h1.id);
+ok(owner?.policyholderRelation === "husband" && owner.policyholder === "Rajesh Sharma", "whose policy it is did not come back with the session");
 const hBack = await sessionDetail(db, h1.id);
 ok(hBack?.health?.tests[0]?.code === "RI110" && hBack.health.diagnosis === health.diagnosis, "the health report did not come back with the session");
 await saveSession(db, null, { id: h1.id, name: MARK, case: input, health: null });
 ok((await sessionDetail(db, h1.id))?.health === null, "removing the health report and saving again did not clear it");
 await db.savedSession.delete({ where: { id: h1.id } });
+
+// "None" chosen for the treatment: the record keeps no bill, not the procedure last on screen.
+const nil = await saveSession(db, null, { name: MARK, case: input, noTreatment: true });
+const nilRow = (await listSessions(db)).find((r) => r.id === nil.id);
+ok(nilRow?.summary.noTreatment === true && nilRow.summary.patientPays === 0 && nilRow.summary.billTotal === 0,
+  "a session saved with no treatment chosen still carried a bill");
+await db.savedSession.delete({ where: { id: nil.id } });
 
 await db.savedSession.delete({ where: { id: first.id } });
 await db.$disconnect();
@@ -118,4 +127,4 @@ if (failures.length) {
   console.error("sessions — " + failures.length + " failed");
   process.exit(1);
 }
-console.log("sessions — saved with the engine's outcome, updated not duplicated, everyone given a stable unique UUID, the health report kept and cleared, and only clean answers remembered");
+console.log("sessions — saved with the engine's outcome, updated not duplicated, everyone given a stable unique UUID, the policy owner kept, the health report kept and cleared, and only clean answers remembered");
