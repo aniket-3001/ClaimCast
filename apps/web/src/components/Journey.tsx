@@ -100,13 +100,27 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
         <Link />
 
         {!g.passed ? (
-          <div className="tnode end refused">
-            <div className="tnode-k">{t("Nothing is payable")}</div>
-            <div className="tnode-v loss">{fmt(r.billTotal)}</div>
-            <div className="tnode-sub">
-              {t("The claim fails before any deduction. The whole bill is the family’s.")}
+          pays.via ? (
+            // The policy's own gate refuses this claim outright, but the age-group
+            // scheme does not turn on that gate -- it still pays, cashless.
+            <div className="tnode end">
+              <div className="tnode-k">{t("You pay")}</div>
+              <div className="tnode-v paid">{fmt(pays.amount)}</div>
+              <div className="tnode-sub">
+                {t("Your policy would refuse this claim outright, but {scheme} pays regardless, cashless.", {
+                  scheme: tx(pays.via.label),
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="tnode end refused">
+              <div className="tnode-k">{t("Nothing is payable")}</div>
+              <div className="tnode-v loss">{fmt(r.billTotal)}</div>
+              <div className="tnode-sub">
+                {t("The claim fails before any deduction. The whole bill is the family’s.")}
+              </div>
+            </div>
+          )
         ) : (
           <>
             {journey(e).map((s, i, all) => (
@@ -145,22 +159,37 @@ export function Journey({ e, onPick }: { e: Evaluated; onPick: (next: CaseInput)
 
             <div className="tnode end">
               <div className="tnode-k">{t("You pay")}</div>
-              <div className="tnode-v loss">{fmt(r.patientPays)}</div>
-              <div className="tnode-sub">
-                {t(
-                  f.spread === "fitted"
-                    ? "{lo} – {hi} once the clinical bill is known, on the fitted spread. The insurer pays {paid} of {bill}."
-                    : "{lo} – {hi} once the clinical bill is known, on the simulated spread. The insurer pays {paid} of {bill}.",
-                  {
-                    lo: fmt(f.low.patientPays),
-                    hi: fmt(f.high.patientPays),
-                    paid: fmt(r.insurerPays),
-                    bill: fmt(r.billTotal),
-                  },
-                )}
-              </div>
-              <Split insurer={r.insurerPays} total={r.billTotal} patient={r.patientPays} />
-              <CostModelNote m={m} />
+              <div className={`tnode-v ${pays.via ? "paid" : "loss"}`}>{fmt(pays.amount)}</div>
+              {pays.via ? (
+                // The scheme is a flat, cashless package rate: no clinical-bill spread
+                // applies to what the family owes, unlike the policy's own claim below.
+                <div className="tnode-sub">
+                  {t("Paid by {scheme}, cashless, at this hospital. On your own plan this would end at {x}.", {
+                    scheme: tx(pays.via.label),
+                    x: fmt(r.patientPays),
+                  })}
+                </div>
+              ) : (
+                <div className="tnode-sub">
+                  {t(
+                    f.spread === "fitted"
+                      ? "{lo} – {hi} once the clinical bill is known, on the fitted spread. The insurer pays {paid} of {bill}."
+                      : "{lo} – {hi} once the clinical bill is known, on the simulated spread. The insurer pays {paid} of {bill}.",
+                    {
+                      lo: fmt(f.low.patientPays),
+                      hi: fmt(f.high.patientPays),
+                      paid: fmt(r.insurerPays),
+                      bill: fmt(r.billTotal),
+                    },
+                  )}
+                </div>
+              )}
+              <Split
+                insurer={pays.via ? r.billTotal - pays.amount : r.insurerPays}
+                total={r.billTotal}
+                patient={pays.amount}
+              />
+              {!pays.via && <CostModelNote m={m} />}
             </div>
           </>
         )}

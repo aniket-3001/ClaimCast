@@ -255,6 +255,10 @@ const ENGINE: Record<string, string> = {
 /** Screen text. Keys are the English exactly as written in the components. */
 const HI: Record<string, string> = {
   // Shell
+  "On your plan, you would pay": "आपके प्लान पर, आप देते",
+  "Paid by {scheme}, cashless, at this hospital. On your own plan this would end at {x}.": "{scheme} द्वारा भुगतान, इस अस्पताल में कैशलेस। आपके अपने प्लान पर यह {x} पर खत्म होता।",
+  "You actually pay, via {scheme}": "आप असल में देंगे, {scheme} के ज़रिए",
+  "Your policy would refuse this claim outright, but {scheme} pays regardless, cashless.": "आपकी पॉलिसी इस दावे को पूरी तरह अस्वीकार कर देगी, लेकिन {scheme} फिर भी कैशलेस भुगतान करती है।",
   "70 and above: Ayushman Vay Vandana is applied by default. It covers up to ₹5 lakh a year, cashless, at PM-JAY hospitals.": "70 और उससे ऊपर: आयुष्मान वय वंदना अपने आप लागू होती है। यह PM-JAY अस्पतालों में साल में ₹5 लाख तक कैशलेस इलाज देती है।",
   "Age 70 and above": "उम्र 70 और उससे ऊपर",
   "Apply it": "लागू करें",

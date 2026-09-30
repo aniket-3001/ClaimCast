@@ -7,7 +7,7 @@
  * markup rather than an exception. Run by `npm run check` alongside selfcheck.
  */
 import { renderToString } from "react-dom/server";
-import { NO_POLICY, evaluate, setRegistry, stayDays, type CaseInput } from "@claimcast/engine";
+import { NO_POLICY, evaluate, familyPays, fmt, setRegistry, stayDays, type CaseInput } from "@claimcast/engine";
 import {
   ADMISSIONS,
   FIXTURES,
@@ -47,6 +47,7 @@ const HEALTH: ConfirmedHealth = {
 setRegistry({ ...FIXTURES, policies: [...FIXTURES.policies, NO_POLICY] });
 
 const noop = () => {};
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 let n = 0;
 const cases: CaseInput[] = ADMISSIONS.map((a) => ({
   hospitalId: a.hospitalId,
@@ -107,9 +108,24 @@ for (const l of ["en", "hi"] as const) {
     // The two age groups, on every case: a child and a 72-year-old, scheme on and off.
     for (const age of [8, 72])
       for (const on of [true, false]) {
-        const html = renderToString(<Journey e={evaluate({ ...c, age, ageScheme: on })} onPick={noop} />);
+        const ec = evaluate({ ...c, age, ageScheme: on });
+        const pays = familyPays(ec);
+        const html = renderToString(<Journey e={ec} onPick={noop} />);
+        const bill = renderToString(<BillView e={ec} />);
         if (l === "hi" && /applied by default|would cover this|Use my plan instead/.test(html)) {
           throw new Error("the age-scheme note has English left in it with Hindi selected");
+        }
+        // When a scheme is the actual payer, no "you pay" total anywhere on the
+        // page may still show the raw policy figure -- that was the exact bug
+        // reported: the headline said 0, the bottom of the tree said otherwise.
+        if (pays.via && pays.amount !== ec.result.patientPays) {
+          const raw = esc(fmt(ec.result.patientPays));
+          if (new RegExp(`tnode-v[^>]*">${raw}<`).test(html)) {
+            throw new Error("Journey's final You-pay node shows the raw policy figure while a scheme is paying");
+          }
+          if (new RegExp(`row-amt (loss|paid)">${raw}<`).test(bill)) {
+            throw new Error("BillView's settlement total shows the raw policy figure while a scheme is paying");
+          }
         }
       }
     renderToString(<Alternatives e={e} onPick={noop} />);

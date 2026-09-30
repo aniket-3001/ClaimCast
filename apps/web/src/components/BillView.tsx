@@ -1,5 +1,5 @@
 import { AgeSchemeNote } from "./Journey";
-import { fmt, isNoPolicy, pct, type LineKind, type Evaluated, registry } from "@claimcast/engine";
+import { familyPays, fmt, isNoPolicy, pct, type LineKind, type Evaluated, registry } from "@claimcast/engine";
 import { lang, t, tx } from "../i18n";
 
 const KIND: Record<LineKind, { label: string; tone: string }> = {
@@ -22,6 +22,10 @@ const KIND: Record<LineKind, { label: string; tone: string }> = {
 export function BillView({ e }: { e: Evaluated }) {
   const { clauses: CLAUSES } = registry();
   const r = e.result;
+  // The age-group scheme (RBSK under 18, Vay Vandana 70+), when it is the
+  // default payer here -- everything below this point works out what the
+  // policy alone would do, and that math is not what the family actually pays.
+  const pays = familyPays(e);
   const byLine = new Map<string, { amount: number; clause: string; reason: string }[]>();
   for (const d of r.deductions) {
     if (!byLine.has(d.lineId)) byLine.set(d.lineId, []);
@@ -187,16 +191,31 @@ export function BillView({ e }: { e: Evaluated }) {
               <span className="row-amt loss">{fmt(-r.siShortfall)}</span>
             </li>
           )}
-          <li className="row">
-            <span className="row-l">{t("Insurer pays")}</span>
-            <span className="row-amt paid">{fmt(r.insurerPays)}</span>
-          </li>
-          <li className="row total">
-            <span className="row-l">{t("You pay")}</span>
-            <span className="row-amt loss">{fmt(r.patientPays)}</span>
-          </li>
+          {pays.via ? (
+            <>
+              <li className="row">
+                <span className="row-l">{t("On your plan, you would pay")}</span>
+                <span className="row-amt">{fmt(r.patientPays)}</span>
+              </li>
+              <li className="row total">
+                <span className="row-l">{t("You actually pay, via {scheme}", { scheme: tx(pays.via.label) })}</span>
+                <span className="row-amt paid">{fmt(pays.amount)}</span>
+              </li>
+            </>
+          ) : (
+            <>
+              <li className="row">
+                <span className="row-l">{t("Insurer pays")}</span>
+                <span className="row-amt paid">{fmt(r.insurerPays)}</span>
+              </li>
+              <li className="row total">
+                <span className="row-l">{t("You pay")}</span>
+                <span className="row-amt loss">{fmt(r.patientPays)}</span>
+              </li>
+            </>
+          )}
         </ul>
-        {e.input.route === "reimbursement" && (
+        {!pays.via && e.input.route === "reimbursement" && (
           <p className="note">
             {t("On this route the family pays {bill} at discharge and is repaid {x} about {d} days later.", {
               bill: fmt(r.billTotal),
