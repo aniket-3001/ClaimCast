@@ -572,7 +572,7 @@ personas = [
      "Read-aloud on every answer, a Listen button, spoken questions, and live screen-reader updates; rupees are said as words."),
     ("E", "Family analysis", "Meena, 42, family floater plan",
      "Husband, two children and her mother-in-law share one policy.",
-     "Every member with their own ID; patient kept apart from the policyholder; sum insured already used this year is entered; age 70+ unlocks Vay Vandana."),
+     "Every member with their own ID; the patient stays separate from the policyholder; at 71, her mother-in-law’s stay is paid automatically by Vay Vandana."),
 ]
 WHERE = {
     "A": "“Ask ClaimCast” button, on every family tab",
@@ -648,7 +648,7 @@ say(s, 0.6, 6.0, 6.3, 0.7, [P((
     f"{nss['surveyPeriod']['households']:,} households), adjusted to Dec 2025 prices with the CPI health index.",
     9.5, False, MUTE), line=1.25)])
 groups = [
-    ("Lower income", "Checks if an Ayushman Bharat (PM-JAY) card — or age 70+ — makes the stay free at this hospital."),
+    ("Lower income", "At 70+, Ayushman Vay Vandana pays automatically — nothing owed. Below that, checks for a PM-JAY card."),
     ("Salaried workers", "Shows when ESI (for wages up to ₹21,000 a month) covers the treatment at no cost."),
     ("Government staff", "Shows the CGHS option for serving and retired central government employees."),
     ("Middle income", "Finds the room, hospital and implant that keep the most money in the family."),
@@ -814,9 +814,10 @@ for i, (when, goal, items, target) in enumerate(phases):
     bullets(s, x + 0.3, 2.42, 3.35, 2.85, items, size=11, gap=6)
     box(s, x + 0.3, 5.28, 3.25, 0.42, PALE, None, MSO_SHAPE.ROUNDED_RECTANGLE, 0.3)
     say(s, x + 0.3, 5.28, 3.25, 0.42, [P((target, 11, True, BLUE), align=PP_ALIGN.CENTER)], anchor=MSO_ANCHOR.MIDDLE)
-card(s, 0.6, 6.05, 12.13, 0.72, PALE, None)
-say(s, 0.9, 6.05, 11.6, 0.72, [P(("Already in place: ", 12, True, BLUE),
-                              ("family profiles with unique IDs · health reports turned into a plan · English and Hindi · "
+card(s, 0.6, 6.0, 12.13, 0.85, PALE, None)
+say(s, 0.9, 6.0, 11.6, 0.85, [P(("Already in place: ", 12, True, BLUE),
+                              ("family profiles with unique IDs · two government schemes applied automatically by age "
+                               "(RBSK, Vay Vandana) · health reports turned into a plan · English and Hindi · "
                                "voice questions and read-aloud · estimator trained on 1,949 PM-JAY packages that retrains itself "
                                "· chat memory", 12, False, INK), line=1.2)], anchor=MSO_ANCHOR.MIDDLE)
 s.notes_slide.notes_text_frame.text = (
