@@ -547,6 +547,13 @@ const HI: Record<string, string> = {
   "Read from your PDF": "आपकी PDF से पढ़ा गया",
   "Sample plan for this demo": "इस डेमो के लिए नमूना प्लान",
   "Upload your policy document (PDF)": "अपना पॉलिसी दस्तावेज़ (PDF) अपलोड करें",
+  "Upload another policy document (PDF)": "एक और पॉलिसी दस्तावेज़ (PDF) अपलोड करें",
+  "Each family member's policy can be uploaded separately; nothing already added is lost.":
+    "परिवार के हर सदस्य की पॉलिसी अलग से अपलोड की जा सकती है; पहले से जोड़ी गई कोई भी पॉलिसी नहीं खोती।",
+  "{n} policies uploaded this sitting — pick the one to price with above.":
+    "इस सत्र में {n} पॉलिसियाँ अपलोड की गई हैं — ऊपर से वह चुनें जिससे खर्च निकालना है।",
+  "Try a different file": "कोई और फ़ाइल आज़माएँ",
+  "Upload a different policy instead": "इसके बजाय कोई और पॉलिसी अपलोड करें",
   "Click to choose the file. We read your limits from it for you to check. It is kept private and deleted after a few days.":
     "फ़ाइल चुनने के लिए क्लिक करें। हम उसमें से आपकी सीमाएँ पढ़ेंगे ताकि आप जाँच सकें। यह निजी रखी जाती है और कुछ दिनों बाद हटा दी जाती है।",
   "Reading {file}": "{file} पढ़ी जा रही है",
