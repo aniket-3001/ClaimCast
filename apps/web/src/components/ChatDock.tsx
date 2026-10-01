@@ -89,14 +89,24 @@ export function ChatDock({
       onInterim: (text) => setDraft(text),
       onFinal: (text) => void ask(text),
       onEnd: () => setListening(false),
-      onError: (code) =>
+      onError: (code) => {
+        // The browser says why it stopped; the reason is shown, not swallowed, because "stopped" gives
+        // nobody anything to fix. The code is also logged for whoever is debugging a particular machine.
+        console.warn("speech recognition error:", code);
         setMicError(
           code === "not-allowed" || code === "service-not-allowed"
             ? t("Microphone permission was refused. Allow it in the browser to speak your question.")
             : code === "no-speech"
               ? t("Didn’t hear anything. Tap the microphone and try again.")
-              : t("Voice input stopped. You can type your question instead."),
-        ),
+              : code === "audio-capture"
+                ? t("No working microphone was found. Check that one is plugged in and chosen in the browser and system sound settings.")
+                : code === "network"
+                  ? t("The browser's speech service could not be reached. Voice input needs an internet connection and Chrome or Edge (Brave and some networks block it). You can type your question instead.")
+                  : code === "language-not-supported"
+                    ? t("This browser cannot recognise speech in the chosen language. You can type your question instead.")
+                    : t("Voice input stopped ({code}). You can type your question instead.", { code }),
+        );
+      },
     });
   };
 
